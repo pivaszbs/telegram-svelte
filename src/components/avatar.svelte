@@ -9,7 +9,7 @@
 	export let small;
 	export let medium;
 	export let big;
-	const commonProps = { small, medium, big};
+	const commonProps = { small, medium, big };
 </script>
 
 {#if saved}

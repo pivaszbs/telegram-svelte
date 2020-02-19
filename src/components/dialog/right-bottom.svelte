@@ -1,9 +1,10 @@
 <script>
     export let count;
     export let pinned;
+    export let muted;
 </script>
 
-<div class="right-bottom">
+<div class:muted={muted} class="right-bottom">
     {#if count > 0}
         <div class="count">{count}</div>
     {:else if pinned}
