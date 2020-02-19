@@ -9,6 +9,7 @@
     export let pinned;
     export let out;
     export let read;
+    export let online;
 </script>
 
 <div class="dialog">
