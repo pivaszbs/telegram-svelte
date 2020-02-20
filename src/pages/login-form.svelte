@@ -1,5 +1,5 @@
 <script>
-    import CountryInput from '../components/ui-kit/inputs/input-country.svelte';
+    import CountryInput from '../components/ui-kit/inputs/input-country/input-country.svelte';
     import PhoneInput from '../components/ui-kit/inputs/input-phone.svelte';
     import CountryPopup from '../components/ui-kit/popups/popup-countries.svelte';
     import Checkbox from '../components/checkbox.svelte';
@@ -14,6 +14,6 @@
 		<CountryInput />
         <PhoneInput />
         <Checkbox />
-        <Button>NEXT</Button>
+        <Button variant="primary">NEXT</Button>
 	</div>
 </div>

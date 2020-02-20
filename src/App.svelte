@@ -2,6 +2,7 @@
 	import Button from './components/button.svelte';
 	import Loader from './components/loader.svelte';
 	import Avatar from './components/avatar.svelte';
+	import LoginForm from './pages/login-form.svelte';
   export let name;
   const handler = () => console.log('hello123');
 </script>
@@ -39,8 +40,5 @@
   </style>
 
 <main>
-  <h1>Dorowa Pashka, svelte top</h1>
-  <Button on:click={handler} variant={'primary'}></Button>
-  <Loader />
-  <Avatar saved big />
+	<LoginForm />
 </main>
