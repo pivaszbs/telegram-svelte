@@ -26,7 +26,7 @@ const updatePhone = text => {
 };
 
 const createPhone = () => {
-    const { subscribe, set, update } = writable('');
+    const { subscribe, set } = writable('');
 
 	return {
 		subscribe,
@@ -34,4 +34,5 @@ const createPhone = () => {
         set: (value) => set(updatePhone(value))
 	};
 }
+
 export const phone = createPhone();

@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import { hideCountryPopup, focused } from '../stores/input';
+    import { countries } from '../stores/popup';
 
 	import CountryInput from '../components/ui-kit/inputs/input-country.svelte';
 	import PhoneInput from '../components/ui-kit/inputs/input-phone.svelte';
@@ -16,6 +17,8 @@
 	const onClickOutside = () => {
 		focused.set('');
 	}
+
+	const submitHandle = event => event.preventDefault();
 </script>
 
 <style>
@@ -58,14 +61,16 @@
 </style>
 
 <div class="login-page">
-	<form class="login-form">
+	<form on:submit={submitHandle} class="login-form">
 		<img src="./images/logo.png" alt="Telegram logo" class="logo">
 		<h1>Sign in to Telegram</h1>
 		<div class="hint">Please confirm your country and enter your phone number</div>
 		<ClickOutside on:clickoutside={onClickOutside} >
 			<div class="input-group country">
-				<CountryInput on:focus={onCountryFocus} />
-				<CountryPopup />
+				<CountryInput on:focus={onCountryFocus}/>
+				{#if !$hideCountryPopup}
+					<CountryPopup countries={$countries} /> 
+				{/if}
 			</div>
 		</ClickOutside>
 		<div class="input-group">

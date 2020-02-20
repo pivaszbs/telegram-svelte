@@ -1,32 +1,32 @@
 import { phone, country } from './input';
-import { writable } from 'svelte/store';
+import { derived } from 'svelte/store';
 import countrylist from './countries.json';
 
-const createCountries = () => {
-    const { subscribe, set, update } = writable(countrylist);
-    phone.subscribe(async phone => {
-        const phonecheck = phone.replace(/\D/g, '').slice(0,3);
-        if (phonecheck) {
-            update(() => countrylist.filter(country => {
-                if (country.code) {
-                    return phonecheck.includes(country.code);      
-                }
-            }));
-        } else {
-            set(countrylist);
+let setted;
+
+export const countries = derived([phone, country], ([ph, cn]) => {
+    const phcheck = ph.replace(/\D/g, '').slice(0,3);
+    const newCountries = countrylist.filter(cntry => {
+        if (phcheck) {
+            if (cntry.code) {
+                return cntry.code.match(phcheck) && cntry.name.toLowerCase().includes(cn.toLowerCase()) || phcheck.includes(cntry.code);      
+            } 
+
+            return false;
         }
+
+        return cntry.name.toLowerCase().includes(cn.toLowerCase());
     });
-    country.subscribe(async country => {
-        if (country) {
-            update(() => countrylist.filter((cntry) => {
-                return cntry.name.toLowerCase().includes(country.toLowerCase());
-            }));
-        } else {
-            set(countrylist);
+    
+    if (newCountries.length === 1 && setted !== newCountries[0].code) {
+        setted = newCountries[0].code;
+        country.set(newCountries[0].name);
+        if (ph.length < newCountries[0].code.length) {
+            phone.set(newCountries[0].code);
         }
-    })
+    } else if (newCountries.length > 1) {
+        setted = void '';
+    }
 
-    return { subscribe }
-}
-
-export const countries = createCountries();
+    return newCountries;
+});
