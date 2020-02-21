@@ -21,7 +21,7 @@ export const countries = derived([phone, country], ([ph, cn]) => {
     if (newCountries.length === 1 && setted !== newCountries[0].code) {
         setted = newCountries[0].code;
         country.set(newCountries[0].name);
-        if (ph.length < newCountries[0].code.length) {
+        if (phcheck.length < newCountries[0].code.length) {
             phone.set(newCountries[0].code);
         }
     } else if (newCountries.length > 1) {

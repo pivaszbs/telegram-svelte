@@ -1,7 +1,7 @@
 <script>
 	import { fade } from 'svelte/transition';
     import PopupItemCountry from '../popup-items/popup-item-country.svelte';
-    import { country } from '../../../stores/input';
+    import { country, focused } from '../../../stores/input';
     export let countries;
     let active = -1
     const keyHandler = event => {
@@ -15,6 +15,7 @@
             case 'Enter':
                 if (countries[active]) {
                     country.set(countries[active].name);
+                    focused.set('phone');
                 }
                 break;
         }
