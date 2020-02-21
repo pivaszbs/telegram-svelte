@@ -21,6 +21,7 @@
 	"dependencies": {
 		"emoji-flags": "^1.2.0",
 		"sirv-cli": "^0.4.4",
-		"svelte-click-outside": "^1.0.0"
+		"svelte-click-outside": "^1.0.0",
+		"svelte-routing": "^1.4.0"
 	}
 }

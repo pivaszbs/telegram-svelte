@@ -2,6 +2,8 @@ import { writable, derived } from 'svelte/store';
 
 export const country = writable('');
 export const focused = writable('');
+export const code = writable('');
+export const password = writable('');
 
 export const hideCountryPopup = derived(focused, $focused => $focused !== 'country');
 

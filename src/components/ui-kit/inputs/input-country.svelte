@@ -1,5 +1,13 @@
 <script>
-	import { country } from '../../../stores/input';
+	import { country, focused } from '../../../stores/input';
+
+	let elem;
+
+    $: $focused === 'country' && elem.focus();
+
+    const onFocus = () => {
+        focused.set('country');
+    }
 </script>
 
 <style lang="scss">
@@ -44,7 +52,7 @@
 	}
 </style>
 
-<input on:focus required bind:value={$country} type="country">
+<input bind:this={elem} on:focus={onFocus} required bind:value={$country} type="country">
 <label for="country">Country</label>
 <div class="icon">
 	<div class="line"></div>

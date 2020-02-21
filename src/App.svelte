@@ -3,6 +3,19 @@
 	import Loader from './components/loader.svelte';
 	import Avatar from './components/avatar.svelte';
 	import LoginForm from './pages/login-form.svelte';
+	import LoginCode from './pages/login-code.svelte';
+	import LoginPassword from './pages/login-password.svelte';
+	import RegisterPage from './pages/register-page.svelte';
+	import { router } from './stores/router';
+	
+	const routes = {
+		'login-form': LoginForm,
+		'login-code': LoginCode,
+		'register-page': RegisterPage,
+		'login-password': LoginPassword
+	};
+
+	router.setRoute('login-code');
 </script>
 
 <style>
@@ -32,5 +45,5 @@
 </style>
 
 <main>
-	<LoginForm />
+	<svelte:component this={routes[$router.route]} {...$router.props} />
 </main>

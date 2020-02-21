@@ -1,7 +1,8 @@
 <script>
 	import { onMount } from 'svelte';
-	import { hideCountryPopup, focused, hideSubmit } from '../stores/input';
+	import { hideCountryPopup, focused, hideSubmit, phone } from '../stores/input';
     import { countries } from '../stores/popup';
+    import { router } from '../stores/router';
 
 	import CountryInput from '../components/ui-kit/inputs/input-country.svelte';
 	import PhoneInput from '../components/ui-kit/inputs/input-phone.svelte';
@@ -11,6 +12,7 @@
 	import ClickOutside from '../components/helpers/click-outside.svelte';
 
     let submit;
+    let loading = false;
 
 	const onCountryFocus = () => {
 		focused.set('country');
@@ -26,11 +28,11 @@
         }
     }
 
-    let loading = false;
 
 	const submitHandle = event => {
         event.preventDefault();
         loading = true;
+        router.setRouteAndProps('login-code');
     }
 
 </script>
@@ -51,10 +53,9 @@
 		display: flex;
 		align-items: center;
         flex-direction: column;
-        margin-top: 20vh;
+        margin-top: 10vh;
 		width: 400px;
         text-align: center;
-        transition: all 0.1s ease-in;
 	}
 
 	.hint {
@@ -91,20 +92,21 @@
     }
 
 </style>
+
 <svelte:body on:keydown={keyHandler} />
 <div class="login-page">
-	<div class="login-form">
-		<img src="./images/logo.png" alt="Telegram logo" class="logo">
-		<h1>Sign in to Telegram</h1>
-		<div class="hint">Please confirm your country and enter your phone number</div>
-		<ClickOutside on:clickoutside={onClickOutside} >
-			<div class="input-group country">
-				<CountryInput on:focus={onCountryFocus}/>
-				{#if !$hideCountryPopup}
-					<CountryPopup countries={$countries} /> 
-				{/if}
-			</div>
-		</ClickOutside>
+    <div class="login-form">
+        <img src="./images/logo.png" alt="Telegram logo" class="logo">
+        <h1>Sign in to Telegram</h1>
+        <div class="hint">Please confirm your country and enter your phone number</div>
+        <ClickOutside on:clickoutside={onClickOutside} >
+            <div class="input-group country">
+                <CountryInput on:focus={onCountryFocus}/>
+                {#if !$hideCountryPopup}
+                    <CountryPopup countries={$countries} /> 
+                {/if}
+            </div>
+        </ClickOutside>
         <form bind:this={submit} on:submit={submitHandle} action="login">
             <div class="input-group">
                 <PhoneInput />
@@ -116,5 +118,5 @@
                 <Button type="submit" variant="primary" {loading}>NEXT</Button>
             {/if}
         </form>
-	</div>
+    </div>
 </div>

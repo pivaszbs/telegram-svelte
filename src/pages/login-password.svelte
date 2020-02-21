@@ -2,17 +2,19 @@
     import { phone, code, focused } from '../stores/input';
     import { router } from '../stores/router';
     import { onMount } from 'svelte';
-    import InputCode from '../components/ui-kit/inputs/input-code.svelte';
+    import InputPassword from '../components/ui-kit/inputs/input-password.svelte';
+    import Button from '../components/button.svelte';
 
+    let loading = false;
+    
     onMount(() => {
-        focused.set('code');
+        focused.set('password');
     })
 
-    code.subscribe(code => {
-        if (code.length > 4) {
-            router.setRoute('login-password')
-        }
-    });
+    const submitHandle = event => {
+        event.preventDefault();
+        loading = true;
+    }
 </script>
 
 <style>
@@ -24,7 +26,7 @@
 		margin-bottom: 4vh;
     }
 
-    .login-code {
+    .login-password {
 		height: 100vh;
 		display: flex;
         justify-content: center;
@@ -37,15 +39,20 @@
         margin-top: 25vh;
 		width: 400px;
         text-align: center;
-	}
+    }
+    
+    .input-group {
+        margin-bottom: 24px;
+    }
 </style>
 
-<div class="login-code">
-    <form action="code">
-        <h1>{$phone}</h1>
+<div class="login-password">
+    <form on:submit={submitHandle} action="password">
+        <h1>Enter a password</h1>
         <div class="hint">We have sent you an SMS with code</div>
         <div class="input-group">
-            <InputCode  />
+            <InputPassword  />
         </div>
+        <Button type="submit" variant="primary" {loading}>NEXT</Button>`
     </form>
 </div>
