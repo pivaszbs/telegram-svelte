@@ -5,7 +5,9 @@
     import InputCode from '../components/ui-kit/inputs/input-code.svelte';
 
     onMount(() => {
-        focused.set('code');
+        setTimeout(() => {
+            focused.set('code');
+        }, 0);
     })
 
     code.subscribe(code => {

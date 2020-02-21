@@ -15,7 +15,7 @@
 		'login-password': LoginPassword
 	};
 
-	router.setRoute('login-code');
+	router.setRoute('login-form');
 </script>
 
 <style>
