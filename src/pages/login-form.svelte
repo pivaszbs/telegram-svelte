@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { hideCountryPopup, focused } from '../stores/input';
+	import { hideCountryPopup, focused, hideSubmit } from '../stores/input';
     import { countries } from '../stores/popup';
 
 	import CountryInput from '../components/ui-kit/inputs/input-country.svelte';
@@ -10,15 +10,29 @@
 	import Button from '../components/button.svelte';
 	import ClickOutside from '../components/helpers/click-outside.svelte';
 
+    let submit;
+
 	const onCountryFocus = () => {
 		focused.set('country');
 	}
 
 	const onClickOutside = () => {
 		focused.set('');
-	}
+    }
+    
+    const keyHandler = event => {
+        if (event.key === 'Enter' && !$hideSubmit) {
+            submit.dispatchEvent(new Event('submit'));
+        }
+    }
 
-	const submitHandle = event => event.preventDefault();
+    let loading = false;
+
+	const submitHandle = event => {
+        event.preventDefault();
+        loading = true;
+    }
+
 </script>
 
 <style>
@@ -30,17 +44,17 @@
 	.login-page {
 		height: 100vh;
 		display: flex;
-		justify-content: center;
+        justify-content: center;
 	}
 
 	.login-form {
 		display: flex;
 		align-items: center;
-		justify-content: center;
-		flex-direction: column;
-		height: 100%;
+        flex-direction: column;
+        margin-top: 20vh;
 		width: 400px;
-		text-align: center;
+        text-align: center;
+        transition: all 0.1s ease-in;
 	}
 
 	.hint {
@@ -57,11 +71,29 @@
 
 	.country {
 		position: relative;
-	}
-</style>
+    }
+    
+    .keep {
+        font-size: 16px;
+        display: flex;
+        margin-bottom: 24px;
+        width: 360px;
+        padding-left: 32px;
+        position: relative;
 
+        overflow: hidden;
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+</style>
+<svelte:body on:keydown={keyHandler} />
 <div class="login-page">
-	<form on:submit={submitHandle} class="login-form">
+	<div class="login-form">
 		<img src="./images/logo.png" alt="Telegram logo" class="logo">
 		<h1>Sign in to Telegram</h1>
 		<div class="hint">Please confirm your country and enter your phone number</div>
@@ -73,10 +105,16 @@
 				{/if}
 			</div>
 		</ClickOutside>
-		<div class="input-group">
-			<PhoneInput />
-		</div>
-		<Checkbox />
-		<Button type="submit" variant="primary">NEXT</Button>
-	</form>
+        <form bind:this={submit} on:submit={submitHandle} action="login">
+            <div class="input-group">
+                <PhoneInput />
+            </div>
+            <div class="keep">
+                <Checkbox checked={true} name="keep" label="Keep me signed in" />
+            </div>
+            {#if !$hideSubmit}
+                <Button type="submit" variant="primary" {loading}>NEXT</Button>
+            {/if}
+        </form>
+	</div>
 </div>

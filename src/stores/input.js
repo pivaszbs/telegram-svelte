@@ -36,3 +36,4 @@ const createPhone = () => {
 }
 
 export const phone = createPhone();
+export const hideSubmit = derived(phone, $phone => $phone.length < 10);
