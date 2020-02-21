@@ -26,12 +26,6 @@
 		margin-bottom: 4vh;
     }
 
-    .login-password {
-		height: 100vh;
-		display: flex;
-        justify-content: center;
-	}
-
 	form {
 		display: flex;
 		align-items: center;
@@ -46,13 +40,11 @@
     }
 </style>
 
-<div class="login-password">
-    <form on:submit={submitHandle} action="password">
-        <h1>Enter a password</h1>
-        <div class="hint">We have sent you an SMS with code</div>
-        <div class="input-group">
-            <InputPassword  />
-        </div>
-        <Button type="submit" variant="primary" {loading}>NEXT</Button>`
-    </form>
-</div>
+<form on:submit={submitHandle} action="password">
+    <h1>Enter a password</h1>
+    <div class="hint">We have sent you an SMS with code</div>
+    <div class="input-group">
+        <InputPassword  />
+    </div>
+    <Button type="submit" variant="primary" {loading}>NEXT</Button>`
+</form>

@@ -42,6 +42,12 @@
 		--ripple-opacity: 0.08;
 		--ripple-duration: 600ms;
 	}
+
+	main {
+		display: flex;
+		justify-content: center;
+		height: 100vh;
+	}
 </style>
 
 <main>

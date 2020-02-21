@@ -57,7 +57,7 @@
 
 </style>
 
-<button transition:fly={{ duration: 200, y: 100}} class:loading={loading} {type} on:click class:primary={variant === 'primary'}>
+<button in:fly={{ duration: 200, y: 100}} class:loading={loading} {type} on:click class:primary={variant === 'primary'}>
 	<span>
     <slot>Button</slot>
   </span>

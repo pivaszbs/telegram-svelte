@@ -26,12 +26,6 @@
 		margin-bottom: 4vh;
     }
 
-    .login-code {
-		height: 100vh;
-		display: flex;
-        justify-content: center;
-	}
-
 	form {
 		display: flex;
 		align-items: center;
@@ -42,12 +36,10 @@
 	}
 </style>
 
-<div class="login-code">
-    <form action="code">
-        <h1>{$phone}</h1>
-        <div class="hint">We have sent you an SMS with code</div>
-        <div class="input-group">
-            <InputCode  />
-        </div>
-    </form>
-</div>
+<form action="code">
+    <h1>{$phone}</h1>
+    <div class="hint">We have sent you an SMS with code</div>
+    <div class="input-group">
+        <InputCode  />
+    </div>
+</form>

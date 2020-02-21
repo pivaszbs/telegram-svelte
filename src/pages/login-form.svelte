@@ -1,5 +1,4 @@
 <script>
-	import { onMount } from 'svelte';
 	import { hideCountryPopup, focused, hideSubmit, phone } from '../stores/input';
     import { countries } from '../stores/popup';
     import { router } from '../stores/router';
@@ -13,10 +12,11 @@
 
     let submit;
     let loading = false;
+    let elem;
 
 	const onCountryFocus = () => {
 		focused.set('country');
-	}
+    }
 
 	const onClickOutside = () => {
 		focused.set('');
@@ -32,7 +32,7 @@
 	const submitHandle = event => {
         event.preventDefault();
         loading = true;
-        router.setRouteAndProps('login-code');
+        router.setRoute('login-code');
     }
 
 </script>
@@ -41,12 +41,6 @@
 	.logo {
 		width: 160px;
 		margin-bottom: 2vh;
-	}
-
-	.login-page {
-		height: 100vh;
-		display: flex;
-        justify-content: center;
 	}
 
 	.login-form {
@@ -94,29 +88,27 @@
 </style>
 
 <svelte:body on:keydown={keyHandler} />
-<div class="login-page">
-    <div class="login-form">
-        <img src="./images/logo.png" alt="Telegram logo" class="logo">
-        <h1>Sign in to Telegram</h1>
-        <div class="hint">Please confirm your country and enter your phone number</div>
-        <ClickOutside on:clickoutside={onClickOutside} >
-            <div class="input-group country">
-                <CountryInput on:focus={onCountryFocus}/>
-                {#if !$hideCountryPopup}
-                    <CountryPopup countries={$countries} /> 
-                {/if}
-            </div>
-        </ClickOutside>
-        <form bind:this={submit} on:submit={submitHandle} action="login">
-            <div class="input-group">
-                <PhoneInput />
-            </div>
-            <div class="keep">
-                <Checkbox checked={true} name="keep" label="Keep me signed in" />
-            </div>
-            {#if !$hideSubmit}
-                <Button type="submit" variant="primary" {loading}>NEXT</Button>
+<div bind:this={elem} class="login-form">
+    <img src="./images/logo.png" alt="Telegram logo" class="logo">
+    <h1>Sign in to Telegram</h1>
+    <div class="hint">Please confirm your country and enter your phone number</div>
+    <ClickOutside on:clickoutside={onClickOutside} >
+        <div class="input-group country">
+            <CountryInput on:focus={onCountryFocus}/>
+            {#if !$hideCountryPopup}
+                <CountryPopup countries={$countries} /> 
             {/if}
-        </form>
-    </div>
+        </div>
+    </ClickOutside>
+    <form bind:this={submit} on:submit={submitHandle} action="login">
+        <div class="input-group">
+            <PhoneInput />
+        </div>
+        <div class="keep">
+            <Checkbox checked={true} name="keep" label="Keep me signed in" />
+        </div>
+        {#if !$hideSubmit}
+            <Button type="submit" variant="primary" {loading}>NEXT</Button>
+        {/if}
+    </form>
 </div>
