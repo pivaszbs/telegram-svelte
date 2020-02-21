@@ -31,8 +31,10 @@
 
 	const submitHandle = event => {
         event.preventDefault();
-        loading = true;
-        router.setRoute('login-code');
+        if (!$hideSubmit) {
+            loading = true;
+            router.setRoute('login-code');
+        }
     }
 
 </script>
