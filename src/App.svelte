@@ -1,18 +1,17 @@
 <script>
-	import Button from './components/button.svelte';
-	import Loader from './components/loader.svelte';
-	import Avatar from './components/avatar.svelte';
 	import LoginForm from './pages/login-form.svelte';
 	import LoginCode from './pages/login-code.svelte';
 	import LoginPassword from './pages/login-password.svelte';
 	import RegisterPage from './pages/register-page.svelte';
+	import ChatPage from './pages/chat-page.svelte';
 	import { router } from './stores/router';
 	
 	const routes = {
 		'login-form': LoginForm,
 		'login-code': LoginCode,
 		'register-page': RegisterPage,
-		'login-password': LoginPassword
+		'login-password': LoginPassword,
+		'chat-page': ChatPage
 	};
 
 	router.setRoute('login-form');

@@ -14,6 +14,7 @@
     const submitHandle = event => {
         event.preventDefault();
         loading = true;
+        router.setRoute('register-page');
     }
 </script>
 

@@ -57,16 +57,24 @@ input:not([type="checkbox"]):focus {
 	caret-color: var(--primary);
 }
 
-input:not([type="checkbox"]):valid~label {
+input:not([type="checkbox"]):valid + 	label {
 	color: var(--gray);
 }
 
-input:not([type="checkbox"]):focus~label {
+input:not([type="checkbox"]):focus + 	label {
 	color: var(--primary)
 }
 
-input:not([type="checkbox"]):focus~label,
-input:not([type="checkbox"]):valid~label {
+input.invalid + label {
+	color: var(--red);
+	bottom: 45px;
+	font-size: 12px;
+	background: var(--white);
+	padding: 2px;
+}
+
+input:not([type="checkbox"]):focus + 	label,
+input:not([type="checkbox"]):valid + 	label {
 	bottom: 45px;
 	font-size: 12px;
 
