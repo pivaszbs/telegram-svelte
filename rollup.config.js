@@ -5,6 +5,9 @@ import livereload from 'rollup-plugin-livereload';
 import { terser } from 'rollup-plugin-terser';
 import autoPreprocess from 'svelte-preprocess';
 import json from '@rollup/plugin-json';
+import babel from 'rollup-plugin-babel';
+import builtins from 'rollup-plugin-node-builtins';
+import globals from 'rollup-plugin-node-globals';
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -26,7 +29,7 @@ export default {
 			// a separate file - better for performance
 			css: css => {
 				css.write('public/build/bundle.css');
-			}
+			},
 		}),
 
 		// If you have external dependencies installed from
@@ -38,6 +41,9 @@ export default {
 			browser: true,
 			dedupe: ['svelte']
 		}),
+		babel({ exclude: 'node_modules/**' }),
+		globals(),
+		builtins(),
 		commonjs(),
 
 		// In dev mode, call `npm run start` once
