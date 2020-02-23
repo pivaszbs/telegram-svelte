@@ -2,6 +2,7 @@
     import Button from '../components/button.svelte';
     import InputName from '../components/ui-kit/inputs/input-name.svelte';
     import InputLastName from '../components/ui-kit/inputs/input-last-name.svelte';
+    import ProfileImage from '../components/profile-image.svelte';
     import { name, lastName } from '../stores/input';
     import { router } from '../stores/router';
 
@@ -107,6 +108,9 @@
     }
 </style>
 
+{#if url}
+    <ProfileImage image={url} />
+{/if}
 <form on:submit={onSubmit} >
 	<div on:drop={onDrop} class="icon">
         <img class:hide={!url} src="{url}" alt="photo">

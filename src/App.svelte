@@ -50,7 +50,6 @@
 	}
 </style>
 
-<ProfileImage image="//raw.githubusercontent.com/qertis/Crop-Image-PureJS/master/image.jpg" />
 <main>
-	<!-- <svelte:component this={routes[$router.route]} {...$router.props} /> -->
+	<svelte:component this={routes[$router.route]} {...$router.props} />
 </main>

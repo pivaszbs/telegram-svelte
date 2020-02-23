@@ -1,77 +1,51 @@
 <script>
-    export let image;
     import { onMount } from 'svelte';
+    import ModalContainer from './modal-container.svelte';
+    export let image;
+    const   CROPWIDTH = 200,
+            CROPHEIGHT = 200,
+            cropWidth = 400,
+            cropHeight = 400,
+            canvas = document.createElement('canvas');
 
-    let cropComponent,
+    let 
+        cropComponent,
         container,
         crop_img,
         image_target,
         event_state = {},
         ratio = 1.0,
         keyZoomValue = 4.0,
-        MINWIDTH = 50,
-        MINHEIGHT = 50,
-        CROPWIDTH = 160,
-        CROPHEIGHT = 160,
-        cropLeft = 0,
-        cropTop = 0,
-        cropWidth = 0,
-        cropHeight = 0,
-        resize_canvas = null;
+        left = -CROPWIDTH / 2,
+        top = -CROPHEIGHT / 2;
+
+    const init = () => {
+        left = -(image_target.offsetWidth / 2 - CROPWIDTH / 2);
+        top = -(image_target.offsetHeight / 2 - CROPHEIGHT / 2);
+    }
 
     onMount(() => {
-        const left = image_target.offsetWidth / 2 - CROPWIDTH / 2;
-        const top = image_target.offsetHeight / 2 - CROPHEIGHT / 2;
-        updateCropImage(left, top);
+        if (image_target.complete) {
+            init()
+        }
     })
 
     const imgZoom = (zoom) => {
-            zoom = zoom * Math.PI * 2
-            var newWidth = Math.floor(container.clientWidth + zoom)
-                    , newHeight = Math.floor(container.clientHeight + zoom)
-                    , w = crop_img.clientWidth
-                    , h = crop_img.clientHeight
-                    , left
-                    , top
-                    , right
-                    , bottom;
-
-            if (newWidth < MINWIDTH) {
-                return;
-            } else if (newWidth > w) {
-                return;
-            }
-
-            left = container.offsetLeft - (zoom / 2);
-            top = container.offsetTop - (zoom / 2);
-            right = left + newWidth;
-            bottom = top + newHeight;
-
-            if (left < 0) {
-                left = 0;
-            }
-            if (top < 0) {
-                top = 0;
-            }
-            if (right > w) {
-                return;
-            }
-            if (bottom > h) {
-                return;
-            }
-
-            ratio = CROPWIDTH / newWidth;
-
-            updateCropSize(newWidth, newWidth);
-            updateCropImage(left, top);
-            updateContainer(left, top);
-            crop();
+        if (crop_img.offsetWidth * (ratio + zoom) < cropWidth || crop_img.offsetHeight * (ratio + zoom) < cropWidth)  {
+            return;
+        }
+        ratio = ratio + zoom;
+        const ox = -((1-ratio) * crop_img.naturalWidth)/2;
+        const oy = -((1-ratio) * crop_img.naturalHeight)/2;
+        left = Math.min(left, ox);
+        top = Math.min(top,  oy);
+        left = Math.max(left, -(crop_img.offsetWidth * ratio - CROPWIDTH) + ox);
+        top = Math.max(top, -(crop_img.offsetHeight * ratio - CROPHEIGHT) + oy);
     };
 
     const startMoving = (e) => {
         e.preventDefault();
         e.stopPropagation();
-
         saveEventState(e);
 
         document.addEventListener('mousemove', moving);
@@ -90,77 +64,44 @@
     }
 
     const moving = (e) => {
-        let curuntTouch = {}
-                , left
-                , top
-                , w
-                , h;
+        const current = {};
 
         e.preventDefault();
         e.stopPropagation();
 
-        curuntTouch.x = e.pageX || e.touches && e.touches[0].pageX;
-        curuntTouch.y = e.pageY || e.touches && e.touches[0].pageY;
-
-        left = curuntTouch.x - (event_state.mouse_x - event_state.container_left);
-        top = curuntTouch.y - (event_state.mouse_y - event_state.container_top);
-        w = container.offsetWidth;
-        h = container.offsetHeight;
-
-        if (left < 0) {
-            left = 0;
-        } else if (left > crop_img.offsetWidth - w) {
-            left = crop_img.offsetWidth - w;
-        }
-        if (top < 0) {
-            top = 0;
-        } else if (top > crop_img.offsetHeight - h) {
-            top = crop_img.offsetHeight - h;
+        current.x = e.pageX || e.touches && e.touches[0].pageX;
+        current.y = e.pageY || e.touches && e.touches[0].pageY;
+        if (!current.x || !current.y) {
+            return;
         }
 
-        updateCropImage(left, top);
-        updateContainer(left, top);
+        const ox = -((1-ratio) * crop_img.naturalWidth)/2;
+        const oy = -((1-ratio) * crop_img.naturalHeight)/2;
+        left = Math.min(left + (current.x - event_state.mouse_x), ox);
+        top = Math.min(top + (current.y - event_state.mouse_y),  oy);
+        left = Math.max(left, -(crop_img.offsetWidth * ratio - CROPWIDTH) + ox);
+        top = Math.max(top, -(crop_img.offsetHeight * ratio - CROPHEIGHT) + oy);
+        event_state.mouse_x = current.x;
+        event_state.mouse_y = current.y;
     }
 
     const keyHandler = (e) => {
         e.preventDefault();
-
-        switch (String.fromCharCode(e.charCode)) {
-            case '+' :
-                imgZoom(keyZoomValue);
+        const plus = 187;
+        const minus = 189;
+        switch (e.keyCode) {
+            case plus :
+                imgZoom(0.05);
                 break;
-            case '-' :
-                imgZoom(-keyZoomValue);
+            case minus :
+                imgZoom(-0.05);
                 break;
         }
     }
 
     const resizing = (e) => {
         e.preventDefault();
-        imgZoom(e.deltaY > 0 ? 1 : -1);
-    }
-
-    const updateCropSize = (width, height)  => {
-        container.style.width = width + 'px';
-        container.style.height = height + 'px';
-    }
-
-    const updateCropImage = (left, top)  => {
-        cropLeft = -left * ratio;
-        cropTop = -top * ratio;
-        left = -left + 'px';
-        top = -top + 'px';
-
-        crop_img.style.top = top;
-        crop_img.style.left = left;
-    }
-
-    const updateContainer = (left, top) => {
-        top = top + (CROPWIDTH / 2) + 'px';
-        left = left + (CROPHEIGHT / 2) + 'px';
-
-        container.style.top = top;
-        container.style.left = left;
+        imgZoom(e.deltaY > 0 ? -0.05: 0.05);
     }
 
     const saveEventState = (e) => {
@@ -174,27 +115,31 @@
         event_state.mouse_y = (e.clientY || e.pageY || e.touches && e.touches[0].clientY) + window.scrollY;
     }
 
-    const crop = () => {
-        cropWidth = crop_img.width * ratio;
-        cropHeight = crop_img.height * ratio;
-
-        resize_canvas.width = CROPWIDTH;
-        resize_canvas.height = CROPHEIGHT;
-
-        var ctx = resize_canvas.getContext('2d');
-        ctx.drawImage(crop_img,
-                cropLeft, cropTop,
-                cropWidth, cropHeight
-        );
-    }
-
     const openCropCanvasImg = () => {
-        crop();
-        const img = resize_canvas.toDataURL('image/png', 1.0);
+        canvas.width = CROPWIDTH;
+        canvas.height = CROPHEIGHT;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(crop_img,
+                left, top,
+                crop_img.width * ratio, crop_img.height * ratio
+        );
+        const img = canvas.toDataURL('image/png', 1.0);
+        console.log('img', img)
     }
 </script>
 
-<style>
+<style lang="scss">
+
+    .container {
+        width: 50vw;
+        height: 50vh;
+        min-width: 500px;
+        min-height: 500px;
+        background: var(--white);
+        display: grid;
+        grid-template-rows: 1fr 400px 1fr;
+        grid-template-columns: 1fr 400px 1fr;
+    }
     .overlay::selection {
         background: transparent;
         border-radius: 50%;
@@ -206,89 +151,81 @@
     .crop-blur {
         -webkit-filter: blur(10px) sepia(0.2);
         filter: blur(10px) sepia(0.2);
+        position: absolute;
     }
     .crop-image,
-    .overlay > img {
-        width: auto;
-        height: auto;
-        /* можно явно указать либо ширину, либо высоту */
-        width: 500px;
-        /*либо height: 300px;*/
+    .overlay > img {    
         display: block;
-        object-fit: contain;
         object-position: center;
     }
     /*add stretch*/
     .crop-image {
         display: block;
-        position: relative;
         pointer-events: none;
     }
     /*add stretch*/
     .overlay > img {
-        position: absolute;
+        position: fixed;
         display: block;
     }
     .crop-component {
+        cursor: move;
         position: relative;
-        display: table;
+        display: flex;
         z-index: 999;
-        background-color: white;
-        margin: 0 auto;
         overflow: hidden;
-        border: white 3px solid;
+        width: 400px;
+        height: 400px;
+        grid-row: 2;
+        grid-column: 2;
     }
     .overlay {
-        position: absolute;
+        position: relative;
+        top: 50%;
         left: 50%;
-        top: 50%;  
+        transform: translateX(-50%) translateY(-50%);
         border-radius: 50%;
             z-index: 999;
-        margin-left: -100px;
-        margin-top: -100px;
-        width: 200px;
-        height: 200px;
         box-shadow: 0 0 0 3px white;
         overflow: hidden;
-        box-sizing: content-box;
+        width: 200px;
+        height: 200px;
     }
-    .overlay:hover,
-    .overlay:active {
-        cursor: move;
-    }
-    .btn-crop {
-        position: fixed;
-        right: 5px;
-        bottom: 5px;
-        vertical-align: bottom;
-        padding: 6px 10px;
-        z-index: 999;
-        background-color: #DE3C50;
-        border: none;
-        border-radius: 5px;
-        color: #FFF;
-    }
+
 </style>
 
 <svelte:body on:keydown={keyHandler} />
-<div on:mousedown={startMoving} on:touchstart={startMoving} on:wheel={resizing}>
-    <div class="overlay" bind:this={container}>
-        <canvas bind:this={resize_canvas}></canvas>
-        <img 
-            bind:this={crop_img}
-            draggable="false" 
-            crossorigin="Anonymous"
-            src="{image}"
-            alt=""
-        />
+<ModalContainer>
+    <div class="container">
+        <div
+            class="crop-component"
+            on:mousedown={startMoving}
+            on:touchstart={startMoving}
+            on:wheel={resizing}>
+            <div class="overlay" 
+                bind:this={container}>
+                <img 
+                    bind:this={crop_img}
+                    draggable="false" 
+                    crossorigin="anonymous"
+                    style="top: {top}px; transform: scale({ratio}); left: {left}px"
+                    src="{image}"
+                    alt=""
+                />
+            </div>
+            <img
+                on:load={init}
+                bind:this={image_target}
+                draggable="false"
+                data-is-crop="true"
+                src="{image}"
+                crossorigin="anonymous"
+                style="top: {top + 100}px; transform: scale({ratio}); left: {left + 100}px"
+
+                class="crop-image crop-blur"
+                alt=""
+            />
+        </div>
+
     </div>
-    <img
-        bind:this={image_target}
-        draggable="false"
-        data-is-crop="true"
-        crossorigin="Anonymous"
-        src="{image}"
-        class="crop-image crop-blur"
-        alt=""
-    />
-</div>
+</ModalContainer>
