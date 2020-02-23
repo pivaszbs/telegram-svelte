@@ -1,116 +1,129 @@
 <script>
-	import { hideCountryPopup, focused, hideSubmit, phone } from '../stores/input';
-    import { countries } from '../stores/popup';
-    import { router } from '../stores/router';
+  import {
+    hideCountryPopup,
+    focused,
+    hideSubmit,
+    phone
+  } from "../stores/input";
+  import { countries } from "../stores/popup";
+  import { router } from "../stores/router";
 
-	import CountryInput from '../components/ui-kit/inputs/input-country.svelte';
-	import PhoneInput from '../components/ui-kit/inputs/input-phone.svelte';
-	import CountryPopup from '../components/ui-kit/popups/popup-countries.svelte';
-	import Checkbox from '../components/checkbox.svelte';
-	import Button from '../components/button.svelte';
-	import ClickOutside from '../components/helpers/click-outside.svelte';
+  import CountryInput from "../components/ui-kit/inputs/input-country.svelte";
+  import PhoneInput from "../components/ui-kit/inputs/input-phone.svelte";
+  import CountryPopup from "../components/ui-kit/popups/popup-countries.svelte";
+  import Checkbox from "../components/checkbox.svelte";
+  import Button from "../components/button.svelte";
+  import ClickOutside from "../components/helpers/click-outside.svelte";
 
-    let submit;
-    let loading = false;
-    let elem;
+  import telegramApi from "../services/TelegramApi";
 
-	const onCountryFocus = () => {
-		focused.set('country');
+  let submit;
+  let loading = false;
+  let elem;
+
+  const onCountryFocus = () => {
+    focused.set("country");
+  };
+
+  const onClickOutside = () => {
+    focused.set("");
+  };
+
+  const keyHandler = event => {
+    if (event.key === "Enter" && !$hideSubmit) {
+      submit.dispatchEvent(new Event("submit"));
     }
+  };
 
-	const onClickOutside = () => {
-		focused.set('');
+  const submitHandle = event => {
+    event.preventDefault();
+    if (!$hideSubmit) {
+      loading = true;
+      telegramApi.sendCode($phone).then(res => {
+        telegramApi
+          .sendSms($phone, res.phone_code_hash, res.next_type)
+          .then(() => {
+            window.phone_code_hash = res.phone_code_hash;
+            router.setRoute("login-code");
+          });
+      });
     }
-    
-    const keyHandler = event => {
-        if (event.key === 'Enter' && !$hideSubmit) {
-            submit.dispatchEvent(new Event('submit'));
-        }
-    }
-
-
-	const submitHandle = event => {
-        event.preventDefault();
-        if (!$hideSubmit) {
-            loading = true;
-            router.setRoute('login-code');
-        }
-    }
-
+  };
 </script>
 
 <style>
-	.logo {
-		width: 160px;
-		margin-bottom: 2vh;
-	}
+  .logo {
+    width: 160px;
+    margin-bottom: 2vh;
+  }
 
-	.login-form {
-		display: flex;
-		align-items: center;
-        flex-direction: column;
-        margin-top: 10vh;
-		width: 400px;
-        text-align: center;
-	}
+  .login-form {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    margin-top: 10vh;
+    width: 400px;
+    text-align: center;
+  }
 
-	.hint {
-		color: var(--dark-gray);
-		font-weight: 400;
-		font-size: 16px;
-		width: 75%;
-		margin-bottom: 4vh;
-	}
+  .hint {
+    color: var(--dark-gray);
+    font-weight: 400;
+    font-size: 16px;
+    width: 75%;
+    margin-bottom: 4vh;
+  }
 
-	.input-group {
-		margin-bottom: 24px;
-	}
+  .input-group {
+    margin-bottom: 24px;
+  }
 
-	.country {
-		position: relative;
-    }
-    
-    .keep {
-        font-size: 16px;
-        display: flex;
-        margin-bottom: 24px;
-        width: 360px;
-        padding-left: 32px;
-        position: relative;
+  .country {
+    position: relative;
+  }
 
-        overflow: hidden;
-    }
+  .keep {
+    font-size: 16px;
+    display: flex;
+    margin-bottom: 24px;
+    width: 360px;
+    padding-left: 32px;
+    position: relative;
 
-    form {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
+    overflow: hidden;
+  }
 
+  form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
 </style>
 
 <svelte:body on:keydown={keyHandler} />
 <div bind:this={elem} class="login-form">
-    <img src="./images/logo.png" alt="Telegram logo" class="logo">
-    <h1>Sign in to Telegram</h1>
-    <div class="hint">Please confirm your country and enter your phone number</div>
-    <ClickOutside on:clickoutside={onClickOutside} >
-        <div class="input-group country">
-            <CountryInput on:focus={onCountryFocus}/>
-            {#if !$hideCountryPopup}
-                <CountryPopup countries={$countries} /> 
-            {/if}
-        </div>
-    </ClickOutside>
-    <form bind:this={submit} on:submit={submitHandle} action="login">
-        <div class="input-group">
-            <PhoneInput />
-        </div>
-        <div class="keep">
-            <Checkbox checked={true} name="keep" label="Keep me signed in" />
-        </div>
-        {#if !$hideSubmit}
-            <Button type="submit" variant="primary" {loading}>NEXT</Button>
-        {/if}
-    </form>
+  <img src="./images/logo.png" alt="Telegram logo" class="logo" />
+  <h1>Sign in to Telegram</h1>
+  <div class="hint">
+    Please confirm your country and enter your phone number
+  </div>
+  <ClickOutside on:clickoutside={onClickOutside}>
+    <div class="input-group country">
+      <CountryInput on:focus={onCountryFocus} />
+      {#if !$hideCountryPopup}
+        <CountryPopup countries={$countries} />
+      {/if}
+    </div>
+  </ClickOutside>
+  <form bind:this={submit} on:submit={submitHandle} action="login">
+    <div class="input-group">
+      <PhoneInput />
+    </div>
+    <div class="keep">
+      <Checkbox checked={true} name="keep" label="Keep me signed in" />
+    </div>
+    {#if !$hideSubmit}
+      <Button type="submit" variant="primary" {loading}>NEXT</Button>
+    {/if}
+  </form>
 </div>
