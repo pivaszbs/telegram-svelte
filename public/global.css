@@ -136,3 +136,20 @@ button:focus {
 		transform: rotate(360deg);
 	}
 }
+
+.icon {
+	display: grid;
+	place-self: center;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+}
+.icon img {
+	width: 24px;
+	height: 24px;
+}
+.icon:hover {
+background: var(--light-gray);
+border-radius: 50%;
+cursor: pointer;
+}

@@ -5,7 +5,7 @@
 	import RegisterPage from './pages/register-page.svelte';
 	import ChatPage from './pages/chat-page.svelte';
 	import { router } from './stores/router';
-	
+
 	const routes = {
 		'login-form': LoginForm,
 		'login-code': LoginCode,
@@ -14,7 +14,7 @@
 		'chat-page': ChatPage
 	};
 
-	router.setRoute('login-form');
+	router.setRoute('chat-page');
 </script>
 
 <style>
