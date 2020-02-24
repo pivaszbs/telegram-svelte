@@ -65,7 +65,7 @@
       border-radius: 50%;
 
       & .icon_display {
-        background: url("/Source/icons/add_photo.svg");
+        background: url("../icons/add_photo.svg");
         background-size: cover;
         width: 50px;
         height: 50px;
