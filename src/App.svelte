@@ -4,6 +4,7 @@
 	import LoginPassword from './pages/login-password.svelte';
 	import RegisterPage from './pages/register-page.svelte';
 	import ChatPage from './pages/chat-page.svelte';
+	import ProfileImage from './components/profile-image.svelte';
 	import { router } from './stores/router';
 	
 	const routes = {
@@ -14,7 +15,7 @@
 		'chat-page': ChatPage
 	};
 
-	router.setRoute('login-form');
+	router.setRoute('register-page');
 </script>
 
 <style>

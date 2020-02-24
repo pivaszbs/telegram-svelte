@@ -23,7 +23,11 @@
     outline: none;
 
     transition: background-color 300ms;
+    &::before {
+      opacity: 0; //fix smui styles
+    }
   }
+
 
   .primary {
     color: var(--white);
