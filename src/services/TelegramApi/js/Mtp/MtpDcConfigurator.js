@@ -4,7 +4,7 @@ export default function MtpDcConfiguratorModule() {
 	window.chosenServers = {};
 
 	const chooseServer = (dcID, upload) => {
-		const dcOptions = Config.Modes.test ? Config.Server.Test : Config.Server.Production;
+		const dcOptions = Config.Server.Production;
 
 		if (chosenServers[dcID] === undefined) {
 			let chosenServer = false,
@@ -19,7 +19,8 @@ export default function MtpDcConfiguratorModule() {
 						'//' +
 						dcOption.host +
 						(dcOption.port != 80 ? ':' + dcOption.port : '') +
-						'/apiws1';
+						'/apiws1'
+						+ (Config.Modes.test ? '_test' : '');
 					break;
 				}
 			}
