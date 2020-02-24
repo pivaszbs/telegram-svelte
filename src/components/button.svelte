@@ -1,7 +1,8 @@
 <script>
-  import { fly } from 'svelte/transition';
+  import { fly } from "svelte/transition";
+  import Ripple from "@smui/ripple";
 
-	export let type;
+  export let type;
   export let variant;
   export let loading;
 </script>
@@ -54,12 +55,17 @@
     opacity: 0;
     z-index: -1;
   }
-
 </style>
 
-<button in:fly={{ duration: 200, y: 100}} class:loading={loading} {type} on:click class:primary={variant === 'primary'}>
-	<span>
+<button
+  use:Ripple={{ ripple: true, color: 'secondary' }}
+  in:fly={{ duration: 200, y: 100 }}
+  class:loading
+  {type}
+  on:click
+  class:primary={variant === 'primary'}>
+  <span>
     <slot>Button</slot>
   </span>
-  
+
 </button>

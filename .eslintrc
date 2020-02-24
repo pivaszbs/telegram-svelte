@@ -1,0 +1,38 @@
+{
+	"plugins": [
+		"prettier",
+		"svelte3"
+	],
+	"env": {
+		"es6": true,
+		"browser": true,
+		"node": true
+	},
+	"parser": "babel-eslint",
+	"extends": [
+		"eslint:recommended",
+		"plugin:prettier/recommended"
+	],
+	"rules": {
+		"no-console": 0,
+		"curly": 1,
+		"no-case-declarations": 1,
+		"no-irregular-whitespace": 0,
+		"no-useless-return": 1,
+		"no-unused-vars": 1,
+		"block-spacing": 1,
+		"no-empty": 1,
+		"no-undef": 0
+	},
+	"settings": {
+		"import/resolver": "webpack"
+	},
+	"overrides": [
+		{
+			"files": [
+				"**/*.svelte"
+			],
+			"processor": "svelte3/svelte3"
+		}
+	],
+}

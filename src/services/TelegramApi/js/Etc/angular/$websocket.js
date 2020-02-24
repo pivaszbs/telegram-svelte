@@ -10,6 +10,7 @@ export default class WebSocketManager {
 		this.socket.binaryType = 'arraybuffer';
 		this.socket.onopen = this.onWebsocketOpen;
 		this.socket.onmessage = async data => {
+			console.log('[WS] Response');
 			let deobfuscated = this.mtpTransport.deobfuscate(new Uint8Array(data.data));
 			deobfuscated = deobfuscated[0] == 127 ? deobfuscated.slice(4) : deobfuscated.slice(1);
 			handler(deobfuscated);
