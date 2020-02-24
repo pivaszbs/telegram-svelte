@@ -1,7 +1,7 @@
 <script>
     import ClickOutside from './helpers/click-outside.svelte';
     import { afterUpdate } from 'svelte';
-    export const destroy = () => container.remove();
+    export let destroy = () => {};
     let container; 
 
     const onClick = () => {

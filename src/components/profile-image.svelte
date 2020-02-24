@@ -1,10 +1,11 @@
 <script>
     import { onMount } from 'svelte';
     import ModalContainer from './modal-container.svelte';
+    import close from 'Source/icons/close.svg';
     export let image;
     export let cropped;
     export let url;
-    let destroy; // function to destroy component, binded to modal container
+    let destroy = () => { cropped = true; }; // function to destroy component, binded to modal container
 
     const   CROPWIDTH = 200,
             CROPHEIGHT = 200,
@@ -241,10 +242,10 @@
 </style>
 
 <svelte:body on:keydown={keyHandler} />
-<ModalContainer bind:destroy={destroy}>
+<ModalContainer destroy={destroy}>
     <div class="container">
         <div class="icon close" on:click={onClose}>
-            <img src="./icons/close.svg" alt="close">
+            <img src={close} alt="close">
         </div>
         <h2>Drag to reposition</h2>
         <div

@@ -97,7 +97,8 @@ const common = {
 					options: {
 						emitCss: true,
 						css: false,
-						preprocess
+						preprocess,
+						hotReload: true,
 					}
 				},
 			}

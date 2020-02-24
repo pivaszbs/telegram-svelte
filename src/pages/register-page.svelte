@@ -20,18 +20,11 @@
         }
     };
 
-    const onDrop = e => {
-        const file = e.dataTransfer.files[0];
-        if (file) {
-            url = window.URL.createObjectURL(new Blob([file]));
-        }
-    }
-  };
-
   const onDrop = e => {
     const file = e.dataTransfer.files[0];
     if (file) {
-      url = window.URL.createObjectURL(new Blob([file]));
+        image = window.URL.createObjectURL(new Blob([file]));
+        cropped = false;
     }
   };
 
