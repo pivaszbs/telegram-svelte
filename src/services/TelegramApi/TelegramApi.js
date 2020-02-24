@@ -15,7 +15,6 @@ import $timeout from './js/Etc/angular/$timeout';
 import { Config } from './js/lib/config';
 import AppUpdatesManagerModule from './js/App/AppUpdatesManager';
 
-import { inflate } from 'pako/lib/inflate';
 import pako from 'pako';
 
 import lottie from 'lottie-web';
@@ -85,23 +84,6 @@ class TelegramApi {
 					console.log('User not found', err);
 				}
 			});
-
-		// To be removed
-		const updateTestHandler = payload => {
-			if (this.user.id === payload.from_id || payload.message_info.out) {
-				console.log('Got peer', this.user);
-			} else {
-				this.getPeerByID(payload.from_id)
-					.then(peer => {
-						// console.log('Got peer', peer);
-					})
-					.catch(err => {
-						// console.log('Peer not found', err);
-					});
-			}
-		};
-
-		// this.subscribeToUpdates('dialogs', updateTestHandler);
 	}
 
 	// MAIN METHODS ------------------------------------------------------
@@ -443,7 +425,7 @@ class TelegramApi {
 		let size = 15728640;
 		let limit = 524288;
 		let offset = 0;
-		const promise = new Promise((resolve, request) => {
+		const promise = new Promise(resolve => {
 			const bytes = [];
 
 			// if (doc.size > size) {
@@ -515,7 +497,7 @@ class TelegramApi {
 		let limit = 524288;
 		let offset = 0;
 
-		const promise = new Promise((resolve, reject) => {
+		const promise = new Promise(resolve => {
 			const bytes = [];
 
 			if (photoSize.size > size) {
@@ -603,23 +585,23 @@ class TelegramApi {
 								}),
 							set_preview: cached
 								? new Promise(resolve => {
-									resolve(cached);
-								})
+										resolve(cached);
+								  })
 								: location &&
-								this.invokeApi('upload.getFile', {
-									offset: 0,
-									limit: 524288,
-									location: {
-										_: 'inputStickerSetThumb',
-										stickerset: {
-											_: 'inputStickerSetID',
-											id: stickerset.id,
-											access_hash: stickerset.access_hash,
+								  this.invokeApi('upload.getFile', {
+										offset: 0,
+										limit: 524288,
+										location: {
+											_: 'inputStickerSetThumb',
+											stickerset: {
+												_: 'inputStickerSetID',
+												id: stickerset.id,
+												access_hash: stickerset.access_hash,
+											},
+											volume_id: location.volume_id,
+											local_id: location.local_id,
 										},
-										volume_id: location.volume_id,
-										local_id: location.local_id,
-									},
-								}).then(res => this._getImageData(res.bytes, stickerset.id)),
+								  }).then(res => this._getImageData(res.bytes, stickerset.id)),
 							docs: result.documents,
 							isAnimated,
 							id: stickerset.id,
@@ -671,7 +653,7 @@ class TelegramApi {
 		return promise;
 	};
 
-	getPhotoPreview = (photo, customSize) => {
+	getPhotoPreview = photo => {
 		const cached = this.MtpApiFileManager.getLocalFile(photo.id);
 		if (cached) {
 			return new Promise(resolve => {
@@ -748,7 +730,7 @@ class TelegramApi {
 		});
 	};
 
-	getPhotoFile = async (photo, size) => {
+	getPhotoFile = async photo => {
 		const { id, access_hash, file_reference } = photo;
 		const photo_size = photo.sizes[2] || photo.sizes[1] || photo.sizes[0];
 		console.log(photo_size);
@@ -1021,9 +1003,9 @@ class TelegramApi {
 				photo = user.photo && user.photo._ !== 'userPhotoEmpty' && user.photo;
 				peer = user.access_hash
 					? {
-						...result,
-						access_hash: user.access_hash,
-					}
+							...result,
+							access_hash: user.access_hash,
+					  }
 					: result;
 			}
 
@@ -1645,9 +1627,9 @@ class TelegramApi {
 			}
 			peer = user.access_hash
 				? {
-					...peer,
-					access_hash: user.access_hash,
-				}
+						...peer,
+						access_hash: user.access_hash,
+				  }
 				: peer;
 		}
 		const message = messages[messages.findIndex(el => el.id === dialog.top_message)];

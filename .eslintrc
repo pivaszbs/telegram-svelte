@@ -16,7 +16,7 @@
 	"rules": {
 		"no-console": 0,
 		"curly": 1,
-		"no-case-declarations": 1,
+		"no-case-declarations": 0,
 		"no-irregular-whitespace": 0,
 		"no-useless-return": 1,
 		"no-unused-vars": 1,
@@ -34,5 +34,5 @@
 			],
 			"processor": "svelte3/svelte3"
 		}
-	],
+	]
 }
