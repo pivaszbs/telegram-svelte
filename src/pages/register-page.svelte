@@ -6,14 +6,17 @@
     import { name, lastName } from '../stores/input';
     import { router } from '../stores/router';
 
-    let url;
+    let url = '';
     let loading;
+    let image;
+    let cropped = false;
     let nameInvalid = false;
 
     const onFileChange = e => {
         const file = e.srcElement.files[0];
         if (file) {
-            url = window.URL.createObjectURL(new Blob([file]));
+            image = window.URL.createObjectURL(new Blob([file]));
+            cropped = false;
         }
     };
 
@@ -108,8 +111,8 @@
     }
 </style>
 
-{#if url}
-    <ProfileImage image={url} />
+{#if image && !cropped}
+    <ProfileImage bind:url={url} image={image} bind:cropped={cropped}/>
 {/if}
 <form on:submit={onSubmit} >
 	<div on:drop={onDrop} class="icon">
