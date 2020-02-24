@@ -51,12 +51,55 @@ export default function MtpNetworkerFactoryModule() {
 		CryptoWorker = new CryptoWorkerModule();
 
 		pendingPromises = [];
+		unresponsedMessages = [];
 
 		handlePromise = data => {
-			if (this.pendingPromises.length > 0) {
-				this.pendingPromises.shift()({ data: data.buffer });
-			}
+			// if (this.pendingPromises.length > 0) {
+			// 	this.pendingPromises.shift()({ data: data.buffer });
+			// }
+			this.toggleOffline(false);
+			// console.log('parse for', message);
+			this.parseResponse(data).then(response => {
+				if (Config.Modes.debug) {
+					console.log(dT(), 'Server response', this.dcID, response);
+				}
+
+				this.processMessage(response.response, response.messageID, response.sessionID);
+
+				for (let k in subscriptions) {
+					subscriptions[k](response.response);
+				}
+
+				forEach(this.unresponsedMessages, msgID => {
+					if (this.sentMessages[msgID]) {
+						const deferred = this.sentMessages[msgID].deferred;
+						delete this.sentMessages[msgID];
+						deferred.resolve();
+					}
+				});
+
+				// this.checkLongPoll();
+
+				this.checkConnectionPeriod = Math.max(1.1, Math.sqrt(this.checkConnectionPeriod));
+			});
 		};
+
+		handleError = error => {
+			if (error.status == 404 && (error.data || '').indexOf('nginx/0.3.33') != -1) {
+				this.Storage.remove('dc' + self.dcID + '_server_salt', 'dc' + self.dcID + '_auth_key').then(
+					() => {
+						window.location.reload();
+					}
+				);
+			}
+			if (!error.message && !error.type) {
+				error = extend(baseError, {
+					type: 'NETWORK_BAD_REQUEST',
+					originalError: error,
+				});
+			}
+			return error;
+		}
 
 		constructor(dcID, authKey, serverSalt, options) {
 			options = options || {};
@@ -374,8 +417,8 @@ export default function MtpNetworkerFactoryModule() {
 			$timeout.cancel(this.checkConnectionPromise);
 
 			const serializer = new TLSerialization({
-					mtproto: true,
-				}),
+				mtproto: true,
+			}),
 				pingID = [nextRandomInt(0xffffffff), nextRandomInt(0xffffffff)];
 
 			serializer.storeMethod('ping', {
@@ -432,8 +475,6 @@ export default function MtpNetworkerFactoryModule() {
 
 				document.body.addEventListener('online focus', this.onOnlineCb);
 			} else {
-				delete this.longPollPending;
-				this.checkLongPoll();
 				this.sheduleRequest();
 
 				if (this.onOnlineCb) {
@@ -607,61 +648,12 @@ export default function MtpNetworkerFactoryModule() {
 				this.sentMessages[message.msg_id] = message;
 			}
 
+			this.unresponsedMessages.push(...noResponseMsgs);
+
 			this.pendingAcks = [];
 
 			self = this;
-			this.sendEncryptedRequest(message).then(
-				result => {
-					self.toggleOffline(false);
-					// console.log('parse for', message);
-					self.parseResponse(result.data).then(response => {
-						if (Config.Modes.debug) {
-							console.log(dT(), 'Server response', self.dcID, response);
-						}
-
-						self.processMessage(response.response, response.messageID, response.sessionID);
-
-						for (let k in subscriptions) {
-							subscriptions[k](response.response);
-						}
-
-						forEach(noResponseMsgs, msgID => {
-							if (self.sentMessages[msgID]) {
-								const deferred = self.sentMessages[msgID].deferred;
-								delete self.sentMessages[msgID];
-								deferred.resolve();
-							}
-						});
-
-						self.checkLongPoll();
-
-						this.checkConnectionPeriod = Math.max(1.1, Math.sqrt(this.checkConnectionPeriod));
-					});
-				},
-				error => {
-					Config.Modes.debug && ('Encrypted request failed', error);
-
-					if (message.container) {
-						forEach(message.inner, msgID => {
-							self.pendingMessages[msgID] = 0;
-						});
-						delete self.sentMessages[message.msg_id];
-					} else {
-						self.pendingMessages[message.msg_id] = 0;
-					}
-
-					forEach(noResponseMsgs, msgID => {
-						if (self.sentMessages[msgID]) {
-							const deferred = self.sentMessages[msgID].deferred;
-							delete self.sentMessages[msgID];
-							delete self.pendingMessages[msgID];
-							deferred.reject();
-						}
-					});
-
-					self.toggleOffline(true);
-				}
-			);
+			this.sendEncryptedRequest(message);
 
 			if (lengthOverflow || singlesCount > 1) {
 				this.sheduleRequest();
@@ -726,59 +718,7 @@ export default function MtpNetworkerFactoryModule() {
 
 				const requestData = xhrSendBuffer ? request.getBuffer() : request.getArray();
 
-				let requestPromise;
-				const url = this.MtpDcConfigurator.chooseServer(self.dcID, self.upload);
-				const baseError = {
-					code: 406,
-					type: 'NETWORK_BAD_RESPONSE',
-					url: url,
-				};
-
-				options = extend(options || {}, {
-					responseType: 'arraybuffer',
-					transformRequest: null,
-				});
-				console.log('{}{}{}{}{}{}SENDING SOCKET');
 				this.SocketManager.sendData(requestData);
-
-				try {
-					options = extend(options || {}, {
-						responseType: 'arraybuffer',
-						transformRequest: null,
-					});
-					// requestPromise = $http.post(url, requestData, options);
-					let pendingPromise;
-					requestPromise = new Promise(resolve => {
-						pendingPromise = resolve;
-					});
-					this.pendingPromises.push(pendingPromise);
-				} catch (e) {
-					requestPromise = Promise.reject(e);
-				}
-				return requestPromise.then(
-					result => {
-						if (!result.data || !result.data.byteLength) {
-							return Promise.reject(baseError);
-						}
-						return result;
-					},
-					error => {
-						if (error.status == 404 && (error.data || '').indexOf('nginx/0.3.33') != -1) {
-							this.Storage.remove('dc' + self.dcID + '_server_salt', 'dc' + self.dcID + '_auth_key').then(
-								() => {
-									window.location.reload();
-								}
-							);
-						}
-						if (!error.message && !error.type) {
-							error = extend(baseError, {
-								type: 'NETWORK_BAD_REQUEST',
-								originalError: error,
-							});
-						}
-						return Promise.reject(error);
-					}
-				);
 			});
 		};
 
@@ -826,7 +766,7 @@ export default function MtpNetworkerFactoryModule() {
 					const deserializerOptions = {
 						mtproto: true,
 						override: {
-							mt_message: function(result, field) {
+							mt_message: function (result, field) {
 								result.msg_id = this.fetchLong(field + '[msg_id]');
 								result.seqno = this.fetchInt(field + '[seqno]');
 								result.bytes = this.fetchInt(field + '[bytes]');
@@ -849,7 +789,7 @@ export default function MtpNetworkerFactoryModule() {
 								}
 								// console.log(dT(), 'override message', result);
 							},
-							mt_rpc_result: function(result, field) {
+							mt_rpc_result: function (result, field) {
 								result.req_msg_id = this.fetchLong(field + '[req_msg_id]');
 
 								const sentMessage = self.sentMessages[result.req_msg_id],

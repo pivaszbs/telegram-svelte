@@ -15,6 +15,8 @@
   import Button from "../components/button.svelte";
   import ClickOutside from "../components/helpers/click-outside.svelte";
 
+  import icon from "Source/images/logo.png";
+
   import telegramApi from "../services/TelegramApi";
 
   let submit;
@@ -102,7 +104,7 @@
 
 <svelte:body on:keydown={keyHandler} />
 <div bind:this={elem} class="login-form">
-  <img src="./images/logo.png" alt="Telegram logo" class="logo" />
+  <img src={icon} alt="Telegram logo" class="logo" />
   <h1>Sign in to Telegram</h1>
   <div class="hint">
     Please confirm your country and enter your phone number
