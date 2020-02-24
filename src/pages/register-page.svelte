@@ -1,25 +1,30 @@
 <script>
-  import Button from "../components/button.svelte";
-  import InputName from "../components/ui-kit/inputs/input-name.svelte";
-  import InputLastName from "../components/ui-kit/inputs/input-last-name.svelte";
-  import { name, lastName } from "../stores/input";
-  import { router } from "../stores/router";
+    import Button from '../components/button.svelte';
+    import InputName from '../components/ui-kit/inputs/input-name.svelte';
+    import InputLastName from '../components/ui-kit/inputs/input-last-name.svelte';
+    import ProfileImage from '../components/profile-image.svelte';
+    import { name, lastName } from '../stores/input';
+    import { router } from '../stores/router';
 
-  let url;
-  let loading;
-  let nameInvalid = false;
+    let url;
+    let loading;
+    let image;
+    let cropped = false;
+    let nameInvalid = false;
 
-  const onFileChange = e => {
-    const file = e.srcElement.files[0];
-    if (file) {
-      url = window.URL.createObjectURL(new Blob([file]));
-    }
-  };
+    const onFileChange = e => {
+        const file = e.srcElement.files[0];
+        if (file) {
+            image = window.URL.createObjectURL(new Blob([file]));
+            cropped = false;
+        }
+    };
 
   const onDrop = e => {
     const file = e.dataTransfer.files[0];
     if (file) {
-      url = window.URL.createObjectURL(new Blob([file]));
+        image = window.URL.createObjectURL(new Blob([file]));
+        cropped = false;
     }
   };
 
@@ -65,7 +70,7 @@
       border-radius: 50%;
 
       & .icon_display {
-        background: url("/Source/icons/add_photo.svg");
+        background: url("../icons/add_photo.svg");
         background-size: cover;
         width: 50px;
         height: 50px;
@@ -106,8 +111,8 @@
   }
 </style>
 
-{#if url}
-    <ProfileImage image={url} />
+{#if image && !cropped}
+    <ProfileImage bind:url={url} image={image} bind:cropped={cropped}/>
 {/if}
 <form on:submit={onSubmit} >
 	<div on:drop={onDrop} class="icon">

@@ -1,7 +1,12 @@
 <script>
     import { onMount } from 'svelte';
     import ModalContainer from './modal-container.svelte';
+    import close from 'Source/icons/close.svg';
     export let image;
+    export let cropped;
+    export let url;
+    let destroy = () => { cropped = true; }; // function to destroy component, binded to modal container
+
     const   CROPWIDTH = 200,
             CROPHEIGHT = 200,
             cropWidth = 400,
@@ -89,12 +94,16 @@
         e.preventDefault();
         const plus = 187;
         const minus = 189;
+        const enter = 13;
         switch (e.keyCode) {
             case plus :
                 imgZoom(0.05);
                 break;
             case minus :
                 imgZoom(-0.05);
+                break;
+            case enter:
+                openCropCanvasImg();
                 break;
         }
     }
@@ -118,27 +127,42 @@
     const openCropCanvasImg = () => {
         canvas.width = CROPWIDTH;
         canvas.height = CROPHEIGHT;
-        var ctx = canvas.getContext('2d');
+        const ox = -((1-ratio) * crop_img.naturalWidth)/2;
+        const oy = -((1-ratio) * crop_img.naturalHeight)/2;
+
+        const ctx = canvas.getContext('2d');
         ctx.drawImage(crop_img,
-                left, top,
-                crop_img.width * ratio, crop_img.height * ratio
+                left - ox, top - oy,
+                crop_img.naturalWidth * ratio, crop_img.naturalHeight * ratio
         );
-        const img = canvas.toDataURL('image/png', 1.0);
-        console.log('img', img)
+
+
+        canvas.toBlob(img => {
+            url = window.URL.createObjectURL(img);
+        });
+        cropped = true;
+    }
+
+    const onClose = () => {
+        destroy();
     }
 </script>
 
 <style lang="scss">
-
     .container {
-        width: 50vw;
-        height: 50vh;
         min-width: 500px;
         min-height: 500px;
         background: var(--white);
         display: grid;
         grid-template-rows: 1fr 400px 1fr;
         grid-template-columns: 1fr 400px 1fr;
+        place-items: center;
+        border-radius: 8px;
+    }
+
+    h2 {
+        justify-self: start;
+        font-size: 20px;
     }
     .overlay::selection {
         background: transparent;
@@ -177,6 +201,7 @@
         width: 400px;
         height: 400px;
         grid-row: 2;
+        border-radius: 8px;
         grid-column: 2;
     }
     .overlay {
@@ -192,11 +217,37 @@
         height: 200px;
     }
 
+    .close {
+        grid-row: 1;
+        grid-column: 1;
+    }
+
+    .crop {
+        grid-row: 3;
+        grid-column: 3;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: var(--primary);
+        margin-bottom: 16px;
+        margin-right: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        svg {
+            fill: var(--white);
+        }
+    }
 </style>
 
 <svelte:body on:keydown={keyHandler} />
-<ModalContainer>
+<ModalContainer destroy={destroy}>
     <div class="container">
+        <div class="icon close" on:click={onClose}>
+            <img src={close} alt="close">
+        </div>
+        <h2>Drag to reposition</h2>
         <div
             class="crop-component"
             on:mousedown={startMoving}
@@ -226,6 +277,10 @@
                 alt=""
             />
         </div>
-
+        <div on:click={openCropCanvasImg} class="crop">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24">
+                <path d="M4.70710678,12.2928932 C4.31658249,11.9023689 3.68341751,11.9023689 3.29289322,12.2928932 C2.90236893,12.6834175 2.90236893,13.3165825 3.29289322,13.7071068 L8.29289322,18.7071068 C8.68341751,19.0976311 9.31658249,19.0976311 9.70710678,18.7071068 L20.7071068,7.70710678 C21.0976311,7.31658249 21.0976311,6.68341751 20.7071068,6.29289322 C20.3165825,5.90236893 19.6834175,5.90236893 19.2928932,6.29289322 L9,16.5857864 L4.70710678,12.2928932 Z"/>
+            </svg>
+        </div>
     </div>
 </ModalContainer>

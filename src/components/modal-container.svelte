@@ -1,3 +1,14 @@
+<script>
+    import ClickOutside from './helpers/click-outside.svelte';
+    import { afterUpdate } from 'svelte';
+    export let destroy = () => {};
+    let container; 
+
+    const onClick = () => {
+        destroy();
+    }
+</script>
+
 <style>
     .modal-container {
         position: absolute;
@@ -18,7 +29,7 @@
     }
 </style>
 
-<div class="modal-container">
-    <div class="paranja"></div>
+<div bind:this={container} class="modal-container">
+    <div on:click={onClick} class="paranja"></div>
     <slot></slot>
 </div>

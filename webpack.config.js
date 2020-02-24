@@ -1,5 +1,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const { preprocess } = require("./svelte.config");
 const merge = require('webpack-merge');
 
@@ -26,13 +28,23 @@ const common = {
 	},
 	module: {
 		rules: [
+			// {
+			// 	test: /\.scss$/,
+			// 	use: ['style-loader', 'css-loader', 'sass-loader'],
+			// },
 			{
-				test: /\.scss$/,
-				use: ['style-loader', 'css-loader', 'sass-loader'],
-			},
-			{
-				test: /\.css$/,
-				use: ['style-loader', 'css-loader'],
+				test: /\.(sa|sc|c)ss$/,
+				use: ['style-loader', MiniCssExtractPlugin.loader, 'css-loader', {
+					loader: 'sass-loader',
+					options: {
+						sassOptions: {
+							includePaths: [
+								'./src/theme',
+								'./node_modules'
+							]
+						}
+					}
+				}],
 			},
 			{
 				test: /\.(png|jpe?g|gif)(\?v=\d+\.\d+\.\d+)?$/,
@@ -84,7 +96,9 @@ const common = {
 					loader: 'svelte-loader',
 					options: {
 						emitCss: true,
-						preprocess
+						css: false,
+						preprocess,
+						hotReload: true,
 					}
 				},
 			}
@@ -96,6 +110,18 @@ const common = {
 			template: path.join(__dirname, '/public/index.html'),
 			inject: true,
 		}),
+		new MiniCssExtractPlugin({
+			filename: '[name].css',
+			chunkFilename: '[name].[id].css'
+		}),
+		new OptimizeCssAssetsPlugin({
+			assetNameRegExp: /\.css$/g,
+			cssProcessor: require('cssnano'),
+			cssProcessorPluginOptions: {
+				preset: ['default', { discardComments: { removeAll: true } }]
+			},
+			canPrint: true
+		})
 	]
 }
 
