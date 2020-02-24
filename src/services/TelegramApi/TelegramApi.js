@@ -60,11 +60,6 @@ class TelegramApi {
 				version: '0.0.1' /* App version */,
 			},
 			server: {
-				test: [
-					{ id: 1, host: '149.154.175.10', port: 443 },
-					{ id: 2, host: '149.154.167.40', port: 443 },
-					{ id: 3, host: '149.154.175.117', port: 443 },
-				],
 				production: [
 					{ id: 1, host: 'pluto.web.telegram.org', port: 80 },
 					{ id: 2, host: 'venus.web.telegram.org', port: 80 },
@@ -74,7 +69,7 @@ class TelegramApi {
 				],
 			},
 			mode: {
-				test: true,
+				test: false,
 				debug: true,
 			},
 		});
