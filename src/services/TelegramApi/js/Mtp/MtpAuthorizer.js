@@ -22,6 +22,7 @@ import MtpSecureRandom from './MtpSecureRandom';
 import MtpDcConfiguratorModule from './MtpDcConfigurator';
 import { Config } from '../lib/config';
 import WebSocketManager from '../Etc/angular/$websocket';
+import logger from '../lib/logger';
 
 export default class MtpAuthorizerModule {
 	chromeMatches = navigator.userAgent.match(/Chrome\/(\d+(\.\d+)?)/);
@@ -85,14 +86,14 @@ export default class MtpAuthorizerModule {
 
 			this.pendingCallbacks.push(pendingPromise);
 		} catch (e) {
-			Config.Modes.debug && console.log('SMTH wrong with http');
+			logger('SMTH wrong with http');
 			requestPromise = Promise.reject(extend(baseError, { originalError: e }));
 		}
 
 		return requestPromise.then(
 			result => {
 				if (!result.data || !result.data.byteLength) {
-					Config.Modes.debug && console.log('SMTH wrong with byteLen');
+					logger('SMTH wrong with byteLen');
 					return Promise.reject(baseError);
 				}
 
@@ -104,7 +105,7 @@ export default class MtpAuthorizerModule {
 					msg_id = deserializer.fetchLong('msg_id');
 					msg_len = deserializer.fetchInt('msg_len');
 				} catch (e) {
-					Config.Modes.debug && console.log('SMTH wrong with deser');
+					logger('SMTH wrong with deser');
 					return Promise.reject(extend(baseError, { originalError: e }));
 				}
 
@@ -112,10 +113,10 @@ export default class MtpAuthorizerModule {
 			},
 			error => {
 				if (!error.message && !error.type) {
-					Config.Modes.debug && console.log('SMTH wrong with shit');
+					logger('SMTH wrong with shit');
 					error = extend(baseError, { originalError: error });
 				}
-				Config.Modes.debug && console.log('SMTH wrong with errrrror');
+				logger('SMTH wrong with errrrror');
 				return Promise.reject(error);
 			}
 		);
@@ -127,18 +128,18 @@ export default class MtpAuthorizerModule {
 
 			request.storeMethod('req_pq', { nonce: auth.nonce });
 
-			Config.Modes.debug && console.log(dT(), 'Send req_pq', bytesToHex(auth.nonce));
+			logger(dT(), 'Send req_pq', bytesToHex(auth.nonce));
 			this.mtpSendPlainRequest(auth.dcID, request.getBuffer()).then(
 				deserializer => {
 					const response = deserializer.fetchObject('ResPQ');
 
 					if (response._ != 'resPQ') {
-						Config.Modes.debug && console.log('resPQ response invalid: ' + response._);
+						logger('resPQ response invalid: ' + response._);
 						throw new Error('resPQ response invalid: ' + response._);
 					}
 
 					if (!bytesCmp(auth.nonce, response.nonce)) {
-						Config.Modes.debug && console.log('resPQ nonce mismatch');
+						logger('resPQ nonce mismatch');
 						throw new Error('resPQ nonce mismatch');
 					}
 
@@ -146,40 +147,33 @@ export default class MtpAuthorizerModule {
 					auth.pq = response.pq;
 					auth.fingerprints = response.server_public_key_fingerprints;
 
-					Config.Modes.debug &&
-						console.log(
-							dT(),
-							'Got ResPQ',
-							bytesToHex(auth.serverNonce),
-							bytesToHex(auth.pq),
-							auth.fingerprints
-						);
+					logger(dT(), 'Got ResPQ', bytesToHex(auth.serverNonce), bytesToHex(auth.pq), auth.fingerprints);
 
 					auth.publicKey = this.MtpRsaKeysManager.select(auth.fingerprints);
 
 					if (!auth.publicKey) {
-						Config.Modes.debug && console.log('No public key found');
+						logger('No public key found');
 						throw new Error('No public key found');
 					}
 
-					Config.Modes.debug && console.log(dT(), 'PQ factorization start', auth.pq);
+					logger(dT(), 'PQ factorization start', auth.pq);
 					this.CryptoWorker.factorize(auth.pq).then(
 						pAndQ => {
 							auth.p = pAndQ[0];
 							auth.q = pAndQ[1];
-							Config.Modes.debug && (dT(), 'PQ factorization done', pAndQ[2]);
+							logger(dT(), 'PQ factorization done', pAndQ[2]);
 							this.mtpSendReqDhParams(auth).then(result => {
 								resolve(result);
 							});
 						},
 						error => {
-							Config.Modes.debug && console.log('Worker error', error, error.stack);
+							logger('Worker error', error, error.stack);
 							reject(error);
 						}
 					);
 				},
 				error => {
-					Config.Modes.debug && console.error(dT(), 'req_pq error', error);
+					logger(dT(), 'req_pq error', error);
 					reject(error);
 				}
 			);
@@ -221,7 +215,7 @@ export default class MtpAuthorizerModule {
 				encrypted_data: rsaEncrypt(auth.publicKey, dataWithHash),
 			});
 
-			Config.Modes.debug && console.log(dT(), 'Send req_DH_params');
+			logger(dT(), 'Send req_DH_params');
 			this.mtpSendPlainRequest(auth.dcID, request.getBuffer()).then(
 				deserializer => {
 					const response = deserializer.fetchObject('Server_DH_Params', 'RESPONSE');
@@ -299,7 +293,7 @@ export default class MtpAuthorizerModule {
 			throw new Error('server_DH_inner_data serverNonce mismatch');
 		}
 
-		Config.Modes.debug && console.log(dT(), 'Done decrypting answer');
+		logger(dT(), 'Done decrypting answer');
 		auth.g = response.g;
 		auth.dhPrime = response.dh_prime;
 		auth.gA = response.g_a;
@@ -347,7 +341,7 @@ export default class MtpAuthorizerModule {
 						encrypted_data: encryptedData,
 					});
 
-					Config.Modes.debug && console.log(dT(), 'Send set_client_DH_params');
+					logger(dT(), 'Send set_client_DH_params');
 					this.mtpSendPlainRequest(auth.dcID, request.getBuffer()).then(
 						deserializer => {
 							const response = deserializer.fetchObject('Set_client_DH_params_answer');
@@ -377,8 +371,7 @@ export default class MtpAuthorizerModule {
 										authKeyAux = authKeyHash.slice(0, 8),
 										authKeyID = authKeyHash.slice(-8);
 
-									Config.Modes.debug &&
-										console.log(dT(), 'Got Set_client_DH_params_answer', response._);
+									logger(dT(), 'Got Set_client_DH_params_answer', response._);
 
 									let newNonceHash1, newNonceHash2, newNonceHash3, serverSalt;
 
@@ -459,7 +452,7 @@ export default class MtpAuthorizerModule {
 
 	mtpAuth = dcID => {
 		if (this.cached[dcID] !== undefined) {
-			Config.Modes.debug && console.log('Returning existing one');
+			logger('Returning existing one');
 			return Promise.resolve(this.cached[dcID]);
 		}
 
@@ -484,11 +477,11 @@ export default class MtpAuthorizerModule {
 				.then(result => {
 					this.cached[dcID] = result;
 
-					Config.Modes.debug && console.log('DATA', this.cached[dcID]);
+					logger('DATA', this.cached[dcID]);
 					resolve(this.cached[dcID]);
 				})
 				.catch(() => {
-					Config.Modes.debug && console.log('DELETED');
+					logger('DELETED');
 					delete this.cached[dcID];
 					reject('DELETED');
 				});

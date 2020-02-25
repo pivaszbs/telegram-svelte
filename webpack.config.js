@@ -101,7 +101,7 @@ const common = {
 						css: false,
 						preprocess,
 						hotReload: true,
-					}
+					},
 				},
 			},
 			{
