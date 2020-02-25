@@ -100,7 +100,8 @@ const common = {
 						emitCss: true,
 						css: false,
 						preprocess,
-					},
+						hotReload: true,
+					}
 				},
 			},
 			{

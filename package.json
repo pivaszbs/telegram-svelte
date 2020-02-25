@@ -15,7 +15,6 @@
 		"@babel/preset-env": "^7.7.1",
 		"@babel/runtime": "^7.8.4",
 		"@goodmind/node-cryptojs-aes": "^0.5.0",
-		"@smui/ripple": "^1.0.0-beta.20",
 		"add-asset-html-webpack-plugin": "^3.1.3",
 		"autoprefixer": "^9.7.4",
 		"babel-eslint": "^10.0.3",
@@ -64,6 +63,7 @@
 		"emoji-flags": "^1.2.0",
 		"sirv-cli": "^0.4.4",
 		"svelte-click-outside": "^1.0.0",
-		"svelte-routing": "^1.4.0"
+		"svelte-routing": "^1.4.0",
+		"@smui/ripple": "^1.0.0-beta.20"
 	}
 }
