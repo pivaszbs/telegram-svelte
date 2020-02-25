@@ -1,9 +1,10 @@
 <script>
-    import { phone, code, focused } from '../stores/input';
+    import { phone, code, focused, password } from '../stores/input';
     import { router } from '../stores/router';
     import { onMount } from 'svelte';
     import InputPassword from '../components/ui-kit/inputs/input-password.svelte';
     import Button from '../components/button.svelte';
+    import telegramApi from '../services/TelegramApi';
 
     let loading = false;
     
@@ -14,7 +15,13 @@
     const submitHandle = event => {
         event.preventDefault();
         loading = true;
-        router.setRoute('register-page');
+        telegramApi.profileManager.signIn2FA($password)
+            .then(res => {
+                router.setRoute('chat-page');
+            })
+            .catch(err => {
+                console.log('ERROR OCCURED', err);
+            });
     }
 </script>
 

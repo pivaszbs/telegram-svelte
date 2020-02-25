@@ -41,13 +41,11 @@
     event.preventDefault();
     if (!$hideSubmit) {
       loading = true;
-      telegramApi.sendCode($phone).then(res => {
-        telegramApi
-          .sendSms($phone, res.phone_code_hash, res.next_type)
-          .then(() => {
-            window.phone_code_hash = res.phone_code_hash;
-            router.setRoute("login-code");
-          });
+      telegramApi.profileManager.sendCode($phone).then(() => {
+        router.setRoute("login-code");
+      })
+      .catch(err => {
+        console.log('ERROR OCCURED', err);
       });
     }
   };
