@@ -128,7 +128,7 @@ export default class MtpAuthorizerModule {
 
 			request.storeMethod('req_pq', { nonce: auth.nonce });
 
-			logger(dT(), 'Send req_pq', bytesToHex(auth.nonce));
+			logger('Send req_pq', bytesToHex(auth.nonce));
 			this.mtpSendPlainRequest(auth.dcID, request.getBuffer()).then(
 				deserializer => {
 					const response = deserializer.fetchObject('ResPQ');
@@ -147,7 +147,7 @@ export default class MtpAuthorizerModule {
 					auth.pq = response.pq;
 					auth.fingerprints = response.server_public_key_fingerprints;
 
-					logger(dT(), 'Got ResPQ', bytesToHex(auth.serverNonce), bytesToHex(auth.pq), auth.fingerprints);
+					logger('Got ResPQ', bytesToHex(auth.serverNonce), bytesToHex(auth.pq), auth.fingerprints);
 
 					auth.publicKey = this.MtpRsaKeysManager.select(auth.fingerprints);
 
@@ -156,12 +156,12 @@ export default class MtpAuthorizerModule {
 						throw new Error('No public key found');
 					}
 
-					logger(dT(), 'PQ factorization start', auth.pq);
+					logger('PQ factorization start', auth.pq);
 					this.CryptoWorker.factorize(auth.pq).then(
 						pAndQ => {
 							auth.p = pAndQ[0];
 							auth.q = pAndQ[1];
-							logger(dT(), 'PQ factorization done', pAndQ[2]);
+							logger('PQ factorization done', pAndQ[2]);
 							this.mtpSendReqDhParams(auth).then(result => {
 								resolve(result);
 							});
@@ -173,7 +173,7 @@ export default class MtpAuthorizerModule {
 					);
 				},
 				error => {
-					logger(dT(), 'req_pq error', error);
+					logger('req_pq error', error);
 					reject(error);
 				}
 			);
@@ -215,7 +215,7 @@ export default class MtpAuthorizerModule {
 				encrypted_data: rsaEncrypt(auth.publicKey, dataWithHash),
 			});
 
-			logger(dT(), 'Send req_DH_params');
+			logger('Send req_DH_params');
 			this.mtpSendPlainRequest(auth.dcID, request.getBuffer()).then(
 				deserializer => {
 					const response = deserializer.fetchObject('Server_DH_Params', 'RESPONSE');
@@ -293,7 +293,7 @@ export default class MtpAuthorizerModule {
 			throw new Error('server_DH_inner_data serverNonce mismatch');
 		}
 
-		logger(dT(), 'Done decrypting answer');
+		logger('Done decrypting answer');
 		auth.g = response.g;
 		auth.dhPrime = response.dh_prime;
 		auth.gA = response.g_a;
@@ -341,7 +341,7 @@ export default class MtpAuthorizerModule {
 						encrypted_data: encryptedData,
 					});
 
-					logger(dT(), 'Send set_client_DH_params');
+					logger('Send set_client_DH_params');
 					this.mtpSendPlainRequest(auth.dcID, request.getBuffer()).then(
 						deserializer => {
 							const response = deserializer.fetchObject('Set_client_DH_params_answer');
@@ -371,7 +371,7 @@ export default class MtpAuthorizerModule {
 										authKeyAux = authKeyHash.slice(0, 8),
 										authKeyID = authKeyHash.slice(-8);
 
-									logger(dT(), 'Got Set_client_DH_params_answer', response._);
+									logger('Got Set_client_DH_params_answer', response._);
 
 									let newNonceHash1, newNonceHash2, newNonceHash3, serverSalt;
 

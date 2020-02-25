@@ -46,7 +46,7 @@ export default function MtpSingleInstanceServiceModule() {
 		if (masterInstance || deactivated) {
 			return false;
 		}
-		logger(dT(), 'deactivate');
+		logger('deactivate');
 		deactivatePromise = false;
 		deactivated = true;
 		clearInstance();

@@ -39,7 +39,7 @@ export default function MtpTimeManagerModule() {
 
 		window.lastMessageID = [0, 0];
 		window.timeOffset = newTimeOffset;
-		logger(dT(), 'Apply server time', serverTime, localTime, newTimeOffset, changed);
+		logger('Apply server time', serverTime, localTime, newTimeOffset, changed);
 
 		return changed;
 	};

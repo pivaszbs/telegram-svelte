@@ -150,7 +150,7 @@ export default function MtpApiFileManagerModule() {
 											resolve(resultInputFile);
 											resolved = true;
 										} else {
-											logger(dT(), 'Progress', (doneParts * partSize) / fileSize);
+											logger('Progress', (doneParts * partSize) / fileSize);
 											progress(offset < fileSize ? offset : fileSize, fileSize);
 											// resolve({ done: doneParts * partSize, total: fileSize });
 										}

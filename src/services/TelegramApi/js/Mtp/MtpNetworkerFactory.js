@@ -191,7 +191,7 @@ export default function MtpNetworkerFactoryModule() {
 				};
 
 			if (Config.Modes.debug) {
-				logger(dT(), 'MT call', method, params, messageID, seqNo);
+				logger('MT call', method, params, messageID, seqNo);
 			}
 
 			return this.pushMessage(message, options);
@@ -214,7 +214,7 @@ export default function MtpNetworkerFactoryModule() {
 				};
 
 			if (Config.Modes.debug) {
-				logger(dT(), 'MT message', object, messageID, seqNo);
+				logger('MT message', object, messageID, seqNo);
 			}
 
 			return this.pushMessage(message, options);
@@ -253,7 +253,7 @@ export default function MtpNetworkerFactoryModule() {
 			if (Config.Modes.debug) {
 				console.log(dT(), 'Api call', method, params, messageID, seqNo, options);
 			} else {
-				logger(dT(), 'Api call', method);
+				logger('Api call', method);
 			}
 
 			return this.pushMessage(message, options);
@@ -310,7 +310,7 @@ export default function MtpNetworkerFactoryModule() {
 		pushMessage = (message, options) => {
 			const self = this;
 
-			logger(dT(), 'Push message ', message, options);
+			logger('Push message ', message, options);
 
 			return new Promise((resolve, reject) => {
 				self.sentMessages[message.msg_id] = extend(message, options || {}, {
@@ -412,7 +412,7 @@ export default function MtpNetworkerFactoryModule() {
 		};
 
 		checkConnection = event => {
-			logger(dT(), 'Check connection', event);
+			logger('Check connection', event);
 			$timeout.cancel(this.checkConnectionPromise);
 
 			const serializer = new TLSerialization({
@@ -438,7 +438,7 @@ export default function MtpNetworkerFactoryModule() {
 					self.toggleOffline(false);
 				},
 				() => {
-					logger(dT(), 'Delay ', self.checkConnectionPeriod * 1000);
+					logger('Delay ', self.checkConnectionPeriod * 1000);
 					self.checkConnectionPromise = $timeout(
 						self.checkConnection.bind(self),
 						parseInt(self.checkConnectionPeriod * 1000)
@@ -486,7 +486,7 @@ export default function MtpNetworkerFactoryModule() {
 		performSheduledRequest = () => {
 			// console.log(dT(), 'sheduled', this.dcID, this.iii);
 			if (this.offline || akStopped) {
-				logger(dT(), 'Cancel sheduled');
+				logger('Cancel sheduled');
 				return false;
 			}
 			delete this.nextReq;
@@ -858,7 +858,7 @@ export default function MtpNetworkerFactoryModule() {
 		};
 
 		reqResendMessage = msgID => {
-			logger(dT(), 'Req resend', msgID);
+			logger('Req resend', msgID);
 			this.pendingResends.push(msgID);
 			this.sheduleRequest(100);
 		};
@@ -926,7 +926,7 @@ export default function MtpNetworkerFactoryModule() {
 					break;
 
 				case 'bad_server_salt':
-					logger(dT(), 'Bad server salt', message);
+					logger('Bad server salt', message);
 					sentMessage = this.sentMessages[message.bad_msg_id];
 					if (!sentMessage || sentMessage.seq_no != message.bad_msg_seqno) {
 						logger(message.bad_msg_id, message.bad_msg_seqno);
@@ -939,7 +939,7 @@ export default function MtpNetworkerFactoryModule() {
 					break;
 
 				case 'bad_msg_notification':
-					logger(dT(), 'Bad msg notification', message);
+					logger('Bad msg notification', message);
 					sentMessage = this.sentMessages[message.bad_msg_id];
 					if (!sentMessage || sentMessage.seq_no != message.bad_msg_seqno) {
 						logger(message.bad_msg_id, message.bad_msg_seqno);
@@ -954,7 +954,7 @@ export default function MtpNetworkerFactoryModule() {
 									.toString(10)
 							)
 						) {
-							logger(dT(), 'Update session');
+							logger('Update session');
 							this.updateSession();
 						}
 						badMessage = this.updateSentMessage(message.bad_msg_id);
@@ -1026,7 +1026,7 @@ export default function MtpNetworkerFactoryModule() {
 						const deferred = sentMessage.deferred;
 						if (message.result._ == 'rpc_error') {
 							const error = this.processError(message.result);
-							logger(dT(), 'Rpc error', error);
+							logger('Rpc error', error);
 							if (deferred) {
 								deferred.reject(error);
 							}
@@ -1043,7 +1043,7 @@ export default function MtpNetworkerFactoryModule() {
 											dRes = message.result;
 										}
 									}
-									logger(dT(), 'Rpc response', dRes);
+									logger('Rpc response', dRes);
 								}
 								sentMessage.deferred.resolve(message.result);
 							}
