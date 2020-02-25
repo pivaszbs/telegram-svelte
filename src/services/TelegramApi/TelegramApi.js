@@ -5,7 +5,7 @@ import MtpApiManagerModule from './js/Mtp/MtpApiManager';
 import AppPeersManagerModule from './js/App/AppPeersManager';
 import MtpApiFileManagerModule from './js/Mtp/MtpApiFileManager';
 import AppUsersManagerModule from './js/App/AppUsersManager';
-import AppProfileManagerModule from './js/App/AppProfileManager';
+import AppProfileManagerModule from './js/App/AppProfileManager.ts';
 import MtpPasswordManagerModule from './js/Mtp/MtpPasswordManager';
 import AppsChatsManagerModule from './js/App/AppChatsManager';
 import FileSaverModule from './js/Etc/FileSaver';
@@ -120,6 +120,13 @@ class TelegramApi {
 	};
 
 	// AUTH METHODS ------------------------------------------------------
+
+	profileManager = {
+		sendCode: this.AppProfileManager.sendCode,
+		signIn: this.AppProfileManager.signIn,
+		signUp: this.AppProfileManager.signUp,
+		signIn2FA: this.AppProfileManager.signIn2FA,
+	};
 
 	sendCode = phone_number =>
 		this.MtpApiManager.invokeApi(

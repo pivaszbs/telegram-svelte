@@ -1,6 +1,7 @@
 import { dT } from '../lib/utils';
 import MtpApiManagerModule from '../Mtp/MtpApiManager';
 import { Config } from '../lib/config';
+import MtpPasswordManagerModule from '../Mtp/MtpPasswordManager';
 
 interface UserInfo {
 	id: number,
@@ -17,6 +18,8 @@ interface UserEmpty {
 
 export default class AppProfileManagerModule {
 	MtpApiManager = MtpApiManagerModule();
+	MtpPasswordManager = new MtpPasswordManagerModule();
+
 	options = { dcID: 2, createNetworker: true };
 
 	phone: string;
@@ -37,6 +40,16 @@ export default class AppProfileManagerModule {
 		return this.user ? this.user.id : -1;
 	}
 
+	setUser (user : UserInfo) {
+		this.MtpApiManager.setUserAuth(this.options.dcID, {
+			id: user.id,
+		});
+
+		this.user = {
+			...user
+		}
+	}
+
 	sendCode = async (phone: string) => {
 		const result = await this.MtpApiManager.invokeApi(
 			'auth.sendCode',
@@ -54,7 +67,7 @@ export default class AppProfileManagerModule {
 		);
 		this.phone_code_hash = result.phone_code_hash;
 		this.next_code_type = result.next_type;
-		this.phone = result.phone;
+		this.phone = phone;
 		return {
 			phone_hash: this.phone_code_hash,
 			next_code_type: this.next_code_type,
@@ -75,12 +88,7 @@ export default class AppProfileManagerModule {
 			throw 'PHONE_NUMBER_UNOCCUPIED';
 		}
 
-		this.MtpApiManager.setUserAuth(this.options.dcID, {
-			id: result.user.id,
-		});
-		this.user = {
-			...result.user
-		};
+		this.setUser(result.user);
 		return this.user;
 	}
 
@@ -97,15 +105,23 @@ export default class AppProfileManagerModule {
 			this.options
 		);
 
-		this.MtpApiManager.setUserAuth(this.options.dcID, {
-			id: result.user.id,
-		});
-
-		this.user = {
-			...result.user
-		};
+		this.setUser(result.user);
 
 		return this.user;
+	}
+
+	signIn2FA = async (password : string) => {
+		const currentState = await this.MtpPasswordManager.getState();
+		const result = await this.MtpPasswordManager.check(currentState, password, this.options);
+		
+		this.setUser(result.user);
+		
+		return this.user;
+	}
+
+	logOut = () => {
+		this.MtpApiManager.logOut();
+		this.user = null;
 	}
 
 }

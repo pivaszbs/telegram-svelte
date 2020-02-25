@@ -2,7 +2,7 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
-const { preprocess } = require("./svelte.config");
+const { preprocess } = require('./svelte.config');
 const merge = require('webpack-merge');
 
 const common = {
@@ -12,9 +12,9 @@ const common = {
 	resolve: {
 		alias: {
 			Source: path.resolve(__dirname, 'src'),
-			svelte: path.resolve("node_modules", "svelte")
+			svelte: path.resolve('node_modules', 'svelte'),
 		},
-		extensions: [".mjs", ".js", ".json", ".svelte", ".html"]
+		extensions: ['.mjs', '.js', '.json', '.svelte', '.html'],
 	},
 	output: {
 		filename: '[name].bundle.js',
@@ -34,17 +34,19 @@ const common = {
 			// },
 			{
 				test: /\.(sa|sc|c)ss$/,
-				use: ['style-loader', MiniCssExtractPlugin.loader, 'css-loader', {
-					loader: 'sass-loader',
-					options: {
-						sassOptions: {
-							includePaths: [
-								'./src/theme',
-								'./node_modules'
-							]
-						}
-					}
-				}],
+				use: [
+					'style-loader',
+					MiniCssExtractPlugin.loader,
+					'css-loader',
+					{
+						loader: 'sass-loader',
+						options: {
+							sassOptions: {
+								includePaths: ['./src/theme', './node_modules'],
+							},
+						},
+					},
+				],
 			},
 			{
 				test: /\.(png|jpe?g|gif)(\?v=\d+\.\d+\.\d+)?$/,
@@ -97,11 +99,18 @@ const common = {
 					options: {
 						emitCss: true,
 						css: false,
-						preprocess
-					}
+						preprocess,
+					},
 				},
-			}
-		]
+			},
+			{
+				test: /\.(tsx?)$/,
+				exclude: /(node_modules|public)/,
+				use: {
+					loader: 'ts-loader',
+				},
+			},
+		],
 	},
 	plugins: [
 		new HtmlWebpackPlugin({
@@ -111,18 +120,18 @@ const common = {
 		}),
 		new MiniCssExtractPlugin({
 			filename: '[name].css',
-			chunkFilename: '[name].[id].css'
+			chunkFilename: '[name].[id].css',
 		}),
 		new OptimizeCssAssetsPlugin({
 			assetNameRegExp: /\.css$/g,
 			cssProcessor: require('cssnano'),
 			cssProcessorPluginOptions: {
-				preset: ['default', { discardComments: { removeAll: true } }]
+				preset: ['default', { discardComments: { removeAll: true } }],
 			},
-			canPrint: true
-		})
-	]
-}
+			canPrint: true,
+		}),
+	],
+};
 
 const devServer = {
 	devServer: {
@@ -137,4 +146,4 @@ module.exports = env => {
 	if (env === 'development') {
 		return merge([common, devServer]);
 	}
-}
+};
