@@ -23,9 +23,9 @@
     outline: none;
 
     transition: background-color 300ms;
-    &::before {
-      opacity: 0; //fix smui styles
-    }
+    // &::before {
+    //   opacity: 0; //fix smui styles
+    // }
   }
 
 
