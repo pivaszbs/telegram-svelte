@@ -1,26 +1,20 @@
 <script>
-	import DefaultAvatar from '../components/ui-kit/avatars/avatar-default.svelte';
-	import SavedAvatar from '../components/ui-kit/avatars/avatar-saved.svelte';
-	import TelegramAvatar from '../components/ui-kit/avatars/avatar-telegram.svelte';
+	import DefaultAvatar from '../ui-kit/avatars/avatar-default.svelte';
+	import SavedAvatar from '../ui-kit/avatars/avatar-saved.svelte';
+	import TelegramAvatar from '../ui-kit/avatars/avatar-telegram.svelte';
+	import './avatar.scss';
 	export let photo;
-	export let name;
+	export let title;
 	export let saved;
 	export let telegram;
 	export let small;
 	export let medium;
 	export let big;
 	export let online;
-	const commonProps = { small, medium, big };
+	const commonProps = { small, medium, big, online };
 </script>
 
 <style lang="scss">
-	.avatar {
-		border-radius: 50%;
-	}
-	.medium {
-		width: 54px;
-		height: 54px;
-	}
 	 .online {
         position: relative;
         &::before {
@@ -43,15 +37,23 @@
 	<TelegramAvatar {...commonProps}/>
 {:else}
 	{#await photo}
-		<DefaultAvatar {name} {...commonProps}/>
+		<DefaultAvatar {title} {...commonProps}/>
 	{:then avatar}
 		{@debug avatar}
 		{#if avatar}
-			<img class='avatar'  class:medium={medium} class:online={online} alt='avatar' src={avatar} />
+			<img
+				class='avatar'
+				src={avatar} 
+				class:online={online}
+				class:small={small}
+				class:medium={medium}
+				class:big={big}
+				alt='avatar'
+			/>
 		{:else}
-			<DefaultAvatar {name} {...commonProps}/>
+			<DefaultAvatar {title} {...commonProps}/>
 		{/if}
 	{:catch error}
-		<DefaultAvatar {name} {...commonProps}/>
+		<DefaultAvatar {title} {...commonProps}/>
 	{/await}
 {/if}

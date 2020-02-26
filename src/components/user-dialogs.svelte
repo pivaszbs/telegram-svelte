@@ -10,7 +10,7 @@
 
 <div class="user-dialogs">
     {#each $dialogs as dialog,i (dialog.id)}
-        <Dialog active={i===0} {...dialog} />
+        <Dialog {...dialog} />
     {/each}
 </div>
 

@@ -1,15 +1,17 @@
 <script>
     import RightTop from './right-top.svelte';
     import RightBottom from './right-bottom.svelte';
-    import Avatar from '../avatar.svelte';
+    import Avatar from '../avatar/avatar.svelte';
     import Ripple from '@smui/ripple'
     export let photo;
-    export let count;
+    export let unreadCount;
     export let title;
     export let text;
     export let time;
     export let pinned;
-    export let out;
+    export let from_name;
+    export let message_info;
+    const { out } = message_info;
     export let read;
     export let online;
     export let active;
@@ -70,78 +72,22 @@
             }
         }
 
-    &__info {
-        grid-row: 1;
-        grid-column: 3;
-        gap: 4px;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        justify-self: right;
-    }
 
-    &__time {
-        color: var(--secondary);
-        font-size: 12px;
-        align-self: center;
-    }
-
-    .full {
-        grid-column: 1/3;
-    }
-
-    &__out {
-        fill: var(--green);
-        align-self: flex-start;
-        justify-self: flex-end;
-        height: 19px;
-    }
-
-    &_right_bottom {
-        grid-row: 2;
-        grid-column: 3;
-        color: var(--white);
-        justify-self: flex-end;
-        align-self: flex-start;
-        height: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    &_pinned {
-        background-color: var(--pinned);
-        width: 24px;
-        border-radius: 50%;
-        svg {
-        fill: var(--white);
-        }
-    }
-
-    &__unread-count {
-        border-radius: 24px;
-        min-width: 24px;
-        color: var(--white);
-        font-size: 14px;
-        text-align: center;
-        background-color: var(--green);
-        .count {
-        padding: 0 6px;
-        }
-    }
-
-    &_muted {
-        background-color: var(--pinned);
-    }
     }
 
 </style>
 
 <div tabindex="0" use:Ripple={{ ripple: true, color: 'secondary' }} class="dialog">
     <div class="avatar-wrapper">
-        <Avatar medium {photo} {online} />
+        <Avatar medium {photo} {online} {title} />
     </div>
     <div class="name">{title}</div>
-    <div class="short">{text}</div>
+    <div class="short">
+        {#if from_name}
+             <span class='short_from'>{from_name}</span>: 
+        {/if}
+        {text}
+    </div>
     <RightTop {out} {time} {read}/>
-    <RightBottom {count} {pinned} />
+    <RightBottom {unreadCount} {pinned} />
 </div>
