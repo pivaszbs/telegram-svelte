@@ -11,8 +11,9 @@
     export let pinned;
     export let from_name;
     export let message_info;
-    const { out } = message_info;
-    export let read;
+    const { out } = message_info; //needed from new API
+    export let read; //needed from new API
+    export let saved; //needed from store/API
     export let online;
     export let active;
 </script>
