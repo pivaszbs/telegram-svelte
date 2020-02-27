@@ -12,6 +12,24 @@ body {
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
 }
 
+* {
+	box-sizing: border-box;
+}
+
+.icon {
+	width: 40px;
+	height: 40px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.icon:hover {
+	background: var(--light-gray);
+	border-radius: 50%;
+	cursor: pointer;
+}
+
 a {
 	color: rgb(0,100,200);
 	text-decoration: none;

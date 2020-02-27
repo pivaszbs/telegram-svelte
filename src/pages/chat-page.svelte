@@ -1,7 +1,12 @@
 <script>
-    import Settings from '../components/settings.svelte'
-
+    import UserDialogs from '../components/user-dialogs.svelte';
 </script>
 
-<Settings></Settings>
-<!-- <h1>welcome on Chat Page</h1> -->
+<div class="chat-page">
+    <div class="left">
+        <UserDialogs />
+    </div>
+    <div class="right">
+
+    </div>
+</div>

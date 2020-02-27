@@ -4,7 +4,9 @@
 	import LoginPassword from './pages/login-password.svelte';
 	import RegisterPage from './pages/register-page.svelte';
 	import ChatPage from './pages/chat-page.svelte';
+	import ProfileImage from './components/profile-image.svelte';
 	import { router } from './stores/router';
+	import telegramApi from './services/TelegramApi';
 
 	const routes = {
 		'login-form': LoginForm,
@@ -14,7 +16,14 @@
 		'chat-page': ChatPage
 	};
 
-	router.setRoute('chat-page');
+	telegramApi.getUserInfo().then(data => {
+		if (data.id) {
+			router.setRoute('chat-page')
+		} else {
+			router.setRoute('login-form');
+		}
+	})
+
 </script>
 
 <style>
