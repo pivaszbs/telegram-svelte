@@ -47,7 +47,7 @@
 	{:then avatar}
 		{@debug avatar}
 		{#if avatar}
-			<img class='avatar'  class:medium={medium} class:online={online} alt='avatar' src={avatar} />
+			<img class='avatar'  class:medium class:online alt='avatar' src={avatar} />
 		{:else}
 			<DefaultAvatar {name} {...commonProps}/>
 		{/if}
