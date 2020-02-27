@@ -14,5 +14,5 @@
 <style>
 </style>
 
-<input class:invalid={invalid} bind:this={elem} on:change bind:value={$name} type="text" name="name" id="name" required>
+<input class:invalid bind:this={elem} on:change bind:value={$name} type="text" name="name" id="name" required>
 <label>Name</label>
