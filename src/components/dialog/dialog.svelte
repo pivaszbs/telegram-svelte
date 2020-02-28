@@ -1,7 +1,10 @@
 <script>
     import RightTop from './right-top.svelte';
     import RightBottom from './right-bottom.svelte';
-    export let avatar;
+    import Avatar from '../avatar.svelte';
+    import Ripple from '@smui/ripple';
+
+    export let photo;
     export let count;
     export let name;
     export let short;
@@ -12,10 +15,10 @@
     export let online;
 </script>
 
-<div class="dialog">
-    <div class="avatar"></div>
+<li use:Ripple={{ ripple: true, color: 'secondary' }} class="dialog">
+    <Avatar {photo} {online} /> 
     <div class="name">{name}</div>
     <div class="short">{short}</div>
     <RightTop {out} {read}/>
-    <RightBottom {time} {pinned} />
-</div>
+    <RightBottom {time} {pinned} {count} />
+</li>

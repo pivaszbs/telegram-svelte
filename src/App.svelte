@@ -15,7 +15,7 @@
 		'chat-page': ChatPage
 	};
 
-	router.setRoute('register-page');
+	router.setRoute('login-form');
 </script>
 
 <style>
