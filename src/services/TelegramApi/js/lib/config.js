@@ -19,7 +19,9 @@ export const Config = window.Config || {};
 */
 
 Config.App = {
-  version: '0.0.1'
+  version: '0.0.1',
+  id: 0,
+  hash: ''
 };
 
 Config.Server = {};

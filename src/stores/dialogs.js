@@ -1,6 +1,4 @@
-import { writable } from "svelte/store";
-import { telegramApi } from "../services/TelegramApi/TelegramApi";
-
-// const apidialogs = telegramApi.getDialogsParsed(10);
+import { writable } from 'svelte/store';
 
 export const dialogs = writable([]);
+export const archives = writable([]);

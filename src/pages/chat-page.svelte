@@ -3,6 +3,10 @@
 </script>
 
 <div class="chat-page">
-    <h1>welcome on Chat Page</h1>
-    <UserDialogs />
+    <div class="left">
+        <UserDialogs />
+    </div>
+    <div class="right">
+        
+    </div>
 </div>
