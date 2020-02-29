@@ -1,15 +1,55 @@
 <script>
-    export let count;
+    export let unreadCount;
     export let pinned;
     export let muted;
+    console.log('unreadCount', unreadCount)
 </script>
 
-<div class:muted={muted} class="right-bottom">
-    {#if count > 0}
-        <div class="count">{count}</div>
+<style lang="scss">
+    .right-bottom {
+        grid-row: 2;
+        grid-column: 3;
+        color: var(--white);
+        justify-self: flex-end;
+        align-self: flex-start;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .muted {
+        background-color: var(--pinned);
+    }
+
+     .pinned {
+        background-color: var(--pinned);
+        width: 24px;
+        border-radius: 50%;
+        svg {
+            fill: var(--white);
+        }
+    }
+
+    .unread {
+        border-radius: 24px;
+        min-width: 24px;
+        color: var(--white);
+        font-size: 14px;
+        text-align: center;
+        background-color: var(--green);
+        .count {
+            padding: 0 6px;
+        }
+    }
+</style>
+
+<div class="right-bottom" class:unread={unreadCount > 0} class:muted={muted} class:pinned={unreadCount === 0 && pinned} >
+    {#if unreadCount > 0}
+        <div class="count">{unreadCount}</div>
     {:else if pinned}
-        <div class="pinned">
-            <!-- svg -->
-        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+            <path d="M15.5076746,5.43106151 C15.6360364,5.50807857 15.7544683,5.60054738 15.8603181,5.70639721 L18.293754,8.13983316 C19.0087487,8.85482776 19.0087487,10.0140631 18.293754,10.7290577 C18.1879042,10.8349075 18.0694723,10.9273763 17.9411106,11.0043934 L16.0271139,12.1527914 C16.2818698,13.6727594 15.6636956,15.1719619 14.2486077,16.5870499 C13.9244725,16.911185 13.3989456,16.911185 13.0748104,16.5870499 L10.83,14.3428746 L7.58689863,17.5868986 C7.28977473,17.8840225 6.8234258,17.9087829 6.49809773,17.6611796 L6.41310137,17.5868986 C6.11597747,17.2897747 6.09121715,16.8234258 6.3388204,16.4980977 L6.41310137,16.4131014 L9.657,13.1688746 L7.41310137,10.9253408 C7.08896621,10.6012057 7.08896621,10.0756787 7.41310137,9.75154358 C8.75743492,8.40721003 10.1776819,7.78209116 11.6195283,7.94136145 L11.8473599,7.97303736 L12.9957579,6.05904069 C13.5159929,5.19198237 14.6406163,4.91082651 15.5076746,5.43106151 Z M14.4191961,6.91310365 L12.9555748,9.35247255 C12.7554257,9.68605435 12.3504433,9.8358671 11.9813866,9.71284821 C11.0837094,9.41362247 10.1767406,9.61176673 9.20691373,10.3715587 L13.6285926,14.7932375 L13.7730814,14.6000944 C14.4125932,13.7025228 14.5665804,12.8565967 14.287303,12.0187646 C14.1642842,11.649708 14.3140969,11.2447255 14.6476787,11.0445765 L17.10429,9.56911679 L17.1199568,9.55526042 C17.1866811,9.48853613 17.1866811,9.3803547 17.1199568,9.31363041 L14.6865208,6.88019447 L14.6536117,6.85449976 C14.5726966,6.80595071 14.4677452,6.83218857 14.4191961,6.91310365 Z"/>
+        </svg>
     {/if}
 </div>
