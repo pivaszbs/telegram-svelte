@@ -44,10 +44,10 @@
 			<img
 				class='avatar'
 				src={avatar} 
-				class:online={online}
-				class:small={small}
-				class:medium={medium}
-				class:big={big}
+				class:online
+				class:small
+				class:medium
+				class:big
 				alt='avatar'
 			/>
 		{:else}

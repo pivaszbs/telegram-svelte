@@ -5,6 +5,6 @@
 	export let medium;
 </script>
 
-<div class="avatar" class:small={small} class:medium={medium} class:big={big}>
+<div class="avatar" class:small class:medium class:big>
     {title[0]}
 </div>
