@@ -1,0 +1,30 @@
+.popup-item {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    height: 50px;
+    padding-left: 15px;
+    padding-right: 15px;
+    vertical-align: middle;
+    align-items: center;
+
+    &:hover {
+        background: var(--light-gray);
+    }
+
+    &_active {
+        background-color: var(--light-gray);
+    }
+    
+    img {
+        height: 40px;
+    }
+
+    & span {
+        display: inline-block;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}

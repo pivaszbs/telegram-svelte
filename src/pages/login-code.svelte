@@ -11,9 +11,6 @@
         }, 0);
     })
 
-    const showInvalid = () => {
-    }
-
     code.subscribe(code => {
         if (code.length > 4) {
             telegramApi.profileManager.signIn(code)
@@ -52,7 +49,7 @@
 	}
 </style>
 
-<form action="code">
+<form on:submit={e => e.preventDefault()} action="code">
     <h1>{$phone}</h1>
     <div class="hint">We have sent you an SMS with code</div>
     <div class="input-group">
