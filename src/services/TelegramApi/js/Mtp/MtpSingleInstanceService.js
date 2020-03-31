@@ -6,6 +6,7 @@ import $rootScope from '../Etc/angular/$rootScope';
 import MtpNetworkerFactoryModule from './MtpNetworkerFactory';
 import $timeout from '../Etc/angular/$timeout';
 import { Config } from '../lib/config';
+import logger from '../lib/logger';
 
 export default function MtpSingleInstanceServiceModule() {
 	window.instanceID = nextRandomInt(0xffffffff);
@@ -32,7 +33,7 @@ export default function MtpSingleInstanceServiceModule() {
 				// $(window).on('beforeunload', clearInstance);
 				window.addEventListener('beforeunload', clearInstance);
 			} catch (e) {
-				Config.Modes.debug && console.log('Error starting instance: ', e);
+				logger('Error starting instance: ', e);
 			}
 		}
 	};
@@ -45,7 +46,7 @@ export default function MtpSingleInstanceServiceModule() {
 		if (masterInstance || deactivated) {
 			return false;
 		}
-		Config.Modes.debug && console.log(dT(), 'deactivate');
+		logger('deactivate');
 		deactivatePromise = false;
 		deactivated = true;
 		clearInstance();

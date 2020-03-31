@@ -1,6 +1,7 @@
 import { forEach, toArray } from './Helper';
 import { dT } from '../lib/utils';
 import { Config } from '../lib/config';
+import logger from '../lib/logger';
 
 export default function StorageModule() {
 	const methods = {};
@@ -81,7 +82,7 @@ export default function StorageModule() {
 	const set = (obj, callback) =>
 		new Promise(resolve => {
 			if (obj.user_auth && Config.Modes.debug) {
-				console.log(dT(), '[DEBUG] Setting ', obj);
+				logger('[DEBUG] Setting ', obj);
 			}
 			var keyValues = {},
 				prefix = storageGetPrefix(),

@@ -8,6 +8,7 @@ import MtpNetworkerFactoryModule from './MtpNetworkerFactory';
 import MtpAuthorizerModule from './MtpAuthorizer';
 import { dT, tsNow } from '../lib/utils';
 import { Config } from '../lib/config';
+import logger from '../lib/logger';
 
 export default function MtpApiManagerModule() {
 	const cachedNetworkers = {};
@@ -121,7 +122,7 @@ export default function MtpApiManagerModule() {
 					storeObj[ssk] = bytesToHex(auth.serverSalt);
 					Storage.set(storeObj);
 
-					Config.Modes.debug && console.log('AUTH', auth);
+					logger('AUTH', auth);
 
 					return (cache[dcID] = MtpNetworkerFactory.getNetworker(
 						dcID,
@@ -131,7 +132,7 @@ export default function MtpApiManagerModule() {
 					));
 				},
 				error => {
-					Config.Modes.debug && ('Get networker error', error, error.stack);
+					logger('Get networker error', error, error.stack);
 					return Promise.reject(error);
 				}
 			);
@@ -192,7 +193,7 @@ export default function MtpApiManagerModule() {
 							telegramMeNotify(false);
 							rejectPromise(error);
 						} else if (error.code == 401 && baseDcID && dcID != baseDcID) {
-							Config.Modes.debug && console.log('Exporting auth...');
+							logger('Exporting auth...');
 							if (cachedExportPromise[dcID] === undefined) {
 								const exportPromise = new Promise((exportResolve, exportReject) => {
 									mtpInvokeApi(
@@ -251,7 +252,7 @@ export default function MtpApiManagerModule() {
 												{ noErrorBox: true }
 											).then(
 												exportedAuth => {
-													Config.Modes.debug && console.log(exportedAuth);
+													logger(exportedAuth);
 													mtpInvokeApi(
 														'auth.importAuthorization',
 														{
@@ -284,7 +285,7 @@ export default function MtpApiManagerModule() {
 													resolve(result);
 												},
 												e => {
-													Config.Modes.debug && console.log('WRAP FAILED', e);
+													logger('WRAP FAILED', e);
 													return rejectPromise;
 												}
 											);

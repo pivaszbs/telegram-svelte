@@ -24,6 +24,7 @@ import CryptoWorkerModule from '../Etc/CryptoWorker';
 import $http from '../Etc/angular/$http';
 import MtpDcConfiguratorModule from './MtpDcConfigurator';
 import WebSocketManager from '../Etc/angular/$websocket';
+import logger from '../lib/logger';
 
 export default function MtpNetworkerFactoryModule() {
 	let updatesProcessor;
@@ -86,11 +87,9 @@ export default function MtpNetworkerFactoryModule() {
 
 		handleError = error => {
 			if (error.status == 404 && (error.data || '').indexOf('nginx/0.3.33') != -1) {
-				this.Storage.remove('dc' + self.dcID + '_server_salt', 'dc' + self.dcID + '_auth_key').then(
-					() => {
-						window.location.reload();
-					}
-				);
+				this.Storage.remove('dc' + self.dcID + '_server_salt', 'dc' + self.dcID + '_auth_key').then(() => {
+					window.location.reload();
+				});
 			}
 			if (!error.message && !error.type) {
 				error = extend(baseError, {
@@ -99,7 +98,7 @@ export default function MtpNetworkerFactoryModule() {
 				});
 			}
 			return error;
-		}
+		};
 
 		constructor(dcID, authKey, serverSalt, options) {
 			options = options || {};
@@ -192,7 +191,7 @@ export default function MtpNetworkerFactoryModule() {
 				};
 
 			if (Config.Modes.debug) {
-				Config.Modes.debug && console.log(dT(), 'MT call', method, params, messageID, seqNo);
+				logger('MT call', method, params, messageID, seqNo);
 			}
 
 			return this.pushMessage(message, options);
@@ -215,7 +214,7 @@ export default function MtpNetworkerFactoryModule() {
 				};
 
 			if (Config.Modes.debug) {
-				Config.Modes.debug && console.log(dT(), 'MT message', object, messageID, seqNo);
+				logger('MT message', object, messageID, seqNo);
 			}
 
 			return this.pushMessage(message, options);
@@ -254,7 +253,7 @@ export default function MtpNetworkerFactoryModule() {
 			if (Config.Modes.debug) {
 				console.log(dT(), 'Api call', method, params, messageID, seqNo, options);
 			} else {
-				Config.Modes.debug && console.log(dT(), 'Api call', method);
+				logger('Api call', method);
 			}
 
 			return this.pushMessage(message, options);
@@ -303,7 +302,7 @@ export default function MtpNetworkerFactoryModule() {
 					setZeroTimeout(self.checkLongPoll.bind(self));
 				},
 				() => {
-					Config.Modes.debug && console.log('Long-poll failed');
+					logger('Long-poll failed');
 				}
 			);
 		};
@@ -311,7 +310,7 @@ export default function MtpNetworkerFactoryModule() {
 		pushMessage = (message, options) => {
 			const self = this;
 
-			Config.Modes.debug && console.log(dT(), 'Push message ', message, options);
+			logger('Push message ', message, options);
 
 			return new Promise((resolve, reject) => {
 				self.sentMessages[message.msg_id] = extend(message, options || {}, {
@@ -413,12 +412,12 @@ export default function MtpNetworkerFactoryModule() {
 		};
 
 		checkConnection = event => {
-			Config.Modes.debug && console.log(dT(), 'Check connection', event);
+			logger('Check connection', event);
 			$timeout.cancel(this.checkConnectionPromise);
 
 			const serializer = new TLSerialization({
-				mtproto: true,
-			}),
+					mtproto: true,
+				}),
 				pingID = [nextRandomInt(0xffffffff), nextRandomInt(0xffffffff)];
 
 			serializer.storeMethod('ping', {
@@ -439,7 +438,7 @@ export default function MtpNetworkerFactoryModule() {
 					self.toggleOffline(false);
 				},
 				() => {
-					Config.Modes.debug && console.log(dT(), 'Delay ', self.checkConnectionPeriod * 1000);
+					logger('Delay ', self.checkConnectionPeriod * 1000);
 					self.checkConnectionPromise = $timeout(
 						self.checkConnection.bind(self),
 						parseInt(self.checkConnectionPeriod * 1000)
@@ -487,7 +486,7 @@ export default function MtpNetworkerFactoryModule() {
 		performSheduledRequest = () => {
 			// console.log(dT(), 'sheduled', this.dcID, this.iii);
 			if (this.offline || akStopped) {
-				Config.Modes.debug && console.log(dT(), 'Cancel sheduled');
+				logger('Cancel sheduled');
 				return false;
 			}
 			delete this.nextReq;
@@ -766,7 +765,7 @@ export default function MtpNetworkerFactoryModule() {
 					const deserializerOptions = {
 						mtproto: true,
 						override: {
-							mt_message: function (result, field) {
+							mt_message: function(result, field) {
 								result.msg_id = this.fetchLong(field + '[msg_id]');
 								result.seqno = this.fetchInt(field + '[seqno]');
 								result.bytes = this.fetchInt(field + '[bytes]');
@@ -789,7 +788,7 @@ export default function MtpNetworkerFactoryModule() {
 								}
 								// console.log(dT(), 'override message', result);
 							},
-							mt_rpc_result: function (result, field) {
+							mt_rpc_result: function(result, field) {
 								result.req_msg_id = this.fetchLong(field + '[req_msg_id]');
 
 								const sentMessage = self.sentMessages[result.req_msg_id],
@@ -859,7 +858,7 @@ export default function MtpNetworkerFactoryModule() {
 		};
 
 		reqResendMessage = msgID => {
-			Config.Modes.debug && console.log(dT(), 'Req resend', msgID);
+			logger('Req resend', msgID);
 			this.pendingResends.push(msgID);
 			this.sheduleRequest(100);
 		};
@@ -927,10 +926,10 @@ export default function MtpNetworkerFactoryModule() {
 					break;
 
 				case 'bad_server_salt':
-					Config.Modes.debug && console.log(dT(), 'Bad server salt', message);
+					logger('Bad server salt', message);
 					sentMessage = this.sentMessages[message.bad_msg_id];
 					if (!sentMessage || sentMessage.seq_no != message.bad_msg_seqno) {
-						Config.Modes.debug && console.log(message.bad_msg_id, message.bad_msg_seqno);
+						logger(message.bad_msg_id, message.bad_msg_seqno);
 						throw new Error('Bad server salt for invalid message');
 					}
 
@@ -940,10 +939,10 @@ export default function MtpNetworkerFactoryModule() {
 					break;
 
 				case 'bad_msg_notification':
-					Config.Modes.debug && console.log(dT(), 'Bad msg notification', message);
+					logger('Bad msg notification', message);
 					sentMessage = this.sentMessages[message.bad_msg_id];
 					if (!sentMessage || sentMessage.seq_no != message.bad_msg_seqno) {
-						Config.Modes.debug && console.log(message.bad_msg_id, message.bad_msg_seqno);
+						logger(message.bad_msg_id, message.bad_msg_seqno);
 						throw new Error('Bad msg notification for invalid message');
 					}
 
@@ -955,7 +954,7 @@ export default function MtpNetworkerFactoryModule() {
 									.toString(10)
 							)
 						) {
-							Config.Modes.debug && console.log(dT(), 'Update session');
+							logger('Update session');
 							this.updateSession();
 						}
 						badMessage = this.updateSentMessage(message.bad_msg_id);
@@ -1027,7 +1026,7 @@ export default function MtpNetworkerFactoryModule() {
 						const deferred = sentMessage.deferred;
 						if (message.result._ == 'rpc_error') {
 							const error = this.processError(message.result);
-							Config.Modes.debug && console.log(dT(), 'Rpc error', error);
+							logger('Rpc error', error);
 							if (deferred) {
 								deferred.reject(error);
 							}
@@ -1044,7 +1043,7 @@ export default function MtpNetworkerFactoryModule() {
 											dRes = message.result;
 										}
 									}
-									Config.Modes.debug && console.log(dT(), 'Rpc response', dRes);
+									logger('Rpc response', dRes);
 								}
 								sentMessage.deferred.resolve(message.result);
 							}
@@ -1082,7 +1081,7 @@ export default function MtpNetworkerFactoryModule() {
 
 	return {
 		getNetworker: (dcID, authKey, serverSalt, options) => {
-			Config.Modes.debug && console.log('NETWORKER', dcID, authKey, serverSalt, options);
+			logger('NETWORKER', dcID, authKey, serverSalt, options);
 			return new MtpNetworker(dcID, authKey, serverSalt, options);
 		},
 		setUpdatesProcessor: callback => {
