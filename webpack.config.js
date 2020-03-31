@@ -13,6 +13,7 @@ const common = {
 		alias: {
 			Source: path.resolve(__dirname, 'src'),
 			svelte: path.resolve('node_modules', 'svelte'),
+			images: path.resolve(__dirname, 'src/assets/images')
 		},
 		extensions: ['.mjs', '.js', '.json', '.svelte', '.html'],
 	},
