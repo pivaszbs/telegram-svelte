@@ -1,0 +1,21 @@
+.avatar {
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar.small {
+    width: 40px;
+    height: 40px;
+}
+
+.avatar.medium {
+    width: 54px;
+    height: 54px;
+}
+
+.avatar.large {
+    width: 100px;
+    height: 100px;
+}

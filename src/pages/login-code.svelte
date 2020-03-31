@@ -3,6 +3,7 @@
     import { router } from '../stores/router';
     import { onMount } from 'svelte';
     import InputCode from '../components/ui-kit/inputs/input-code.svelte';
+    import telegramApi from '../services/TelegramApi';
 
     onMount(() => {
         setTimeout(() => {
@@ -10,9 +11,24 @@
         }, 0);
     })
 
+    const showInvalid = () => {
+    }
+
     code.subscribe(code => {
         if (code.length > 4) {
-            router.setRoute('login-password')
+            telegramApi.profileManager.signIn(code)
+                .then(res => {
+                    router.setRoute('chat-page');
+                })
+                .catch(err => {
+                    if (err === 'PHONE_NUMBER_UNOCCUPIED') {
+                        router.setRoute('register-page');
+                    } else if (err.type === 'SESSION_PASSWORD_NEEDED') {
+                        router.setRoute('login-password');
+                    } else {
+                        showInvalid();
+                    }
+                });
         }
     });
 </script>
