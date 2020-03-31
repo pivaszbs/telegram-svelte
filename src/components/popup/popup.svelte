@@ -2,7 +2,6 @@
 	import { clsx } from './../../helpers/index.js';
     import { fade, fly } from 'svelte/transition';
 
-    export let active = false;
     let className;
     export { className as class }
 </script>
@@ -38,6 +37,6 @@
     }
 </style>
 
-<ul on:keydown transition:fly={{ duration: 200, y: 20 }} class={clsx("popup", className)} class:hide={!active}>
+<ul on:keydown transition:fly={{ duration: 200, y: 20 }} class={clsx("popup", className)}>
     <slot></slot>   
 </ul>
