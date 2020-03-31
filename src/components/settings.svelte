@@ -1,35 +1,30 @@
 <script>
+	import SettingsItem from './settings-item.svelte';
+	import Edit from './../assets/images/edit.svg';
+	import Notifications from './../assets/images/notifications.svg';
+	import Language from './../assets/images/language.svg';
+	import Privacy from './../assets/images/privacy.svg';
+	import Settings from './../assets/images/settings.svg';
     import SettingsHeader from '../components/ui-kit/sidebar/sidebar-header.svelte'
     import SettingsInfo from '../components/ui-kit/sidebar/sidebar-info.svelte'
+    
+    const listItems = [
+        {icon: Edit, text: "Edit profile", class: "edit"},
+        {icon: Settings, text: "General settings", class: "settings"},
+        {icon: Notifications, text: "Notifications", class: "notifications"},
+        {icon: Privacy, text: "Privacy and security", class: "privacy"},
+        {icon: Language, text: "Language", class: "language"},
+    ]
 </script>
 
 <div class="sidebar sidebar_left settings">
     <SettingsHeader/>
     <SettingsInfo/>
-
-
-<ul class="settings-list">
-	<li class="settings-list__item settings-list__edit">
-		<img src="./icons/edit.svg" alt="">
-		<div class="settings-list__text">Edit profile</div>
-	</li>
-	<li class="settings-list__item settings-list__general-settings">
-		<img src="./icons/settings.svg" alt="">
-		<div class="settings-list__text">General settings</div>
-	</li>
-	<li class="settings-list__item settings-list__notifications">
-		<img src="./icons/unmute.svg" alt="">
-		<div class="settings-list__text">Notifications</div>
-	</li>
-	<li class="settings-list__item settings-list__privacy">
-		<img src="./icons/lock.svg" alt="">
-		<div class="settings-list__text">Privacy and security</div>
-	</li>
-	<li class="settings-list__item settings-list__language">
-		<img src="./icons/language.svg" alt="">
-		<div class="settings-list__text">Language</div>
-	</li>
-</ul>
+    <ul class="settings-list">
+        {#each listItems as item}
+            <SettingsItem {...item}/>
+        {/each}
+    </ul>
 </div>
 
 <style lang="scss">
@@ -87,16 +82,16 @@
         width: 23.5vw;
         min-width: 230px;
 
-        img {
-            width: 24px;
-            height: 24px;
-            padding-right: 25px;
-        }
+            img {
+                width: 24px;
+                height: 24px;
+                padding-right: 25px;
+            }
 
-        &:hover {
-            background-color: var(--light-gray);
-            cursor: pointer;
-        }
+            &:hover {
+                background-color: var(--light-gray);
+                cursor: pointer;
+            }
         }
         &__text {
         font-size: 14px;
