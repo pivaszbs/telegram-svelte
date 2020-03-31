@@ -3,6 +3,7 @@ import { Config } from '../lib/config';
 import { nextRandomInt } from '../lib/bin_utils';
 import { dT } from '../lib/utils';
 import { noop, isFunction } from '../Etc/Helper';
+import logger from '../lib/logger';
 
 export default function MtpApiFileManagerModule() {
 	let cachedFs = false;
@@ -149,8 +150,7 @@ export default function MtpApiFileManagerModule() {
 											resolve(resultInputFile);
 											resolved = true;
 										} else {
-											Config.Modes.debug &&
-												console.log(dT(), 'Progress', (doneParts * partSize) / fileSize);
+											logger('Progress', (doneParts * partSize) / fileSize);
 											progress(offset < fileSize ? offset : fileSize, fileSize);
 											// resolve({ done: doneParts * partSize, total: fileSize });
 										}
@@ -166,7 +166,7 @@ export default function MtpApiFileManagerModule() {
 			}
 
 			const cancel = () => {
-				Config.Modes.debug && console.log('cancel upload', canceled, resolved);
+				logger('cancel upload', canceled, resolved);
 				if (!canceled && !resolved) {
 					canceled = true;
 					errorHandler({ type: 'UPLOAD_CANCELED' });

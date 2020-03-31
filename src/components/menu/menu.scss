@@ -1,0 +1,209 @@
+.menu__search_active_no {
+    position: absolute;
+    z-index: -1;
+    border-radius: 24px;
+    height: 100%;
+    svg {
+        position: absolute;
+        fill: var(--special-gray);
+        bottom: 6px;
+        left: 6px;
+    }
+    background-color: var(--right-gray);
+    min-width: 190px;
+    width: calc(25vw - 80px);
+}
+
+.menu {
+    display: grid;
+    grid-template-columns: 60px auto;
+    grid-template-rows: 40px;
+    margin-bottom: 10px;
+    padding-top: 10px;
+    align-items: center;
+    transition: 0.4s ease-in;
+
+    user-select: none;
+
+    &__search-wrapper {
+        height: 90%;
+        width: 95%;
+        position: relative;
+        align-items: center;
+        justify-content: center;
+        display: flex;
+    }
+
+    &__search-icon {
+        height: 14px;
+        width: 14px;
+        position: absolute;
+        fill: var(--special-gray);
+        bottom: 15px;
+        left: 6px;
+    }
+
+    input[type="search"] {
+        position: absolute;
+        z-index: 3;
+        background: rgba(#fff, 0);
+        font-size: 14px;
+        border-radius: 24px;
+        width: 100%;
+        align-self: center;
+        padding: 10px 10px 10px 35px;
+        border: none;
+
+        &::placeholder {
+        color: var(--special-gray);
+        }
+        &:focus {
+            outline: none;
+            border: none;
+        }
+    }
+
+    .hide {
+        width: 0 !important;
+        display: flex !important;
+    }
+
+    .menu__search_overlay {
+        z-index: 2;
+        font-size: 14px;
+        height: 120%;
+        width: 110%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: none;
+        position: absolute;
+        overflow: hidden;
+
+        transition: all 0.1s ease-in;
+
+        .menu__search_active {
+            position: relative;
+            box-shadow: 0 0 0 1.5pt var(--primary);
+            z-index: -1;
+            border-radius: 24px;
+            background-color: var(--white);
+            min-width: calc(25vw - 80px);
+            height: 32px;
+            transition: 0.1s ease-in;
+            svg {
+                position: absolute;
+                fill: var(--primary);
+                bottom: 4px;
+                left: 4px;
+            }
+            @media (max-width: 1060px) {
+                & {
+                    min-width: 190px;
+                }
+            }
+        }
+    }
+
+    &__checkbox {
+        * {
+            transition: all 0.2s ease-in;
+        }
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        grid-column: 1;
+        grid-row: 1;
+        width: 40px;
+        height: 40px;
+        justify-self: center;
+        cursor: pointer;
+    }
+
+    .menu-list {
+        top: 40px;
+        left: 10px;
+        max-width: 200px;
+
+        & li {
+            justify-content: flex-start;
+            width: 200px;
+            img {
+                width: 24px;
+                height: 24px;
+                margin-right: 25px;
+            }
+        }
+
+        &__archived {
+        display: grid;
+        grid-template-columns: 24px 1fr 48px;
+
+        .dialog_right_bottom {
+            grid-row: 1;
+            align-self: center;
+            max-width: 48px;
+        }
+
+        &__text {
+            transform: translateX(24px);
+        }
+        }
+    }
+
+    .burger,
+    .arrow {
+        div {
+        display: block;
+        width: 18px;
+        height: 3px;
+        }
+    }
+
+    .burger {
+        div {
+        margin-bottom: 3px;
+        background: #707579;
+        &:last-child {
+            margin-bottom: 0;
+        }
+        }
+    }
+
+    .arrow {
+        transform: rotate(180deg);
+        margin-right: -8px;
+        div {
+        width: 18px;
+        background: #707579;
+        transform: translate(4px, 0);
+
+        &:first-child {
+            width: 12px;
+            transform: rotate(45deg) translate(8px, -8px);
+        }
+
+        &:last-child {
+            width: 12px;
+            transform: rotate(-45deg) translate(8px, 8px);
+        }
+        }
+    }
+
+    &__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+
+        &_active {
+        background: var(--light-gray);
+        border-radius: 50%;
+        cursor: pointer;
+        }
+    }
+}

@@ -4,6 +4,7 @@ import CryptoWorkerModule from '../Etc/CryptoWorker';
 import MtpSecureRandom from './MtpSecureRandom';
 import { getParams } from '../lib/telegram_srp';
 import { Config } from '../lib/config';
+import logger from '../lib/logger';
 
 export default class MtpPasswordManagerModule {
 	MtpApiManager = MtpApiManagerModule();
@@ -11,12 +12,12 @@ export default class MtpPasswordManagerModule {
 
 	getState = options =>
 		this.MtpApiManager.invokeApi('account.getPassword', {}, options).then(result => {
-			Config.Modes.debug && console.log(result);
+			logger(result);
 			return result;
 		});
 
 	updateSettings = (state, settings) => {
-		Config.Modes.debug && console.log(settings);
+		logger(settings);
 
 		let currentHashPromise;
 		let newHashPromise;

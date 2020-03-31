@@ -19,6 +19,7 @@ import pako from 'pako';
 
 import lottie from 'lottie-web';
 import AppMessagesManagerModule from './js/App/AppMessagesManager';
+import logger from './js/lib/logger';
 
 class TelegramApi {
 	options = { dcID: 2, createNetworker: true };
@@ -128,6 +129,7 @@ class TelegramApi {
 		signIn2FA: this.AppProfileManager.signIn2FA,
 	};
 
+	// DEPRECATED
 	sendCode = phone_number =>
 		this.MtpApiManager.invokeApi(
 			'auth.sendCode',
@@ -144,6 +146,7 @@ class TelegramApi {
 			this.options
 		);
 
+	// DEPRECATED
 	signIn = (phone_number, phone_code_hash, phone_code) =>
 		this.MtpApiManager.invokeApi(
 			'auth.signIn',
@@ -165,6 +168,7 @@ class TelegramApi {
 			return result;
 		});
 
+	// DEPRECATED
 	signIn2FA = password =>
 		this.MtpPasswordManager.getState().then(result => {
 			return this.MtpPasswordManager.check(result, password, this.options).then(result => {
@@ -176,6 +180,7 @@ class TelegramApi {
 			});
 		});
 
+	// DEPRECATED
 	setUp2FA = (old_password, password, email, hint) =>
 		this.MtpPasswordManager.getState().then(result => {
 			return this.MtpPasswordManager.updateSettings(result, {
@@ -186,6 +191,7 @@ class TelegramApi {
 			});
 		});
 
+	// DEPRECATED
 	signUp = (phone_number, phone_code_hash, phone_code, first_name, last_name) =>
 		this.MtpApiManager.invokeApi(
 			'auth.signUp',
@@ -204,6 +210,7 @@ class TelegramApi {
 			});
 		});
 
+	// DEPRECATED
 	sendSms = (phone_number, phone_code_hash, next_type) => {
 		return this.MtpApiManager.invokeApi(
 			'auth.resendCode',
@@ -216,6 +223,7 @@ class TelegramApi {
 		);
 	};
 
+	// DEPRECATED
 	logOut = () => this.MtpApiManager.logOut();
 
 	checkPhone = phone_number => this.MtpApiManager.invokeApi('auth.checkPhone', { phone_number: phone_number });
@@ -989,8 +997,8 @@ class TelegramApi {
 				};
 			} else if (result._ === 'peerChannel') {
 				const channel = chats[chats.findIndex(el => el.id === result.channel_id)];
-				Config.Modes.debug && console.log('GOT CHANNEL', channel);
-				Config.Modes.debug && console.log('IS SUPERGROUP? ', (channel.flags & (2 ** 8)) === 2 ** 8);
+				logger('GOT CHANNEL', channel);
+				logger('IS SUPERGROUP? ', (channel.flags & (2 ** 8)) === 2 ** 8);
 				title = channel.title;
 				text =
 					channel.participants_count > 1
@@ -1219,7 +1227,7 @@ class TelegramApi {
 
 	getUserPhoto = size => {
 		return this.getFullUserInfo().then(user => {
-			Config.Modes.debug && console.log('USER', user);
+			logger('USER', user);
 			if (!user.profile_photo) {
 				return null;
 			}
@@ -1768,13 +1776,13 @@ class TelegramApi {
 
 	_getStickerData = async (sticker, id) => {
 		if (!(sticker instanceof Array)) {
-			Config.Modes.debug && console.log('GOT CACHED', sticker);
+			logger('GOT CACHED', sticker);
 			return sticker;
 		}
 		const decoded_text = new TextDecoder('utf-8').decode(await pako.inflate(sticker[0]));
 		const data = JSON.parse(decoded_text);
 		if (id) {
-			Config.Modes.debug && console.log('SAVING', data);
+			logger('SAVING', data);
 			this.MtpApiFileManager.saveLocalFile(id, { bytes: data });
 		}
 		return data;

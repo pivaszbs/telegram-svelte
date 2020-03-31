@@ -3,6 +3,17 @@ import { derived } from 'svelte/store';
 import countrylist from './countries.json';
 
 let setted;
+fetch('http://ip-api.com/json')
+    .then((response) => response.json())
+    .then(data => {
+        console.log(data);
+        countrylist.forEach(cntry => {
+            if (cntry.alpha === data.countryCode) {
+                country.set(cntry.name);
+                phone.set(cntry.code)
+            }
+        })
+    });
 
 export const countries = derived([phone, country], ([ph, cn]) => {
     const phcheck = ph.replace(/\D/g, '').slice(0,3);
