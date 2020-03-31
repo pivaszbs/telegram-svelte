@@ -5,7 +5,7 @@ import MtpApiManagerModule from './js/Mtp/MtpApiManager';
 import AppPeersManagerModule from './js/App/AppPeersManager';
 import MtpApiFileManagerModule from './js/Mtp/MtpApiFileManager';
 import AppUsersManagerModule from './js/App/AppUsersManager';
-import AppProfileManagerModule from './js/App/AppProfileManager.ts';
+import AppProfileManagerModule from './js/App/AppProfileManager';
 import MtpPasswordManagerModule from './js/Mtp/MtpPasswordManager';
 import AppsChatsManagerModule from './js/App/AppChatsManager';
 import FileSaverModule from './js/Etc/FileSaver';
@@ -39,6 +39,7 @@ class TelegramApi {
 	MtpNetworkerFactory = MtpNetworkerFactoryModule();
 
 	AppUpdatesManager = new AppUpdatesManagerModule();
+	AppMessagesManager = new AppMessagesManagerModule();
 
 	constructor() {
 		this.MtpNetworkerFactory.setUpdatesProcessor(message => {
@@ -127,104 +128,8 @@ class TelegramApi {
 		signIn: this.AppProfileManager.signIn,
 		signUp: this.AppProfileManager.signUp,
 		signIn2FA: this.AppProfileManager.signIn2FA,
+		logOut: this.AppProfileManager.logOut,
 	};
-
-	// DEPRECATED
-	sendCode = phone_number =>
-		this.MtpApiManager.invokeApi(
-			'auth.sendCode',
-			{
-				phone_number: phone_number,
-				// sms_type: 5,
-				api_id: Config.App.id,
-				api_hash: Config.App.hash,
-				lang_code: navigator.language || 'en',
-				settings: {
-					_: 'codeSettings',
-				},
-			},
-			this.options
-		);
-
-	// DEPRECATED
-	signIn = (phone_number, phone_code_hash, phone_code) =>
-		this.MtpApiManager.invokeApi(
-			'auth.signIn',
-			{
-				phone_number: phone_number,
-				phone_code_hash: phone_code_hash,
-				phone_code: phone_code,
-			},
-			this.options
-		).then(result => {
-			if (result._ === 'auth.authorizationSignUpRequired') {
-				throw 'PHONE_NUMBER_UNOCCUPIED';
-			}
-
-			this.MtpApiManager.setUserAuth(this.options.dcID, {
-				id: result.user.id,
-			});
-			this.user = result.user;
-			return result;
-		});
-
-	// DEPRECATED
-	signIn2FA = password =>
-		this.MtpPasswordManager.getState().then(result => {
-			return this.MtpPasswordManager.check(result, password, this.options).then(result => {
-				this.MtpApiManager.setUserAuth(this.options.dcID, {
-					id: result.user.id,
-				});
-				this.user = result.user;
-				return result;
-			});
-		});
-
-	// DEPRECATED
-	setUp2FA = (old_password, password, email, hint) =>
-		this.MtpPasswordManager.getState().then(result => {
-			return this.MtpPasswordManager.updateSettings(result, {
-				cur_password: old_password,
-				new_password: password,
-				email: email,
-				hint: hint,
-			});
-		});
-
-	// DEPRECATED
-	signUp = (phone_number, phone_code_hash, phone_code, first_name, last_name) =>
-		this.MtpApiManager.invokeApi(
-			'auth.signUp',
-			{
-				phone_number: phone_number,
-				phone_code_hash: phone_code_hash,
-				phone_code: phone_code,
-				first_name: first_name || '',
-				last_name: last_name || '',
-			},
-			this.options
-		).then(result => {
-			this.user = result.user;
-			this.MtpApiManager.setUserAuth(this.options.dcID, {
-				id: result.user.id,
-			});
-		});
-
-	// DEPRECATED
-	sendSms = (phone_number, phone_code_hash, next_type) => {
-		return this.MtpApiManager.invokeApi(
-			'auth.resendCode',
-			{
-				phone_number: phone_number,
-				phone_code_hash: phone_code_hash,
-				next_type: next_type,
-			},
-			this.options
-		);
-	};
-
-	// DEPRECATED
-	logOut = () => this.MtpApiManager.logOut();
 
 	checkPhone = phone_number => this.MtpApiManager.invokeApi('auth.checkPhone', { phone_number: phone_number });
 

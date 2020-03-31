@@ -1,56 +1,52 @@
-import { dT } from '../lib/utils';
 import MtpApiManagerModule from '../Mtp/MtpApiManager';
 import { Config } from '../lib/config';
 import MtpPasswordManagerModule from '../Mtp/MtpPasswordManager';
 
-interface UserInfo {
-	id: number,
-	first_name: string,
-	second_name: string | undefined,
-	username: string,
-	phone: string,
-	photo: object,
-	status: string | undefined
-}
-
-interface UserEmpty {
-}
-
 export default class AppProfileManagerModule {
-	MtpApiManager = MtpApiManagerModule();
-	MtpPasswordManager = new MtpPasswordManagerModule();
+	static instance = null;
 
-	options = { dcID: 2, createNetworker: true };
+	constructor() {
+		if (AppProfileManagerModule.instance) {
+			return AppProfileManagerModule.instance;
+		}
 
-	phone: string;
-	phone_code: string;
-	phone_code_hash: string;
-	next_code_type: string;
+		this.MtpApiManager = MtpApiManagerModule();
+		this.MtpPasswordManager = new MtpPasswordManagerModule();
 
-	user: UserInfo;
+		this.options = { dcID: 2, createNetworker: true };
 
-	getProfile = () : UserInfo | UserEmpty => {
+		this.phone;
+		this.phone_code;
+		this.phone_code_hash;
+		this.next_code_type;
+
+		this.user;
+
+		AppProfileManagerModule.instance = this;
+	}
+
+	getProfile = () => {
 		if (this.user) {
 			return this.user;
 		}
-		return {}
-	}
+		return {};
+	};
 
-	getProfileId = () : number => {
+	getProfileId = () => {
 		return this.user ? this.user.id : -1;
-	}
+	};
 
-	setUser (user : UserInfo) {
+	setUser(user) {
 		this.MtpApiManager.setUserAuth(this.options.dcID, {
 			id: user.id,
 		});
 
 		this.user = {
-			...user
-		}
+			...user,
+		};
 	}
 
-	sendCode = async (phone: string) => {
+	sendCode = async phone => {
 		const result = await this.MtpApiManager.invokeApi(
 			'auth.sendCode',
 			{
@@ -74,7 +70,7 @@ export default class AppProfileManagerModule {
 		};
 	};
 
-	signIn = async (code: string) => {
+	signIn = async code => {
 		const result = await this.MtpApiManager.invokeApi(
 			'auth.signIn',
 			{
@@ -90,9 +86,9 @@ export default class AppProfileManagerModule {
 
 		this.setUser(result.user);
 		return this.user;
-	}
+	};
 
-	signUp = async (first_name: string, last_name?: string) => {
+	signUp = async (first_name, last_name = '') => {
 		const result = await this.MtpApiManager.invokeApi(
 			'auth.signUp',
 			{
@@ -108,20 +104,19 @@ export default class AppProfileManagerModule {
 		this.setUser(result.user);
 
 		return this.user;
-	}
+	};
 
-	signIn2FA = async (password : string) => {
+	signIn2FA = async password => {
 		const currentState = await this.MtpPasswordManager.getState();
 		const result = await this.MtpPasswordManager.check(currentState, password, this.options);
-		
+
 		this.setUser(result.user);
-		
+
 		return this.user;
-	}
+	};
 
 	logOut = () => {
 		this.MtpApiManager.logOut();
 		this.user = null;
-	}
-
+	};
 }

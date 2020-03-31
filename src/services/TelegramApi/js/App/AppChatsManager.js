@@ -2,11 +2,19 @@ import { forEach, isObject } from '../Etc/Helper';
 import { safeReplaceObject } from '../lib/utils';
 
 export default class AppsChatsManagerModule {
+	static instance = null;
+
 	constructor() {
-		window.chatsManagerStorage = window.chatsManagerStorage || {};
-		window.channelAccess = window.channelAccess || {};
-		window.fullChats = window.fullChats || {};
-		window.dialogsManagerStorage = window.dialogsManagerStorage || {};
+		if (AppsChatsManagerModule.instance) {
+			return AppsChatsManagerModule.instance;
+		}
+
+		this.chatsManagerStorage = {};
+		this.channelAccess = {};
+		this.fullChats = {};
+		this.dialogsManagerStorage = {};
+
+		AppsChatsManagerModule.instance = this;
 	}
 
 	saveApiChats = apiChats => {

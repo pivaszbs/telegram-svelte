@@ -5,26 +5,33 @@
  * https://github.com/zhukov/webogram/blob/master/LICENSE
  */
 
-var _logTimer = (new Date()).getTime();
+var _logTimer = new Date().getTime();
 
 export function dT() {
-  return '[' + (((new Date()).getTime() - _logTimer) / 1000).toFixed(3) + ']';
+	return '[' + ((new Date().getTime() - _logTimer) / 1000).toFixed(3) + ']';
 }
 
 export function tsNow(seconds) {
-  var t = +new Date() + (window.tsOffset || 0);
-  return seconds ? Math.floor(t / 1000) : t;
+	var t = +new Date() + (window.tsOffset || 0);
+	return seconds ? Math.floor(t / 1000) : t;
 }
 
 export function safeReplaceObject(wasObject, newObject) {
-  for (var key in wasObject) {
-    if (!newObject.hasOwnProperty(key) && key.charAt(0) != '$') {
-      delete wasObject[key];
-    }
-  }
-  for (var key in newObject) {
-    if (newObject.hasOwnProperty(key)) {
-      wasObject[key] = newObject[key];
-    }
-  }
+	for (var key in wasObject) {
+		if (!newObject.hasOwnProperty(key) && key.charAt(0) != '$') {
+			delete wasObject[key];
+		}
+	}
+	for (var key in newObject) {
+		if (newObject.hasOwnProperty(key)) {
+			wasObject[key] = newObject[key];
+		}
+	}
+}
+
+export function tlFlags(flags, val) {
+	if (val) {
+		return (flags & (2 ** val)) === 2 ** val;
+	}
+	return val => (flags & (2 ** val)) === 2 ** val;
 }
