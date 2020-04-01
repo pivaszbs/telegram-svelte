@@ -1,37 +1,40 @@
-import { forEach, isObject } from '../Etc/Helper';
 import AppUsersManagerModule from './AppUsersManager';
 import { tlFlags } from '../lib/utils';
 import AppPeersManagerModule from './AppPeersManager';
-import MtpApiFileManagerModule from '../Mtp/MtpApiFileManager';
 import { telegramApi } from '../../TelegramApi';
+import AppProfileManager from './AppProfileManager';
 
-export default class AppMessagesManagerModule {
-	static instance = null;
-
+class AppMessagesManagerModule {
 	constructor() {
-		if (AppMessagesManagerModule.instance) {
-			return AppMessagesManagerModule.instance;
-		}
-
 		this.messages = {};
-		this.AppUsersManager = new AppUsersManagerModule();
-		this.AppPeersManager = new AppPeersManagerModule();
-
-		AppMessagesManagerModule.instance = this;
+		this.AppUsersManager = AppUsersManagerModule;
+		this.AppPeersManager = AppPeersManagerModule;
 	}
 
-	saveMessages = (peerId, messages = []) => {
-		messages.forEach(message => this.saveMessage(peerId, message));
+	saveMessages = (messages = []) => {
+		messages.forEach(this.saveMessage);
 	};
 
-	saveMessage = (peerId, message) => {
-		this.messages[peerId] = this.messages[peerId] || {};
+	_getMessagePeerId = message => {
+		if (!message.from_id) {
+			return message.to_id.channel_id;
+		}
 
-		const peerMessages = this.messages[peerId];
+		if (message.to_id._ === 'peerChat' || message.to_id._ === 'peerChannel') {
+			return message.to_id.channel_id || message.to_id.chat_id;
+		}
 
+		if (message.from_id === AppProfileManager.getProfileId()) {
+			return message.to_id.channel_id || message.to_id.chat_id || message.to_id.user_id;
+		}
+
+		return message.from_id;
+	};
+
+	_getMessageFlags = message => {
 		const messageFlags = tlFlags(message.flags);
 
-		peerMessages[message.id] = {
+		return {
 			out: messageFlags(1),
 			mentioned: messageFlags(4),
 			media_unread: messageFlags(5),
@@ -40,19 +43,18 @@ export default class AppMessagesManagerModule {
 			scheduled: messageFlags(18),
 			legacy: messageFlags(19),
 			hide_edit: messageFlags(21),
-			id: message.id,
-			from_id: message.from_id || -1,
-			to_id: message.to_id.user_id || message.to_id.chat_id || message.to_id.channel_id,
-			fwd_from: message.fwd_from,
-			reply_id: message.reply_to_msg_id,
-			date: new Date(message.date * 1000),
-			message: this._getMessageText(message),
-			media: message.media,
-			entities: message.entities,
-			views: message.views,
-			edit_date: new Date(message.edit_date * 1000),
-			post_author: message.post_author || '',
-			grouped_id: message.grouped_id,
+		};
+	};
+
+	saveMessage = message => {
+		const peerId = this._getMessagePeerId(message);
+
+		const peerMessages = (this.messages[peerId] = this.messages[peerId] || {});
+
+		peerMessages[message.id] = {
+			...message,
+			...this._getMessageFlags(message),
+			formattedText: this._getMessageText(message),
 		};
 	};
 
@@ -86,16 +88,7 @@ export default class AppMessagesManagerModule {
 			payload.schedule_date = schedule_date;
 		}
 
-		return telegramApi.invokeApi('messages.sendMessage', payload);
-	};
-
-	getMessagesManagerForPeerId = peerId => {
-		return {
-			saveMessages: (messages = []) => this.saveMessage(peerId, messages),
-			saveMessage: message => this.saveMessage(peerId, message),
-			getMessages: () => this.getMessages(peerId),
-			getMessage: id => this.getMessage(peerId, id),
-		};
+		return await telegramApi.invokeApi('messages.sendMessage', payload);
 	};
 
 	_getMessageText = message => {
@@ -180,7 +173,7 @@ export default class AppMessagesManagerModule {
 
 		let name;
 
-		if (from_peer.id === this.user.id) {
+		if (from_peer.id === AppProfileManager.getProfileId()) {
 			name = 'You';
 		} else {
 			name = (from_peer.first_name + ' ' + (from_peer.last_name || '')).trim();
@@ -243,3 +236,5 @@ export default class AppMessagesManagerModule {
 		return result;
 	};
 }
+
+export default new AppMessagesManagerModule();

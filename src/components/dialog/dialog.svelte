@@ -4,14 +4,15 @@
     import Avatar from '../avatar/avatar.svelte';
     import Ripple from '@smui/ripple'
     export let photo;
+    photo = photo && photo.src;
     export let unreadCount;
     export let title;
     export let text;
     export let time;
     export let pinned;
-    export let from_name;
-    export let message_info;
-    const { out } = message_info; //needed from new API
+    export let fromName;
+    export let out;
+    // const { out } = message_info; //needed from new API
     export let read; //needed from new API
     export let saved; //needed from store/API
     export let online;
@@ -84,8 +85,8 @@
     </div>
     <div class="name">{title}</div>
     <div class="short">
-        {#if from_name}
-             <span class='short_from'>{from_name}</span>: 
+        {#if fromName}
+             <span class='short_from'>{fromName}</span>: 
         {/if}
         {text}
     </div>

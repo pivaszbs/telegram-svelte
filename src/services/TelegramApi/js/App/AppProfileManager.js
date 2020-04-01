@@ -2,15 +2,9 @@ import MtpApiManagerModule from '../Mtp/MtpApiManager';
 import { Config } from '../lib/config';
 import MtpPasswordManagerModule from '../Mtp/MtpPasswordManager';
 
-export default class AppProfileManagerModule {
-	static instance = null;
-
+class AppProfileManagerModule {
 	constructor() {
-		if (AppProfileManagerModule.instance) {
-			return AppProfileManagerModule.instance;
-		}
-
-		this.MtpApiManager = MtpApiManagerModule();
+		this.MtpApiManager = MtpApiManagerModule;
 		this.MtpPasswordManager = new MtpPasswordManagerModule();
 
 		this.options = { dcID: 2, createNetworker: true };
@@ -21,19 +15,33 @@ export default class AppProfileManagerModule {
 		this.next_code_type;
 
 		this.user;
+		this.userFullInfo;
+		this.myID;
 
-		AppProfileManagerModule.instance = this;
+		this.MtpApiManager.getUserID().then(id => {
+			if (id) {
+				this.myID = id;
+			}
+		});
 	}
+
+	isAuth = () => {
+		return Boolean(this.myID);
+	};
+
+	isSelf = id => {
+		return this.getProfileId === id;
+	};
 
 	getProfile = () => {
 		if (this.user) {
 			return this.user;
 		}
-		return {};
+		return null;
 	};
 
 	getProfileId = () => {
-		return this.user ? this.user.id : -1;
+		return this.myID || -1;
 	};
 
 	setUser(user) {
@@ -118,5 +126,8 @@ export default class AppProfileManagerModule {
 	logOut = () => {
 		this.MtpApiManager.logOut();
 		this.user = null;
+		this.myID = null;
 	};
 }
+
+export default new AppProfileManagerModule();

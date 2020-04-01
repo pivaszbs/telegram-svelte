@@ -2,17 +2,14 @@ import StorageModule from '../Etc/Storage';
 import MtpApiManagerModule from '../Mtp/MtpApiManager';
 import { forEach, isObject } from '../Etc/Helper';
 import { safeReplaceObject, tsNow } from '../lib/utils';
+import AppProfileManager from './AppProfileManager';
 
-export default class AppUsersManagerModule {
+class AppUsersManagerModule {
 	static instance = null;
 
 	constructor() {
-		if (AppUsersManagerModule.instance) {
-			return AppUsersManagerModule.instance;
-		}
-
 		this.Storage = StorageModule();
-		this.MtpApiManager = new MtpApiManagerModule();
+		this.MtpApiManager = MtpApiManagerModule;
 
 		this.users = {};
 		this.fullUsers = {};
@@ -35,6 +32,10 @@ export default class AppUsersManagerModule {
 	};
 
 	saveApiUser = (apiUser, noReplace) => {
+		if (apiUser.id === this.myID) {
+			AppProfileManager.setUser(apiUser);
+		}
+
 		if (
 			!isObject(apiUser) ||
 			(noReplace && isObject(this.users[apiUser.id]) && this.users[apiUser.id].first_name)
@@ -84,8 +85,6 @@ export default class AppUsersManagerModule {
 
 		const userID = apiUser.id;
 
-		apiUser.num = (Math.abs(userID) % 8) + 1;
-
 		if (apiUser.pFlags === undefined) {
 			apiUser.pFlags = {};
 		}
@@ -133,18 +132,27 @@ export default class AppUsersManagerModule {
 		return 0;
 	};
 
+	isOnline = id => {
+		const user = this.getUser(id);
+		if (!user) {
+			return false;
+		}
+
+		return user.status && user.status === 'userStatusOnline';
+	};
+
 	getUser = id => {
 		if (isObject(id)) {
 			return id;
 		}
-		return this.users[id] || { id: id, deleted: true, num: 1, access_hash: this.userAccess[id] };
+		return this.users[id] || null;
 	};
 
 	getFullUser = id => {
 		if (isObject(id)) {
 			return id;
 		}
-		return this.fullUsers[id] || { id: id, deleted: true, num: 1, access_hash: this.userAccess[id] };
+		return this.fullUsers[id] || null;
 	};
 
 	getSelf = () => {
@@ -163,3 +171,5 @@ export default class AppUsersManagerModule {
 		};
 	};
 }
+
+export default new AppUsersManagerModule();

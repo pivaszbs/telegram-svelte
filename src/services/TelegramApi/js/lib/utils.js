@@ -35,3 +35,31 @@ export function tlFlags(flags, val) {
 	}
 	return val => (flags & (2 ** val)) === 2 ** val;
 }
+
+export function convertDate(date) {
+	const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+	let time = new Date(date * 1000);
+	const currentTime = new Date();
+
+	const startOfTheWeek = date => {
+		const now = date ? new Date(date) : new Date();
+		now.setHours(0, 0, 0, 0);
+		const monday = new Date(now);
+		monday.setDate(1);
+		return monday;
+	};
+
+	const formatTime = t => (t < 10 ? '0' + t : t);
+
+	if (time.getDay() - currentTime.getDay() === 0) {
+		time = `${formatTime(time.getHours())}:${formatTime(time.getMinutes())}`;
+	} else if (time.getDay() > startOfTheWeek(time)) {
+		time = days[time.getDay()];
+	} else {
+		time = time.toLocaleDateString().replace(/[/]/g, '.');
+		time = time.slice(0, 6) + time.slice(8);
+	}
+
+	return time;
+}

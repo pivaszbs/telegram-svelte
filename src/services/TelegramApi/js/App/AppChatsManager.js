@@ -1,20 +1,16 @@
 import { forEach, isObject } from '../Etc/Helper';
-import { safeReplaceObject } from '../lib/utils';
+import { safeReplaceObject, tlFlags, convertDate } from '../lib/utils';
+import AppPeersManager from './AppPeersManager';
+import AppMessagesManager from './AppMessagesManager';
+import AppProfileManager from './AppProfileManager';
+import AppUsersManager from './AppUsersManager';
+import { telegramApi } from '../../TelegramApi';
 
-export default class AppsChatsManagerModule {
-	static instance = null;
-
+class AppsChatsManagerModule {
 	constructor() {
-		if (AppsChatsManagerModule.instance) {
-			return AppsChatsManagerModule.instance;
-		}
-
 		this.chatsManagerStorage = {};
-		this.channelAccess = {};
 		this.fullChats = {};
 		this.dialogsManagerStorage = {};
-
-		AppsChatsManagerModule.instance = this;
 	}
 
 	saveApiChats = apiChats => {
@@ -26,16 +22,14 @@ export default class AppsChatsManagerModule {
 			return;
 		}
 
-		apiChat.num = (Math.abs(apiChat.id >> 1) % 8) + 1;
-
 		if (apiChat.pFlags === undefined) {
 			apiChat.pFlags = {};
 		}
 
-		if (chatsManagerStorage[apiChat.id] === undefined) {
-			chatsManagerStorage[apiChat.id] = apiChat;
+		if (this.chatsManagerStorage[apiChat.id] === undefined) {
+			this.chatsManagerStorage[apiChat.id] = apiChat;
 		} else {
-			safeReplaceObject(chatsManagerStorage[apiChat.id], apiChat);
+			safeReplaceObject(this.chatsManagerStorage[apiChat.id], apiChat);
 		}
 	};
 
@@ -46,50 +40,119 @@ export default class AppsChatsManagerModule {
 
 		const { full_chat: apiChat } = apiChatFull;
 
-		apiChat.num = (Math.abs(apiChat.id >> 1) % 8) + 1;
-
 		if (apiChat.pFlags === undefined) {
 			apiChat.pFlags = {};
 		}
 
-		if (fullChats[apiChat.id] === undefined) {
-			fullChats[apiChat.id] = apiChatFull;
+		if (this.fullChats[apiChat.id] === undefined) {
+			this.fullChats[apiChat.id] = apiChatFull;
 		} else {
-			safeReplaceObject(fullChats[apiChat.id], apiChatFull);
+			safeReplaceObject(this.fullChats[apiChat.id], apiChatFull);
 		}
 	};
 
-	saveDialogs = apiDialogs => {
-		forEach(apiDialogs, this.saveDialog);
+	saveDialogs = (apiDialogs = []) => {
+		apiDialogs.forEach(this.saveDialog);
 	};
 
 	saveDialog = dialog => {
+		dialog = { ...dialog };
 		if (!isObject(dialog)) {
 			return;
 		}
 
-		dialog.id = dialog.peer.user_id || dialog.peer.chat_id || dialog.peer.channel_id;
-		dialog.num = (Math.abs(dialog.id >> 1) % 8) + 1;
+		dialog.id = AppPeersManager.getPeerId(dialog.peer);
+		const dialogPeer = AppPeersManager.getPeer(dialog.id);
 
 		if (dialog.pFlags === undefined) {
 			dialog.pFlags = {};
 		}
 
-		if (dialogsManagerStorage[dialog.id] === undefined) {
-			dialogsManagerStorage[dialog.id] = dialog;
+		let photo = dialogPeer.photo;
+
+		if (photo && photo._ !== 'userProfilePhotoEmpty' && photo._ !== 'chatPhotoEmpty') {
+			photo = {
+				...photo,
+				src: telegramApi.getPeerPhoto(dialogPeer),
+			};
+		}
+
+		dialog.photo = photo;
+		dialog.unreadCount = dialog.unread_count;
+		dialog.title = (() => {
+			if (dialogPeer._ !== 'user') {
+				return dialogPeer.title;
+			}
+			return (dialogPeer.first_name + ' ' + (dialogPeer.last_name || '')).trim();
+		})();
+		const topMessage = AppMessagesManager.getMessage(dialog.id, dialog.top_message);
+
+		dialog.text = topMessage.formattedText;
+		dialog.date = topMessage.date;
+		dialog.time = convertDate(topMessage.date);
+		dialog.pinned = tlFlags(dialog.flags, 2);
+		if (dialogPeer._ !== 'user' && !this.isChannel(dialog.id) && topMessage._ !== 'messageService') {
+			dialog.fromName = AppPeersManager.getPeer(topMessage.from_id).first_name;
+		}
+		dialog.out = topMessage.out;
+		dialog.saved = AppProfileManager.isSelf(dialog.id);
+		if (dialogPeer._ === 'user') {
+			dialog.online = AppUsersManager.isOnline(dialog.id);
+		}
+		dialog.muted = this.isMuted(dialog.id);
+
+		if (this.dialogsManagerStorage[dialog.id] === undefined) {
+			this.dialogsManagerStorage[dialog.id] = dialog;
 		} else {
-			safeReplaceObject(dialogsManagerStorage[dialog.id], dialog);
+			safeReplaceObject(this.dialogsManagerStorage[dialog.id], dialog);
 		}
 	};
 
-	getChat = id => chatsManagerStorage[id] || { id: id, deleted: true, access_hash: channelAccess[id] };
-	getFullChat = id => fullChats[id] || { id: id, deleted: true, access_hash: channelAccess[id] };
-	getDialog = id => dialogsManagerStorage[id] || { id: id, deleted: true };
+	getChat = id => this.chatsManagerStorage[id] || null;
+	getFullChat = id => this.fullChats[id] || null;
+	getDialog = id => this.dialogsManagerStorage[id] || null;
+	getDialogsSorted = () => {
+		const pinned = [];
+		const dialogs = [];
+
+		Object.values(this.dialogsManagerStorage)
+			.sort(this._sortByDate)
+			.forEach(dialog => {
+				if (dialog.pinned) {
+					pinned.push(dialog);
+				} else {
+					dialogs.push(dialog);
+				}
+			});
+
+		return [...pinned, ...dialogs];
+	};
+
+	_sortByDate = (a, b) => b.date - a.date;
+
+	isMuted = id => {
+		const dialog = this.dialogsManagerStorage[id];
+		const notifySettings = dialog && dialog.notifySettings;
+
+		return dialog && (tlFlags(notifySettings.flags, 1) || notifySettings.mute_until * 1000 > Date.now());
+	};
 
 	isChannel = id => {
-		const chat = chatsManagerStorage[id];
+		const chat = this.chatsManagerStorage[id];
 
-		return (chat && (chat._ == 'channel' || chat._ == 'channelForbidden')) || channelAccess[id];
+		return chat && (chat._ === 'channel' || chat._ === 'channelForbidden') && !tlFlags(chat.flags, 8);
+	};
+
+	isSupergroup = id => {
+		const chat = this.chatsManagerStorage[id];
+
+		return chat && (chat._ === 'channel' || chat._ === 'channelForbidden') && tlFlags(chat.flags, 8);
+	};
+
+	isGroup = id => {
+		const chat = this.chatsManagerStorage[id];
+
+		return chat && (chat._ === 'chat' || chat._ === 'chatForbidden');
 	};
 
 	getChatInput = id => id || 0;
@@ -101,7 +164,9 @@ export default class AppsChatsManagerModule {
 		return {
 			_: 'inputChannel',
 			channel_id: id,
-			access_hash: this.getChat(id).access_hash || channelAccess[id] || 0,
+			access_hash: this.getChat(id).access_hash || this.channelAccess[id] || 0,
 		};
 	};
 }
+
+export default new AppsChatsManagerModule();
