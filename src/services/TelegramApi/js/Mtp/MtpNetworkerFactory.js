@@ -10,7 +10,6 @@ import {
 	bigStringInt,
 	bytesCmp,
 } from '../lib/bin_utils';
-import $interval from '../Etc/angular/$interval';
 import $timeout from '../Etc/angular/$timeout';
 import MtpSecureRandom from './MtpSecureRandom';
 import MtpTimeManagerModule from './MtpTimeManager';
@@ -21,7 +20,6 @@ import { dT, tsNow } from '../lib/utils';
 import StorageModule from '../Etc/Storage';
 import '../lib/polyfill';
 import CryptoWorkerModule from '../Etc/CryptoWorker';
-import $http from '../Etc/angular/$http';
 import MtpDcConfiguratorModule from './MtpDcConfigurator';
 import WebSocketManager from '../Etc/angular/$websocket';
 import logger from '../lib/logger';
@@ -688,7 +686,6 @@ export default function MtpNetworkerFactoryModule() {
 		};
 
 		sendEncryptedRequest = (message, options) => {
-			console.log('Goin to send message', message);
 			const self = this;
 			options = options || {};
 			// console.log(dT(), 'Send encrypted'/*, message*/);
