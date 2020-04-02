@@ -1,14 +1,22 @@
 <script>
-    import { password, focused } from '../../../stores/input';
+	import { password, focused } from '../../../stores/input';
 
-    let elem;
+	let elem;
 
-    $: $focused === 'password' && elem.focus();
+	$: $focused === 'password' && elem.focus();
 
-    const onFocus = () => {
-        focused.set('password');
-    }
+	const onFocus = () => {
+		focused.set('password');
+	};
 </script>
 
-<input bind:this={elem} on:change bind:value={$password} type="text" name="password" id="password" required>
+<input
+	bind:this="{elem}"
+	on:change
+	bind:value="{$password}"
+	type="text"
+	name="password"
+	id="password"
+	required
+/>
 <label>Password</label>

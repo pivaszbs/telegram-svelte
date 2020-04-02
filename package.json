@@ -4,7 +4,10 @@
 	"license": "MIT",
 	"scripts": {
 		"start": "webpack-dev-server --config webpack.config.js --env development",
-		"build": "webpack --config webpack.config.js --env production"
+		"build": "webpack --config webpack.config.js --env production",
+		"f": "yarn prettier && yarn lint --fix",
+		"prettier": "prettier --write **/**/**/**/**/**/**/**.{svelte,js} --plugin-search-dir=.",
+		"lint": "eslint --debug src"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.8.4",
@@ -51,6 +54,7 @@
 		"svelte-loader": "^2.13.6",
 		"svelte-preprocess": "^3.4.0",
 		"svelte-preprocess-sass": "^0.2.0",
+		"svg-inline-loader": "^0.8.2",
 		"ts-loader": "^6.2.1",
 		"typescript": "^3.7.2",
 		"webpack": "^4.41.2",
@@ -60,10 +64,10 @@
 		"webpack-merge": "^4.2.2"
 	},
 	"dependencies": {
+		"@smui/ripple": "^1.0.0-beta.20",
 		"emoji-flags": "^1.2.0",
 		"sirv-cli": "^0.4.4",
 		"svelte-click-outside": "^1.0.0",
-		"svelte-routing": "^1.4.0",
-		"@smui/ripple": "^1.0.0-beta.20"
+		"svelte-routing": "^1.4.0"
 	}
 }

@@ -1668,6 +1668,8 @@ class TelegramApi {
 			from_name = 'You';
 		}
 
+		const id = peer.channel_id || peer.chat_id || peer.user_id;
+
 		return {
 			title: title,
 			isOnline: status && status._ === 'userStatusOnline',
@@ -1679,7 +1681,8 @@ class TelegramApi {
 			archived: dialog.folder_id && dialog.folder_id === 1,
 			time: this._convertDate(date),
 			unreadCount: unread_count,
-			dialog_peer: peer,
+			peer,
+			id,
 			is_supergroup,
 			photo,
 			from_name,

@@ -3,12 +3,25 @@
 
 	let elem;
 
-    $: $focused === 'country' && elem.focus();
+	$: $focused === 'country' && elem.focus();
 
-    const onFocus = () => {
-        focused.set('country');
-    }
+	const onFocus = () => {
+		focused.set('country');
+	};
 </script>
+
+<input
+	bind:this="{elem}"
+	on:focus="{onFocus}"
+	required
+	bind:value="{$country}"
+	type="country"
+/>
+<label for="country">Country</label>
+<div class="icon">
+	<div class="line"></div>
+	<div class="line"></div>
+</div>
 
 <style lang="scss">
 	.icon {
@@ -34,12 +47,12 @@
 
 			&:last-child {
 				right: 1px;
-				transform: rotate(-45deg)
+				transform: rotate(-45deg);
 			}
 		}
 	}
 
-	input:focus~.icon {
+	input:focus ~ .icon {
 		.line {
 			&:first-child {
 				transform: rotate(-45deg);
@@ -51,10 +64,3 @@
 		}
 	}
 </style>
-
-<input bind:this={elem} on:focus={onFocus} required bind:value={$country} type="country">
-<label for="country">Country</label>
-<div class="icon">
-	<div class="line"></div>
-	<div class="line"></div>
-</div>
