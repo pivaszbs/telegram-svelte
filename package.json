@@ -6,7 +6,7 @@
 		"start": "webpack-dev-server --config webpack.config.js --env development",
 		"build": "webpack --config webpack.config.js --env production",
 		"f": "yarn prettier && yarn lint --fix",
-		"prettier": "prettier --write **/**/**/**/**/**/**/**.{svelte,js} --plugin-search-dir=.",
+		"prettier": "prettier --write **/**/**/**/**/**/**/**.svelte --plugin-search-dir=.",
 		"lint": "eslint --debug src"
 	},
 	"devDependencies": {

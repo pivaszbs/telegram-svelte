@@ -1,12 +1,10 @@
 import MtpNetworkerFactoryModule from '../Mtp/MtpNetworkerFactory';
 // import { telegramApi } from '../../../../App';
-import { Config } from '../lib/config';
-import { dT } from '../lib/utils';
 import AppUsersManagerModule from './AppUsersManager';
 import AppMessagesManagerModule from './AppMessagesManager';
 import { telegramApi } from '../../TelegramApi';
 
-export default class AppUpdatesManagerModule {
+class AppUpdatesManagerModule {
 	subscribed = {
 		status: [],
 		messages: [],
@@ -15,7 +13,20 @@ export default class AppUpdatesManagerModule {
 	};
 
 	MtpNetworkerFactory = MtpNetworkerFactoryModule();
-	AppUsersManager = new AppUsersManagerModule();
+
+	constructor() {
+		this.AppUsersManager = AppUsersManagerModule;
+		const updatesHandler = data => {
+			// console.log('Got event', data);
+			if (data._ === 'updateShort' || data._ === 'updates') {
+				this._parseUpdate(data);
+			} else if (data._ === 'updateShortMessage' || data._ === 'updateShortChatMessage') {
+				this._parseUpdate({ update: data });
+			}
+		};
+
+		this.MtpNetworkerFactory.subscribe('updateHandler', updatesHandler);
+	}
 
 	_checkFlag = (flags, idx) => {
 		return (flags & (2 ** idx)) === 2 ** idx;
@@ -31,19 +42,6 @@ export default class AppUpdatesManagerModule {
 		legacy: this._checkFlag(msg_flags, 19),
 		hide_edit: this._checkFlag(msg_flags, 21),
 	});
-
-	constructor() {
-		const updatesHandler = data => {
-			// console.log('Got event', data);
-			if (data._ === 'updateShort' || data._ === 'updates') {
-				this._parseUpdate(data);
-			} else if (data._ === 'updateShortMessage' || data._ === 'updateShortChatMessage') {
-				this._parseUpdate({ update: data });
-			}
-		};
-
-		this.MtpNetworkerFactory.subscribe('updateHandler', updatesHandler);
-	}
 
 	passUpdate = data => {
 		console.log('Got event', data);
@@ -179,8 +177,6 @@ export default class AppUpdatesManagerModule {
 			});
 		}
 
-		new AppMessagesManagerModule(chat_id).saveMessage(message);
-
 		const payload = {
 			_: 'newMessage',
 			from_id,
@@ -205,8 +201,6 @@ export default class AppUpdatesManagerModule {
 				top_message: id,
 			});
 		}
-
-		new AppMessagesManagerModule(user_id).saveMessage(message);
 
 		const payload = {
 			_: 'newMessage',
@@ -256,7 +250,7 @@ export default class AppUpdatesManagerModule {
 			});
 		}
 
-		const messageManager = new AppMessagesManagerModule(to_id);
+		const messageManager = AppMessagesManagerModule;
 		messageManager.saveMessage(message);
 
 		this._dispatchForDialogs(payload);
@@ -275,3 +269,5 @@ export default class AppUpdatesManagerModule {
 		this.subscribed.messages.forEach(el => this._dispatchEvent(el, payload));
 	};
 }
+
+export default new AppUpdatesManagerModule();

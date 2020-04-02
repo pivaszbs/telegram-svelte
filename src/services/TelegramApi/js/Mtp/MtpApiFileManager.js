@@ -15,7 +15,7 @@ export default function MtpApiFileManagerModule() {
 	let downloadPulls = {};
 	let downloadActives = {};
 
-	let MtpApiManager = window.apiManager || new MtpApiManagerModule();
+	let MtpApiManager = MtpApiManagerModule;
 
 	const downloadRequest = (dcID, cb, activeDelta) => {
 		if (downloadPulls[dcID] === undefined) {

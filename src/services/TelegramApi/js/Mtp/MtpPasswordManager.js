@@ -7,7 +7,7 @@ import { Config } from '../lib/config';
 import logger from '../lib/logger';
 
 export default class MtpPasswordManagerModule {
-	MtpApiManager = MtpApiManagerModule();
+	MtpApiManager = MtpApiManagerModule;
 	CryptoWorker = new CryptoWorkerModule();
 
 	getState = options =>

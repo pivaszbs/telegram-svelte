@@ -10,7 +10,7 @@ import { dT, tsNow } from '../lib/utils';
 import { Config } from '../lib/config';
 import logger from '../lib/logger';
 
-export default function MtpApiManagerModule() {
+function MtpApiManagerModule() {
 	const cachedNetworkers = {};
 	const cachedUploadNetworkers = {};
 	const cachedExportPromise = {};
@@ -370,3 +370,5 @@ export default function MtpApiManagerModule() {
 		getBaseDcID,
 	};
 }
+
+export default MtpApiManagerModule();

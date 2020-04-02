@@ -1,50 +1,37 @@
 <script>
-	import RightTop from './right-top.svelte';
-	import RightBottom from './right-bottom.svelte';
-	import Avatar from '../avatar/avatar.svelte';
-	import Ripple from '@smui/ripple';
-	import { loadPeerDialog } from '../../services/storeService';
-	export let photo,
-		unreadCount,
-		title,
-		text,
-		time,
-		pinned,
-		from_name,
-		message_info,
-		peer;
-	const { out } = message_info; //needed from new API
-	export let read; //needed from new API
-	export let saved; //needed from store/API
-	export let online, active;
-	const onClick = () => {
-		if (active) {
-			return;
-		}
-
-		loadPeerDialog(peer);
-	};
+    import RightTop from './right-top.svelte';
+    import RightBottom from './right-bottom.svelte';
+    import Avatar from '../avatar/avatar.svelte';
+    import Ripple from '@smui/ripple'
+    export let photo;
+    photo = photo && photo.src;
+    export let unreadCount;
+    export let title;
+    export let text;
+    export let time;
+    export let pinned;
+    export let fromName;
+    export let out;
+    // const { out } = message_info; //needed from new API
+    export let read; //needed from new API
+    export let saved; //needed from store/API
+    export let online;
+    export let active;
 </script>
 
-<div
-	on:click="{onClick}"
-	tabindex="0"
-	use:Ripple="{{ ripple: true, color: 'secondary' }}"
-	class="dialog"
->
-	<div class="avatar-wrapper">
-		<Avatar medium {photo} {online} {title} />
-	</div>
-	<div class="name">{title}</div>
-	<div class="short">
-		{#if from_name}
-			<span class="short_from">{from_name}</span>
-			:
-		{/if}
-		{text}
-	</div>
-	<RightTop {out} {time} {read} />
-	<RightBottom {unreadCount} {pinned} />
+<div tabindex="0" use:Ripple={{ ripple: true, color: 'secondary' }} class="dialog">
+    <div class="avatar-wrapper">
+        <Avatar medium {photo} {online} {title} />
+    </div>
+    <div class="name">{title}</div>
+    <div class="short">
+        {#if fromName}
+             <span class='short_from'>{fromName}</span>: 
+        {/if}
+        {text}
+    </div>
+    <RightTop {out} {time} {read}/>
+    <RightBottom {unreadCount} {pinned} />
 </div>
 
 <style lang="scss">

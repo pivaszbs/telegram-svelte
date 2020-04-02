@@ -15,7 +15,7 @@ const createMessages = () => {
 		if (peerId !== get(currentPeer).id) {
 			return;
 		}
-		console.log('current peer', get(currentPeer));
+
 		messages.update(old => {
 			old = [...old];
 			old[mapper[newMessage.id]] = newMessage;

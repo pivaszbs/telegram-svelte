@@ -83,6 +83,8 @@ export class TLSerialization {
 	};
 
 	writeInt = (i, field) => {
+		//logger('>>>', i.toString(16), i, field);
+
 		this.checkLength(4);
 		this.intView[this.offset / 4] = i;
 		this.offset += 4;
@@ -135,6 +137,8 @@ export class TLSerialization {
 	};
 
 	storeString = (s, field) => {
+		//logger('>>>', s, (field || '') + ':string');
+
 		if (s === undefined) {
 			s = '';
 		}
@@ -167,6 +171,8 @@ export class TLSerialization {
 		} else if (bytes === undefined) {
 			bytes = [];
 		}
+		//logger('>>>', bytesToHex(bytes), (field || '') + ':bytes');
+
 		var len = bytes.byteLength || bytes.length;
 		this.checkLength(len + 8);
 		if (len <= 253) {
@@ -196,6 +202,7 @@ export class TLSerialization {
 			throw new Error('Invalid bits: ' + bits + ', ' + bytes.length);
 		}
 
+		//logger('>>>', bytesToHex(bytes), (field || '') + ':int' + bits);
 		this.checkLength(len);
 
 		this.byteView.set(bytes, this.offset);
@@ -208,6 +215,7 @@ export class TLSerialization {
 		}
 		var len = bytes.length;
 
+		//logger('>>>', bytesToHex(bytes), field || '');
 		this.checkLength(len);
 
 		this.byteView.set(bytes, this.offset);
@@ -371,6 +379,7 @@ export default class TLDeserialization {
 
 		const i = this.intView[this.offset / 4];
 
+		//logger('<<<', i.toString(16), i, field);
 
 		this.offset += 4;
 
@@ -444,6 +453,8 @@ export default class TLDeserialization {
 			s = sUTF8;
 		}
 
+		//logger('<<<', s, (field || '') + ':string');
+
 		return s;
 	};
 
@@ -465,6 +476,8 @@ export default class TLDeserialization {
 			this.offset++;
 		}
 
+		//logger('<<<', bytesToHex(bytes), (field || '') + ':bytes');
+
 		return bytes;
 	};
 
@@ -485,6 +498,8 @@ export default class TLDeserialization {
 			bytes.push(this.byteView[this.offset++]);
 		}
 
+		//logger('<<<', bytesToHex(bytes), (field || '') + ':int' + bits);
+
 		return bytes;
 	};
 
@@ -504,6 +519,8 @@ export default class TLDeserialization {
 		for (let i = 0; i < len; i++) {
 			bytes.push(this.byteView[this.offset++]);
 		}
+
+		//logger('<<<', bytesToHex(bytes), field || '');
 
 		return bytes;
 	};
