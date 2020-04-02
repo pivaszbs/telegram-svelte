@@ -89,18 +89,6 @@ const common = {
 				],
 			},
 			{
-				test: /\.(svg)(\?v=\d+\.\d+\.\d+)?$/,
-				use: [
-					{
-						loader: 'file-loader',
-						options: {
-							name: '[name].[ext]',
-							outputPath: 'icons/',
-						},
-					},
-				],
-			},
-			{
 				test: /\.m?js$/,
 				exclude: /(node_modules|bower_components)/,
 				use: {

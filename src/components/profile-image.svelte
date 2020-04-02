@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import ModalContainer from './modal-container.svelte';
-	import close from 'Source/icons/close.svg';
+	import close from 'images/close.svg';
 	export let image;
 	export let cropped;
 	export let url;

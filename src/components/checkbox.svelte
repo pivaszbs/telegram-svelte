@@ -17,7 +17,7 @@
 		display: inline-flex;
 		align-items: flex-start;
 		margin-top: -2px;
-		background: var(--white) url('../icons/empty.svg');
+		background: var(--white) url('~images/empty.svg');
 
 		&:active,
 		&:checked:active,
@@ -26,7 +26,7 @@
 		}
 
 		&:checked {
-			background: url('../icons/filled.svg');
+			background: url('~images/filled.svg');
 		}
 	}
 

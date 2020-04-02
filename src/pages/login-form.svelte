@@ -15,7 +15,7 @@
 	import Button from '../components/button.svelte';
 	import ClickOutside from '../components/helpers/click-outside.svelte';
 
-	import icon from 'Source/images/logo.png';
+	import icon from 'images/logo.png';
 
 	import telegramApi from '../services/TelegramApi';
 

@@ -1,5 +1,5 @@
 <script>
-	import More from './../../assets/images/more.svg';
+	import More from 'images/more.svg';
 	import Search from 'images/search.svg';
 	import { user } from './../../stores/user.js';
 	import { loadStatus } from './status-helpers.js';
@@ -12,7 +12,7 @@
 
 {#if $dialogs[1]}
 	<div class="top-bar">
-		<Avatar small photo="{$dialogs[1].photo}" title="{$dialogs[1].title}" />
+		<Avatar small photo="{$dialogs[1].photo.src}" title="{$dialogs[1].title}" />
 		<div class="name">{$dialogs[1].title}</div>
 		<div class="top-bar__search icon">
 			<img src="{Search}" />

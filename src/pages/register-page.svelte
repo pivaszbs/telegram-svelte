@@ -92,7 +92,7 @@
 			border-radius: 50%;
 
 			& .icon_display {
-				background: url('../icons/add_photo.svg');
+				background: url('~images/add_photo.svg');
 				background-size: cover;
 				width: 50px;
 				height: 50px;
