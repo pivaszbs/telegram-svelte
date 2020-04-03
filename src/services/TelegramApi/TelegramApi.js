@@ -14,10 +14,6 @@ import { isArray, isFunction, forEach, map, min, noop } from './js/Etc/Helper';
 import $timeout from './js/Etc/angular/$timeout';
 import { Config } from './js/lib/config';
 import AppUpdatesManagerModule from './js/App/AppUpdatesManager';
-
-import pako from 'pako';
-
-import lottie from 'lottie-web';
 import AppMessagesManagerModule from './js/App/AppMessagesManager';
 import logger from './js/lib/logger';
 
@@ -33,7 +29,7 @@ class TelegramApi {
 	AppProfileManager = AppProfileManagerModule;
 
 	MtpApiManager = MtpApiManagerModule;
-	MtpApiFileManager = new MtpApiFileManagerModule();
+	// MtpApiFileManager = new MtpApiFileManagerModule();
 	MtpPasswordManager = new MtpPasswordManagerModule();
 	FileSaver = new FileSaverModule();
 	MtpNetworkerFactory = MtpNetworkerFactoryModule();
@@ -52,7 +48,7 @@ class TelegramApi {
 		});
 
 		window.apiManager = this.MtpApiManager;
-		this.MtpApiFileManager = new MtpApiFileManagerModule();
+		this.MtpApiFileManager = MtpApiFileManagerModule;
 
 		this.setConfig({
 			app: {
@@ -129,244 +125,10 @@ class TelegramApi {
 
 	// MESSAGES AND FILES ------------------------------------------------------
 
-	sendFile = async (
-		params = {
-			id: 0,
-			file: {},
-			caption: '',
-		},
-		inputType,
-		progressHandler = noop
-	) => {
-		const peer = this.mapPeerToTruePeer(await this.getPeerByID(params.id));
-
-		return this.MtpApiFileManager.uploadFile(params.file, progressHandler).then(inputFile => {
-			const file = params.file;
-
-			inputFile.name = file.name;
-
-			const inputMedia = {
-				_: inputType || 'inputMediaUploadedDocument',
-				file: inputFile,
-				mime_type: file.type,
-				attributes: [{ _: 'documentAttributeFilename', file_name: file.name }],
-			};
-
-			return this.MtpApiManager.invokeApi('messages.sendMedia', {
-				peer,
-				media: inputMedia,
-				message: params.caption,
-				random_id: [nextRandomInt(0xffffffff), nextRandomInt(0xffffffff)],
-			});
-		});
-	};
-
-	downloadDocument = (doc, progress, autosave, useCached = true) => {
-		doc = doc || {};
-		doc.id = doc.id || 0;
-		doc.access_hash = doc.access_hash || 0;
-		doc.attributes = doc.attributes || [];
-		doc.size = doc.size || 0;
-
-		const cached = this.MtpApiFileManager.getLocalFile(doc.id);
-
-		if (cached && useCached) {
-			return new Promise(resolve => {
-				resolve(cached);
-			});
-		}
-
-		if (!isFunction(progress)) {
-			progress = noop;
-		}
-
-		const location = {
-			_: 'inputDocumentFileLocation',
-			id: doc.id,
-			access_hash: doc.access_hash,
-			file_reference: doc.file_reference,
-		};
-		let fileName = 'FILE';
-		let size = 15728640;
-		let limit = 524288;
-		let offset = 0;
-		const promise = new Promise(resolve => {
-			const bytes = [];
-
-			// if (doc.size > size) {
-			// 	throw new Error('Big file not supported');
-			// }
-
-			size = doc.size;
-
-			forEach(doc.attributes, attr => {
-				if (attr._ == 'documentAttributeFilename') {
-					fileName = attr.file_name;
-				}
-			});
-
-			const download = () => {
-				if (offset < size) {
-					this.MtpApiManager.invokeApi('upload.getFile', {
-						location: location,
-						offset: offset,
-						limit: limit,
-					}).then(result => {
-						bytes.push(result.bytes);
-						offset += limit;
-						progress(offset < size ? offset : size, size);
-						download();
-					});
-				} else {
-					if (autosave) {
-						this.FileSaver.save(bytes, fileName);
-					}
-					resolve({
-						bytes: bytes,
-						fileName: fileName,
-						type: doc.mime_type,
-					});
-				}
-			};
-
-			$timeout(download);
-		});
-		this.MtpApiFileManager.saveDownloadingPromise(doc.id, promise);
-		return promise;
-	};
-
-	downloadPhoto = (photo, progress, autosave, useCached = true) => {
-		const photoSize = photo.sizes[photo.sizes.length - 1];
-		const location = {
-			_: 'inputPhotoFileLocation',
-			id: photo.id,
-			access_hash: photo.access_hash,
-			file_reference: photo.file_reference,
-			thumb_size: 'c',
-		};
-
-		const cached = this.MtpApiFileManager.getLocalFile(photo.id);
-
-		if (cached && useCached) {
-			return new Promise(resolve => {
-				resolve(cached);
-			});
-		}
-
-		if (!isFunction(progress)) {
-			progress = noop;
-		}
-
-		const fileName = photo.id + '.jpg';
-		let size = 15728640;
-		let limit = 524288;
-		let offset = 0;
-
-		const promise = new Promise(resolve => {
-			const bytes = [];
-
-			if (photoSize.size > size) {
-				throw new Error('Big file not supported');
-			}
-
-			size = photoSize.size;
-
-			const download = () => {
-				if (offset < size) {
-					this.MtpApiManager.invokeApi('upload.getFile', {
-						location: location,
-						offset: offset,
-						limit: limit,
-					}).then(result => {
-						bytes.push(result.bytes);
-						offset += limit;
-						progress(offset < size ? offset : size, size);
-						download();
-					});
-				} else {
-					if (autosave) {
-						this.FileSaver.save(bytes, fileName);
-					}
-					resolve({
-						bytes: bytes,
-						fileName: fileName,
-						type: 'image/jpeg',
-					});
-				}
-			};
-
-			$timeout(download);
-		});
-		this.MtpApiFileManager.saveDownloadingPromise(photo.id, promise);
-		return promise;
-	};
-
 	_asyncForEach = async (array, callback) => {
 		for (let index = 0; index < array.length; index++) {
 			await callback(array[index], index, array);
 		}
-	};
-
-	getDocumentPreview = doc => {
-		const cached = this.MtpApiFileManager.getLocalFile(doc.id);
-		if (cached) {
-			return new Promise(resolve => {
-				resolve(cached);
-			});
-		}
-
-		const location = { ...doc };
-		let limit = 524288;
-
-		let thumb_size = doc.thumbs;
-		if (thumb_size) {
-			thumb_size = thumb_size[2] || thumb_size[1] || thumb_size[0];
-			location.thumb_size = thumb_size.type;
-		} else {
-			return new Promise(resolve => {
-				resolve({});
-			});
-		}
-
-		location._ = 'inputDocumentFileLocation';
-
-		const promise = this.MtpApiManager.invokeApi('upload.getFile', {
-			location: location,
-			offset: 0,
-			limit: limit,
-		}).then(res => {
-			return this._getImageData(res.bytes, doc.id);
-		});
-		this.MtpApiFileManager.saveDownloadingPromise(doc.id, promise);
-		return promise;
-	};
-
-	getPhotoPreview = photo => {
-		const cached = this.MtpApiFileManager.getLocalFile(photo.id);
-		if (cached) {
-			return new Promise(resolve => {
-				resolve(cached);
-			});
-		}
-
-		let photo_size = photo.sizes;
-		photo_size = photo_size[2] || photo_size[1] || photo_size[0];
-		const location = {
-			_: 'inputPhotoFileLocation',
-			id: photo.id,
-			access_hash: photo.access_hash,
-			file_reference: photo.file_reference,
-			thumb_size: photo_size.type,
-		};
-		let limit = 524288;
-
-		const promise = this.MtpApiManager.invokeApi('upload.getFile', {
-			location: location,
-			offset: 0,
-			limit: limit,
-		}).then(data => this._getImageData(data.bytes, photo.id));
-		this.MtpApiFileManager.saveDownloadingPromise(photo.id, promise);
-		return promise;
 	};
 
 	getMessageByID = id => {
@@ -404,35 +166,6 @@ class TelegramApi {
 					return null;
 				}
 			});
-	};
-
-	getPeerPhoto = async peer => {
-		if (!peer.photo) {
-			return;
-		}
-
-		const cached = this.MtpApiFileManager.getLocalFile(peer.id);
-
-		if (cached) {
-			return cached;
-		}
-
-		const photo = peer.photo.photo_small;
-		const promise = this.invokeApi('upload.getFile', {
-			location: {
-				_: 'inputPeerPhotoFileLocation',
-				peer: this.mapPeerToTruePeer(peer),
-				volume_id: photo.volume_id,
-				local_id: photo.local_id,
-			},
-			offset: 0,
-			limit: 1048576,
-		}).then(photo_file => {
-			// console.log('Got file!');
-			return this._getImageData(photo_file.bytes, peer.id);
-		});
-		this.MtpApiFileManager.saveDownloadingPromise(peer.id, promise);
-		return promise;
 	};
 
 	searchPeerMessages = async (
@@ -567,36 +300,6 @@ class TelegramApi {
 
 	getFullChat = chat_id => this.MtpApiManager.invokeApi('messages.getFullChat', { chat_id });
 
-	editChatPhoto = (chat_id, photo) => {
-		return this.MtpApiFileManager.uploadFile(photo).then(inputFile => {
-			return this.MtpApiManager.invokeApi('messages.editChatPhoto', {
-				chat_id: chat_id,
-				photo: {
-					_: 'inputChatUploadedPhoto',
-					file: inputFile,
-					crop: {
-						_: 'inputPhotoCropAuto',
-					},
-				},
-			});
-		});
-	};
-
-	editChannelPhoto = (channel_id, photo) => {
-		return this.MtpApiFileManager.uploadFile(photo).then(inputFile => {
-			return this.MtpApiManager.invokeApi('channels.editPhoto', {
-				channel: this.AppChatsManager.getChannelInput(channel_id),
-				photo: {
-					_: 'inputChatUploadedPhoto',
-					file: inputFile,
-					crop: {
-						_: 'inputPhotoCropAuto',
-					},
-				},
-			});
-		});
-	};
-
 	getChatParticipants = async chat_id => {
 		const chat = await this.getFullPeer(chat_id, 'chat');
 
@@ -689,14 +392,6 @@ class TelegramApi {
 			}
 
 			return this.getPhotoFile(user.profile_photo, size);
-		});
-	};
-
-	editUserPhoto = photo => {
-		return this.MtpApiFileManager.uploadFile(photo).then(inputFile => {
-			return this.invokeApi('photos.uploadProfilePhoto', {
-				file: inputFile,
-			});
 		});
 	};
 
@@ -1127,32 +822,6 @@ class TelegramApi {
 		}
 	};
 
-	_getStickerData = async (sticker, id) => {
-		if (!(sticker instanceof Array)) {
-			logger('GOT CACHED', sticker);
-			return sticker;
-		}
-		const decoded_text = new TextDecoder('utf-8').decode(await pako.inflate(sticker[0]));
-		const data = JSON.parse(decoded_text);
-		if (id) {
-			logger('SAVING', data);
-			this.MtpApiFileManager.saveLocalFile(id, { bytes: data });
-		}
-		return data;
-	};
-
-	setStickerToContainer = (sticker, container, cacheId) => {
-		return this._getStickerData(sticker.bytes, cacheId).then(st => {
-			return lottie.loadAnimation({
-				container: container,
-				renderer: 'svg',
-				loop: true,
-				autoplay: false,
-				animationData: st,
-			});
-		});
-	};
-
 	_fillPhotosPromises = async (photos = []) => {
 		const photo_promises = [];
 		photos.forEach(photo => {
@@ -1181,32 +850,6 @@ class TelegramApi {
 		});
 
 		return doc_results;
-	};
-
-	_getImageData = async (bytes, id) => {
-		if (!(bytes instanceof Uint8Array)) {
-			return bytes;
-		}
-		const data = window.URL.createObjectURL(new Blob([bytes], { type: 'image/png' }));
-		if (id) {
-			this.MtpApiFileManager.saveLocalFile(id, data);
-		}
-		return data;
-	};
-
-	_getVideoData = async (bytes, id) => {
-		// const byteArray = ;
-		// console.log('BTARRAY', byteArray);
-		if (!(bytes instanceof Array)) {
-			return bytes;
-		}
-		const blob = new Blob(bytes, { type: 'video/mp4' });
-		console.log('BLOB', blob);
-		const data = window.URL.createObjectURL(blob);
-		if (id) {
-			this.MtpApiFileManager.saveLocalFile(id, { bytes: data });
-		}
-		return data;
 	};
 }
 
