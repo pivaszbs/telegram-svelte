@@ -111,9 +111,10 @@ class AppsChatsManagerModule {
 	getChat = id => this.chatsManagerStorage[id] || null;
 	getFullChat = id => this.fullChats[id] || null;
 	getDialog = id => this.dialogsManagerStorage[id] || null;
-	getDialogsSorted = () => {
+
+	getDialogsSorted = (offset, limit) => {
 		const pinned = [];
-		const dialogs = [];
+		let dialogs = [];
 
 		Object.values(this.dialogsManagerStorage)
 			.sort(this._sortByDate)
@@ -124,6 +125,16 @@ class AppsChatsManagerModule {
 					dialogs.push(dialog);
 				}
 			});
+
+		if (offset) {
+			const idx = dialogs.findIndex(el => el.date === offset);
+			if (idx) {
+				dialogs = dialogs.slice(idx);
+			}
+		}
+		if (limit) {
+			dialogs = dialogs.slice(0, limit);
+		}
 
 		return [...pinned, ...dialogs];
 	};

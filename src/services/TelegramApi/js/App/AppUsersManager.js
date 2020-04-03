@@ -63,6 +63,7 @@ class AppUsersManagerModule {
 			apiUser.sortStatus = -1;
 		} else {
 			apiUser.sortStatus = this.getUserStatusForSort(apiUser.status);
+			apiUser.formattedStatus = this.statusTransform(apiUser.status);
 		}
 
 		let result = this.users[userID];
@@ -130,6 +131,64 @@ class AppUsersManagerModule {
 		}
 
 		return 0;
+	};
+
+	unitCheck = unit => {
+		if (unit > 1) {
+			return 's';
+		}
+
+		return '';
+	};
+
+	statusTransform = ({ was_online: lastSeen, _: type }) => {
+		switch (type) {
+			case 'userStatusRecently':
+				return `last seen recently`;
+
+			case 'userStatusLastWeek':
+				return 'last seen last week';
+
+			case 'userStatusLastMonth':
+				return 'last seen last month';
+
+			case 'userStatusOffline':
+				return this.lastSeenTransform(lastSeen);
+
+			case 'userStatusOnline':
+				return 'online';
+		}
+	};
+
+	lastSeenTransform = lastSeen => {
+		const unixShift = 1000;
+		const now = new Date().getTime() / unixShift;
+		const diff = Math.abs(now - lastSeen);
+		const step = 60;
+		let time;
+		let unit;
+		if (diff < step) {
+			return `last seen just now`;
+		} else if (diff < step ** 2) {
+			unit = new Date(diff * unixShift).getMinutes();
+			time = 'minute';
+		} else if (diff < step ** 2 * 24) {
+			unit = new Date(lastSeen * unixShift).getHours();
+			time = 'hour';
+		} else if (diff < step ** 2 * 24 * 7) {
+			unit = new Date(lastSeen * unixShift).getDay();
+			time = 'day';
+		} else if (diff < step ** 2 * 24 * 7 * 4) {
+			unit = new Date(lastSeen * unixShift).getHours();
+			time = 'week';
+		} else if (diff < step ** 2 * 24 * 7 * 4 * 12) {
+			unit = new Date(lastSeen * unixShift).getHours();
+			time = 'month';
+		} else {
+			time = `long time`;
+		}
+		time = unit + ' ' + time + this.unitCheck(unit);
+		return `last seen ${time} ago`;
 	};
 
 	isOnline = id => {
