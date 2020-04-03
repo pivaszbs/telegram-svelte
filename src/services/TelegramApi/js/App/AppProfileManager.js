@@ -1,10 +1,11 @@
-import MtpApiManagerModule from '../Mtp/MtpApiManager';
 import { Config } from '../lib/config';
 import MtpPasswordManagerModule from '../Mtp/MtpPasswordManager';
+import MtpApiManager from '../Mtp/MtpApiManager';
+import MtpApiFileManager from '../Mtp/MtpApiFileManager';
 
 class AppProfileManagerModule {
 	constructor() {
-		this.MtpApiManager = MtpApiManagerModule;
+		// this.MtpApiManager = MtpApiManagerModule;
 		this.MtpPasswordManager = new MtpPasswordManagerModule();
 
 		this.options = { dcID: 2, createNetworker: true };
@@ -18,7 +19,7 @@ class AppProfileManagerModule {
 		this.userFullInfo;
 		this.myID;
 
-		this.MtpApiManager.getUserID().then(id => {
+		MtpApiManager.getUserID().then(id => {
 			if (id) {
 				this.myID = id;
 			}
@@ -45,7 +46,7 @@ class AppProfileManagerModule {
 	};
 
 	setUser(user) {
-		this.MtpApiManager.setUserAuth(this.options.dcID, {
+		MtpApiManager.setUserAuth(this.options.dcID, {
 			id: user.id,
 		});
 
@@ -55,7 +56,7 @@ class AppProfileManagerModule {
 	}
 
 	sendCode = async phone => {
-		const result = await this.MtpApiManager.invokeApi(
+		const result = await MtpApiManager.invokeApi(
 			'auth.sendCode',
 			{
 				phone_number: phone,
@@ -79,7 +80,7 @@ class AppProfileManagerModule {
 	};
 
 	signIn = async code => {
-		const result = await this.MtpApiManager.invokeApi(
+		const result = await MtpApiManager.invokeApi(
 			'auth.signIn',
 			{
 				phone_number: this.phone,
@@ -97,7 +98,7 @@ class AppProfileManagerModule {
 	};
 
 	signUp = async (first_name, last_name = '') => {
-		const result = await this.MtpApiManager.invokeApi(
+		const result = await MtpApiManager.invokeApi(
 			'auth.signUp',
 			{
 				phone_number: this.phone,
@@ -124,9 +125,17 @@ class AppProfileManagerModule {
 	};
 
 	logOut = () => {
-		this.MtpApiManager.logOut();
+		MtpApiManager.logOut();
 		this.user = null;
 		this.myID = null;
+	};
+
+	editProfilePhoto = photo => {
+		return MtpApiFileManager.uploadFile(photo).then(inputFile => {
+			return MtpApiManager.invokeApi('photos.uploadProfilePhoto', {
+				file: inputFile,
+			});
+		});
 	};
 }
 

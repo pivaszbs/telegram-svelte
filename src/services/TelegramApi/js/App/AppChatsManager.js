@@ -4,7 +4,7 @@ import AppPeersManager from './AppPeersManager';
 import AppMessagesManager from './AppMessagesManager';
 import AppProfileManager from './AppProfileManager';
 import AppUsersManager from './AppUsersManager';
-import { telegramApi } from '../../TelegramApi';
+import MtpApiFileManager from '../Mtp/MtpApiFileManager';
 
 class AppsChatsManagerModule {
 	constructor() {
@@ -73,7 +73,7 @@ class AppsChatsManagerModule {
 		if (photo && photo._ !== 'userProfilePhotoEmpty' && photo._ !== 'chatPhotoEmpty') {
 			photo = {
 				...photo,
-				src: telegramApi.getPeerPhoto(dialogPeer),
+				src: MtpApiFileManager.getPeerPhoto(dialog.id),
 			};
 		}
 

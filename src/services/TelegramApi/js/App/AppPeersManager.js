@@ -1,6 +1,5 @@
 import AppsChatsManagerModule from './AppChatsManager';
 import AppUsersManagerModule from './AppUsersManager';
-import { isObject } from '../Etc/Helper';
 
 class AppPeersManagerModule {
 	AppChatsManager = AppsChatsManagerModule;
@@ -26,12 +25,44 @@ class AppPeersManagerModule {
 			if (peer._ === 'channel') {
 				return {
 					_: 'inputPeerChannel',
+					channel_id: peer.id,
 					access_hash: peer.access_hash,
 				};
 			}
 			if (peer._ === 'user') {
 				return {
 					_: 'inputPeerUser',
+					user_id: peer.id,
+					access_hash: peer.access_hash,
+				};
+			}
+		}
+		return {
+			_: 'inputPeerEmpty',
+		};
+	};
+
+	getInputByID = peerID => {
+		const peer = this.getPeer(peerID);
+
+		if (peer) {
+			if (peer._ === 'chat') {
+				return {
+					_: 'inputChat',
+					chat_id: peer.id.toString(),
+				};
+			}
+			if (peer._ === 'channel') {
+				return {
+					_: 'inputChannel',
+					channel_id: peer.id.toString(),
+					access_hash: peer.access_hash,
+				};
+			}
+			if (peer._ === 'user') {
+				return {
+					_: 'inputUser',
+					user_id: peer.id.toString(),
 					access_hash: peer.access_hash,
 				};
 			}
