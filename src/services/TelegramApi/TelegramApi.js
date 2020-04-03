@@ -109,8 +109,6 @@ class TelegramApi {
 		});
 	};
 
-	// AUTH METHODS ------------------------------------------------------
-
 	profileManager = {
 		sendCode: this.AppProfileManager.sendCode,
 		signIn: this.AppProfileManager.signIn,
@@ -120,6 +118,11 @@ class TelegramApi {
 		isAuth: this.AppProfileManager.isAuth,
 		getProfile: this.AppProfileManager.getProfile,
 		getProfileId: this.AppProfileManager.getProfileId,
+	};
+
+	peerManager = {
+		getPeerById: this.AppPeersManager.getPeer,
+		getPeerId: this.AppPeersManager.getPeerId,
 	};
 
 	checkPhone = phone_number => this.MtpApiManager.invokeApi('auth.checkPhone', { phone_number: phone_number });
@@ -545,22 +548,21 @@ class TelegramApi {
 		});
 	};
 
-	fetchDialogs = async (limit, offset) => {
-		offset = offset || 0;
-		limit = limit || 50;
-
-		const dialogs = await this.MtpApiManager.invokeApi('messages.getDialogs', {
+	fetchDialogs = async (limit = 50, offset = 0) => {
+		const request = {
 			offset_peer: this.AppPeersManager.getInputPeerByID(0),
 			offset_date: offset,
 			limit: limit,
-		});
+		};
+
+		const dialogs = await this.MtpApiManager.invokeApi('messages.getDialogs', request);
 
 		this.AppUsersManager.saveApiUsers(dialogs.users);
 		this.AppChatsManager.saveApiChats(dialogs.chats);
 		this.AppMessagesManager.saveMessages(dialogs.messages);
 		this.AppChatsManager.saveDialogs(dialogs.dialogs);
 
-		return this.AppChatsManager.getDialogsSorted();
+		return this.AppChatsManager.getDialogsSorted(offset, limit);
 	};
 
 	getFullChat = chat_id => this.MtpApiManager.invokeApi('messages.getFullChat', { chat_id });
