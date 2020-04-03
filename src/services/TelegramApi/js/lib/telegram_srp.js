@@ -34,8 +34,7 @@ function Cm(...t) {
 	for (let i of t) {
 		'number' == typeof i
 			? s.set(wm(e - n), n)
-			: (s.set(i instanceof ArrayBuffer ? new Uint8Array(i) : i, n),
-			  (n += i.byteLength));
+			: (s.set(i instanceof ArrayBuffer ? new Uint8Array(i) : i, n), (n += i.byteLength));
 	}
 	return s;
 }
@@ -51,22 +50,11 @@ const Am = async (t, e, s) =>
 			return new Uint8Array(
 				await crypto.subtle.deriveBits(
 					{ name: 'PBKDF2', hash: t, salt: s, iterations: n },
-					await crypto.subtle.importKey(
-						'raw',
-						e,
-						{ name: 'PBKDF2' },
-						!1,
-						['deriveBits']
-					),
+					await crypto.subtle.importKey('raw', e, { name: 'PBKDF2' }, !1, ['deriveBits']),
 					512
 				)
 			);
-		})(
-			'SHA-512',
-			await (async (t, e, s) => await Pm(await Pm(t, e), s))(t, e, s),
-			e,
-			1e5
-		),
+		})('SHA-512', await (async (t, e, s) => await Pm(await Pm(t, e), s))(t, e, s), e, 1e5),
 		s
 	);
 
@@ -95,10 +83,5 @@ export const getParams = async (t, e, s, n, i, r) => {
 	w.isNegative() && (w = w.add(c));
 	const $ = ym(w.modPow(h.add(p.multiply(g)), c)),
 		y = await xm($);
-	return {
-		A: l,
-		M1: await xm(
-			Cm(km(await xm(s), await xm(e)), await xm(n), await xm(i), l, r, y)
-		),
-	};
+	return { A: l, M1: await xm(Cm(km(await xm(s), await xm(e)), await xm(n), await xm(i), l, r, y)) };
 };

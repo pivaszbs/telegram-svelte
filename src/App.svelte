@@ -41,6 +41,7 @@
 		--dark-gray: rgb(106, 108, 111);
 		--gray-300: #e0e0e0;
 		--pinned: #c4c9cc;
+		--special-gray: var(--secondary);
 
 		--green: #4dcd5e;
 		--shadow: rgba(0, 0, 0, 0.75);

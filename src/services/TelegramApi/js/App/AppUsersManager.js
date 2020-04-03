@@ -201,7 +201,7 @@ class AppUsersManagerModule {
 			return false;
 		}
 
-		return user.status?._ === 'userStatusOnline';
+		return user.status && user.status === 'userStatusOnline';
 	};
 
 	getUser = id => {
