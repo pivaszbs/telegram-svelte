@@ -22,7 +22,6 @@ export default class Abridged {
 	}
 
 	generateObfuscatedInitMessage = async () => {
-		// const random = this.getRandomBytes(64);
 		const random = new Uint8Array(64);
 
 		random[56] = 239;
