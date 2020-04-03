@@ -19,8 +19,8 @@ export default function MtpDcConfiguratorModule() {
 						'//' +
 						dcOption.host +
 						(dcOption.port != 80 ? ':' + dcOption.port : '') +
-						'/apiws1'
-						+ (Config.Modes.test ? '_test' : '');
+						'/apiws1' +
+						(Config.Modes.test ? '_test' : '');
 					break;
 				}
 			}

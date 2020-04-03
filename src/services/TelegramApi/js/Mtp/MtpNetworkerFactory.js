@@ -28,8 +28,11 @@ export default function MtpNetworkerFactoryModule() {
 	let updatesProcessor;
 	let akStopped = false;
 	const chromeMatches = navigator.userAgent.match(/Chrome\/(\d+(\.\d+)?)/);
-	const chromeVersion = (chromeMatches && parseFloat(chromeMatches[1])) || false;
-	const xhrSendBuffer = !('ArrayBufferView' in window) && (!chromeVersion || chromeVersion < 30);
+	const chromeVersion =
+		(chromeMatches && parseFloat(chromeMatches[1])) || false;
+	const xhrSendBuffer =
+		!('ArrayBufferView' in window) &&
+		(!chromeVersion || chromeVersion < 30);
 
 	window.subscriptions = {};
 
@@ -63,7 +66,11 @@ export default function MtpNetworkerFactoryModule() {
 					console.log(dT(), 'Server response', this.dcID, response);
 				}
 
-				this.processMessage(response.response, response.messageID, response.sessionID);
+				this.processMessage(
+					response.response,
+					response.messageID,
+					response.sessionID
+				);
 
 				for (let k in subscriptions) {
 					subscriptions[k](response.response);
@@ -79,13 +86,22 @@ export default function MtpNetworkerFactoryModule() {
 
 				// this.checkLongPoll();
 
-				this.checkConnectionPeriod = Math.max(1.1, Math.sqrt(this.checkConnectionPeriod));
+				this.checkConnectionPeriod = Math.max(
+					1.1,
+					Math.sqrt(this.checkConnectionPeriod)
+				);
 			});
 		};
 
 		handleError = error => {
-			if (error.status == 404 && (error.data || '').indexOf('nginx/0.3.33') != -1) {
-				this.Storage.remove('dc' + self.dcID + '_server_salt', 'dc' + self.dcID + '_auth_key').then(() => {
+			if (
+				error.status == 404 &&
+				(error.data || '').indexOf('nginx/0.3.33') != -1
+			) {
+				this.Storage.remove(
+					'dc' + self.dcID + '_server_salt',
+					'dc' + self.dcID + '_auth_key'
+				).then(() => {
 					window.location.reload();
 				});
 			}
@@ -123,7 +139,10 @@ export default function MtpNetworkerFactoryModule() {
 			this.pendingResends = [];
 			this.connectionInited = false;
 
-			const url = this.MtpDcConfigurator.chooseServer(this.dcID, this.upload);
+			const url = this.MtpDcConfigurator.chooseServer(
+				this.dcID,
+				this.upload
+			);
 			this.SocketManager = new WebSocketManager(url, this.handlePromise);
 
 			// $interval(this.checkLongPoll.bind(this), 10000);
@@ -146,7 +165,9 @@ export default function MtpNetworkerFactoryModule() {
 			if (sentMessage.container) {
 				const newInner = [];
 				forEach(sentMessage.inner, innerSentMessageID => {
-					const innerSentMessage = self.updateSentMessage(innerSentMessageID);
+					const innerSentMessage = self.updateSentMessage(
+						innerSentMessageID
+					);
 					if (innerSentMessage) {
 						newInner.push(innerSentMessage.msg_id);
 					}
@@ -155,7 +176,9 @@ export default function MtpNetworkerFactoryModule() {
 			}
 
 			sentMessage.msg_id = this.MtpTimeManager.generateID();
-			sentMessage.seq_no = this.generateSeqNo(sentMessage.notContentRelated || sentMessage.container);
+			sentMessage.seq_no = this.generateSeqNo(
+				sentMessage.notContentRelated || sentMessage.container
+			);
 			this.sentMessages[sentMessage.msg_id] = sentMessage;
 			delete self.sentMessages[sentMessageID];
 
@@ -226,8 +249,14 @@ export default function MtpNetworkerFactoryModule() {
 				serializer.storeInt(Config.Schema.API.layer, 'layer');
 				serializer.storeInt(0x69796de9, 'initConnection');
 				serializer.storeInt(Config.App.id, 'api_id');
-				serializer.storeString(navigator.userAgent || 'Unknown UserAgent', 'device_model');
-				serializer.storeString(navigator.platform || 'Unknown Platform', 'system_version');
+				serializer.storeString(
+					navigator.userAgent || 'Unknown UserAgent',
+					'device_model'
+				);
+				serializer.storeString(
+					navigator.platform || 'Unknown Platform',
+					'system_version'
+				);
 				serializer.storeString(Config.App.version, 'app_version');
 				serializer.storeString(navigator.language || 'en', 'lang_code');
 			}
@@ -249,7 +278,15 @@ export default function MtpNetworkerFactoryModule() {
 				};
 
 			if (Config.Modes.debug) {
-				console.log(dT(), 'Api call', method, params, messageID, seqNo, options);
+				console.log(
+					dT(),
+					'Api call',
+					method,
+					params,
+					messageID,
+					seqNo,
+					options
+				);
 			} else {
 				logger('Api call', method);
 			}
@@ -260,14 +297,20 @@ export default function MtpNetworkerFactoryModule() {
 		checkLongPoll = force => {
 			const isClean = this.cleanupSent();
 			// console.log('Check lp', this.longPollPending, tsNow(), this.dcID, isClean);
-			if ((this.longPollPending && tsNow() < this.longPollPending) || this.offline || akStopped) {
+			if (
+				(this.longPollPending && tsNow() < this.longPollPending) ||
+				this.offline ||
+				akStopped
+			) {
 				return false;
 			}
 			const self = this;
 			this.Storage.get('dc').then(baseDcID => {
 				if (
 					isClean &&
-					(baseDcID != self.dcID || self.upload || (self.sleepAfter && tsNow() > self.sleepAfter))
+					(baseDcID != self.dcID ||
+						self.upload ||
+						(self.sleepAfter && tsNow() > self.sleepAfter))
 				) {
 					// console.warn(dT(), 'Send long-poll for DC is delayed', self.dcID, self.sleepAfter);
 					return;
@@ -311,12 +354,16 @@ export default function MtpNetworkerFactoryModule() {
 			logger('Push message ', message, options);
 
 			return new Promise((resolve, reject) => {
-				self.sentMessages[message.msg_id] = extend(message, options || {}, {
-					deferred: {
-						resolve: resolve,
-						reject: reject,
-					},
-				});
+				self.sentMessages[message.msg_id] = extend(
+					message,
+					options || {},
+					{
+						deferred: {
+							resolve: resolve,
+							reject: reject,
+						},
+					}
+				);
 				self.pendingMessages[message.msg_id] = 0;
 
 				if (!options || !options.noShedule) {
@@ -441,7 +488,10 @@ export default function MtpNetworkerFactoryModule() {
 						self.checkConnection.bind(self),
 						parseInt(self.checkConnectionPeriod * 1000)
 					);
-					self.checkConnectionPeriod = Math.min(60, self.checkConnectionPeriod * 1.5);
+					self.checkConnectionPeriod = Math.min(
+						60,
+						self.checkConnectionPeriod * 1.5
+					);
 				}
 			);
 		};
@@ -466,7 +516,10 @@ export default function MtpNetworkerFactoryModule() {
 					this.checkConnection.bind(this),
 					parseInt(this.checkConnectionPeriod * 1000)
 				);
-				this.checkConnectionPeriod = Math.min(30, (1 + this.checkConnectionPeriod) * 1.5);
+				this.checkConnectionPeriod = Math.min(
+					30,
+					(1 + this.checkConnectionPeriod) * 1.5
+				);
 
 				this.onOnlineCb = this.checkConnection.bind(this);
 
@@ -475,7 +528,10 @@ export default function MtpNetworkerFactoryModule() {
 				this.sheduleRequest();
 
 				if (this.onOnlineCb) {
-					document.body.removeEventListener('online focus', this.onOnlineCb);
+					document.body.removeEventListener(
+						'online focus',
+						this.onOnlineCb
+					);
 				}
 				$timeout.cancel(this.checkConnectionPromise);
 			}
@@ -543,7 +599,9 @@ export default function MtpNetworkerFactoryModule() {
 				if (!value || value >= currentTime) {
 					message = self.sentMessages[messageID];
 					if (message) {
-						const messageByteLength = (message.body.byteLength || message.body.length) + 32;
+						const messageByteLength =
+							(message.body.byteLength || message.body.length) +
+							32;
 						if (!message.notContentRelated && lengthOverflow) {
 							return;
 						}
@@ -609,11 +667,23 @@ export default function MtpNetworkerFactoryModule() {
 				const onloads = [];
 				const innerMessages = [];
 				for (let i = 0; i < messages.length; i++) {
-					container.storeLong(messages[i].msg_id, 'CONTAINER[' + i + '][msg_id]');
+					container.storeLong(
+						messages[i].msg_id,
+						'CONTAINER[' + i + '][msg_id]'
+					);
 					innerMessages.push(messages[i].msg_id);
-					container.storeInt(messages[i].seq_no, 'CONTAINER[' + i + '][seq_no]');
-					container.storeInt(messages[i].body.length, 'CONTAINER[' + i + '][bytes]');
-					container.storeRawBytes(messages[i].body, 'CONTAINER[' + i + '][body]');
+					container.storeInt(
+						messages[i].seq_no,
+						'CONTAINER[' + i + '][seq_no]'
+					);
+					container.storeInt(
+						messages[i].body.length,
+						'CONTAINER[' + i + '][bytes]'
+					);
+					container.storeRawBytes(
+						messages[i].body,
+						'CONTAINER[' + i + '][body]'
+					);
 					if (messages[i].noResponse) {
 						noResponseMsgs.push(messages[i].msg_id);
 					}
@@ -636,7 +706,13 @@ export default function MtpNetworkerFactoryModule() {
 				this.sentMessages[message.msg_id] = containerSentMessage;
 
 				if (Config.Modes.debug) {
-					console.log(dT(), 'Container', innerMessages, message.msg_id, message.seq_no);
+					console.log(
+						dT(),
+						'Container',
+						innerMessages,
+						message.msg_id,
+						message.seq_no
+					);
 				}
 			} else {
 				if (message.noResponse) {
@@ -666,7 +742,11 @@ export default function MtpNetworkerFactoryModule() {
 				const msgKey = new Uint8Array(bytesHash).subarray(4, 20);
 				return self.getMsgKeyIv(msgKey, true).then(keyIv => {
 					// console.log(dT(), 'after msg key iv');
-					return this.CryptoWorker.aesEncrypt(bytes, keyIv[0], keyIv[1]).then(encryptedBytes => {
+					return this.CryptoWorker.aesEncrypt(
+						bytes,
+						keyIv[0],
+						keyIv[1]
+					).then(encryptedBytes => {
 						// console.log(dT(), 'Finish encrypt');
 						return {
 							bytes: encryptedBytes,
@@ -681,7 +761,11 @@ export default function MtpNetworkerFactoryModule() {
 			// console.log(dT(), 'get decrypted start');
 			return this.getMsgKeyIv(msgKey, false).then(keyIv => {
 				// console.log(dT(), 'after msg key iv');
-				return this.CryptoWorker.aesDecrypt(encryptedData, keyIv[0], keyIv[1]);
+				return this.CryptoWorker.aesDecrypt(
+					encryptedData,
+					keyIv[0],
+					keyIv[1]
+				);
 			});
 		};
 
@@ -703,19 +787,30 @@ export default function MtpNetworkerFactoryModule() {
 			data.storeInt(message.body.length, 'message_data_length');
 			data.storeRawBytes(message.body, 'message_data');
 
-			return this.getEncryptedMessage(data.getBuffer()).then(encryptedResult => {
-				// console.log(dT(), 'Got encrypted out message'/*, encryptedResult*/);
-				const request = new TLSerialization({
-					startMaxLength: encryptedResult.bytes.byteLength + 256,
-				});
-				request.storeIntBytes(self.authKeyID, 64, 'auth_key_id');
-				request.storeIntBytes(encryptedResult.msgKey, 128, 'msg_key');
-				request.storeRawBytes(encryptedResult.bytes, 'encrypted_data');
+			return this.getEncryptedMessage(data.getBuffer()).then(
+				encryptedResult => {
+					// console.log(dT(), 'Got encrypted out message'/*, encryptedResult*/);
+					const request = new TLSerialization({
+						startMaxLength: encryptedResult.bytes.byteLength + 256,
+					});
+					request.storeIntBytes(self.authKeyID, 64, 'auth_key_id');
+					request.storeIntBytes(
+						encryptedResult.msgKey,
+						128,
+						'msg_key'
+					);
+					request.storeRawBytes(
+						encryptedResult.bytes,
+						'encrypted_data'
+					);
 
-				const requestData = xhrSendBuffer ? request.getBuffer() : request.getArray();
+					const requestData = xhrSendBuffer
+						? request.getBuffer()
+						: request.getArray();
 
-				this.SocketManager.sendData(requestData);
-			});
+					this.SocketManager.sendData(requestData);
+				}
+			);
 		};
 
 		parseResponse = responseBuffer => {
@@ -724,9 +819,15 @@ export default function MtpNetworkerFactoryModule() {
 
 			const deserializer = new TLDeserialization(responseBuffer);
 
-			const authKeyID = deserializer.fetchIntBytes(64, false, 'auth_key_id');
+			const authKeyID = deserializer.fetchIntBytes(
+				64,
+				false,
+				'auth_key_id'
+			);
 			if (!bytesCmp(authKeyID, this.authKeyID)) {
-				throw new Error('Invalid server auth_key_id: ' + bytesToHex(authKeyID));
+				throw new Error(
+					'Invalid server auth_key_id: ' + bytesToHex(authKeyID)
+				);
 			}
 			const msgKey = deserializer.fetchIntBytes(128, true, 'msg_key'),
 				encryptedData = deserializer.fetchRawBytes(
@@ -735,82 +836,141 @@ export default function MtpNetworkerFactoryModule() {
 					'encrypted_data'
 				);
 
-			return this.getDecryptedMessage(msgKey, encryptedData).then(dataWithPadding => {
-				// console.log(dT(), 'after decrypt');
-				const deserializer = new TLDeserialization(dataWithPadding, {
-					mtproto: true,
-				});
+			return this.getDecryptedMessage(msgKey, encryptedData).then(
+				dataWithPadding => {
+					// console.log(dT(), 'after decrypt');
+					const deserializer = new TLDeserialization(
+						dataWithPadding,
+						{
+							mtproto: true,
+						}
+					);
 
-				const salt = deserializer.fetchIntBytes(64, false, 'salt');
-				const sessionID = deserializer.fetchIntBytes(64, false, 'session_id');
-				const messageID = deserializer.fetchLong('message_id');
+					const salt = deserializer.fetchIntBytes(64, false, 'salt');
+					const sessionID = deserializer.fetchIntBytes(
+						64,
+						false,
+						'session_id'
+					);
+					const messageID = deserializer.fetchLong('message_id');
 
-				const seqNo = deserializer.fetchInt('seq_no');
+					const seqNo = deserializer.fetchInt('seq_no');
 
-				const messageBody = deserializer.fetchRawBytes(false, true, 'message_data');
+					const messageBody = deserializer.fetchRawBytes(
+						false,
+						true,
+						'message_data'
+					);
 
-				// console.log(dT(), 'before hash');
-				const hashData = convertToUint8Array(dataWithPadding).subarray(0, deserializer.getOffset());
+					// console.log(dT(), 'before hash');
+					const hashData = convertToUint8Array(
+						dataWithPadding
+					).subarray(0, deserializer.getOffset());
 
-				return this.CryptoWorker.sha1Hash(hashData).then(dataHash => {
-					if (!bytesCmp(msgKey, bytesFromArrayBuffer(dataHash).slice(-16))) {
-						console.warn(msgKey, bytesFromArrayBuffer(dataHash));
-						throw new Error('server msgKey mismatch');
-					}
+					return this.CryptoWorker.sha1Hash(hashData).then(
+						dataHash => {
+							if (
+								!bytesCmp(
+									msgKey,
+									bytesFromArrayBuffer(dataHash).slice(-16)
+								)
+							) {
+								console.warn(
+									msgKey,
+									bytesFromArrayBuffer(dataHash)
+								);
+								throw new Error('server msgKey mismatch');
+							}
 
-					const buffer = bytesToArrayBuffer(messageBody);
-					const deserializerOptions = {
-						mtproto: true,
-						override: {
-							mt_message: function(result, field) {
-								result.msg_id = this.fetchLong(field + '[msg_id]');
-								result.seqno = this.fetchInt(field + '[seqno]');
-								result.bytes = this.fetchInt(field + '[bytes]');
+							const buffer = bytesToArrayBuffer(messageBody);
+							const deserializerOptions = {
+								mtproto: true,
+								override: {
+									mt_message: function(result, field) {
+										result.msg_id = this.fetchLong(
+											field + '[msg_id]'
+										);
+										result.seqno = this.fetchInt(
+											field + '[seqno]'
+										);
+										result.bytes = this.fetchInt(
+											field + '[bytes]'
+										);
 
-								const offset = this.getOffset();
+										const offset = this.getOffset();
 
-								try {
-									result.body = this.fetchObject('Object', field + '[body]');
-								} catch (e) {
-									console.error(dT(), 'parse error', e.message, e.stack);
-									result.body = {
-										_: 'parse_error',
-										error: e,
-									};
-								}
-								if (this.offset != offset + result.bytes) {
-									// console.warn(dT(), 'set offset', this.offset, offset, result.bytes);
-									// console.log(dT(), result);
-									this.offset = offset + result.bytes;
-								}
-								// console.log(dT(), 'override message', result);
-							},
-							mt_rpc_result: function(result, field) {
-								result.req_msg_id = this.fetchLong(field + '[req_msg_id]');
+										try {
+											result.body = this.fetchObject(
+												'Object',
+												field + '[body]'
+											);
+										} catch (e) {
+											console.error(
+												dT(),
+												'parse error',
+												e.message,
+												e.stack
+											);
+											result.body = {
+												_: 'parse_error',
+												error: e,
+											};
+										}
+										if (
+											this.offset !=
+											offset + result.bytes
+										) {
+											// console.warn(dT(), 'set offset', this.offset, offset, result.bytes);
+											// console.log(dT(), result);
+											this.offset = offset + result.bytes;
+										}
+										// console.log(dT(), 'override message', result);
+									},
+									mt_rpc_result: function(result, field) {
+										result.req_msg_id = this.fetchLong(
+											field + '[req_msg_id]'
+										);
 
-								const sentMessage = self.sentMessages[result.req_msg_id],
-									type = (sentMessage && sentMessage.resultType) || 'Object';
+										const sentMessage =
+												self.sentMessages[
+													result.req_msg_id
+												],
+											type =
+												(sentMessage &&
+													sentMessage.resultType) ||
+												'Object';
 
-								if (result.req_msg_id && !sentMessage) {
-									// console.warn(dT(), 'Result for unknown message', result);
-									return;
-								}
-								result.result = this.fetchObject(type, field + '[result]');
-								// console.log(dT(), 'override rpc_result', sentMessage, type, result);
-							},
-						},
-					};
-					const deserializer = new TLDeserialization(buffer, deserializerOptions);
-					const response = deserializer.fetchObject('', 'INPUT');
+										if (result.req_msg_id && !sentMessage) {
+											// console.warn(dT(), 'Result for unknown message', result);
+											return;
+										}
+										result.result = this.fetchObject(
+											type,
+											field + '[result]'
+										);
+										// console.log(dT(), 'override rpc_result', sentMessage, type, result);
+									},
+								},
+							};
+							const deserializer = new TLDeserialization(
+								buffer,
+								deserializerOptions
+							);
+							const response = deserializer.fetchObject(
+								'',
+								'INPUT'
+							);
 
-					return {
-						response: response,
-						messageID: messageID,
-						sessionID: sessionID,
-						seqNo: seqNo,
-					};
-				});
-			});
+							return {
+								response: response,
+								messageID: messageID,
+								sessionID: sessionID,
+								seqNo: seqNo,
+							};
+						}
+					);
+				}
+			);
 		};
 
 		applyServerSalt = newServerSalt => {
@@ -818,7 +978,9 @@ export default function MtpNetworkerFactoryModule() {
 
 			const storeObj = {};
 
-			storeObj['dc' + this.dcID + '_server_salt'] = bytesToHex(serverSalt);
+			storeObj['dc' + this.dcID + '_server_salt'] = bytesToHex(
+				serverSalt
+			);
 			this.Storage.set(storeObj);
 
 			this.serverSalt = serverSalt;
@@ -840,7 +1002,10 @@ export default function MtpNetworkerFactoryModule() {
 
 			$timeout.cancel(this.nextReqPromise);
 			if (delay > 0) {
-				this.nextReqPromise = $timeout(this.performSheduledRequest.bind(this), delay || 0);
+				this.nextReqPromise = $timeout(
+					this.performSheduledRequest.bind(this),
+					delay || 0
+				);
 			} else {
 				setZeroTimeout(this.performSheduledRequest.bind(this));
 			}
@@ -866,7 +1031,10 @@ export default function MtpNetworkerFactoryModule() {
 			// console.log('clean start', this.dcID/*, this.sentMessages*/);
 			forEach(this.sentMessages, (message, msgID) => {
 				// console.log('clean iter', msgID, message);
-				if (message.notContentRelated && self.pendingMessages[msgID] === undefined) {
+				if (
+					message.notContentRelated &&
+					self.pendingMessages[msgID] === undefined
+				) {
 					// console.log('clean notContentRelated', msgID);
 					delete self.sentMessages[msgID];
 				} else if (message.container) {
@@ -900,13 +1068,24 @@ export default function MtpNetworkerFactoryModule() {
 		};
 
 		processError = rawError => {
-			const matches = (rawError.error_message || '').match(/^([A-Z_0-9]+\b)(: (.+))?/) || [];
+			const matches =
+				(rawError.error_message || '').match(
+					/^([A-Z_0-9]+\b)(: (.+))?/
+				) || [];
 			rawError.error_code = uintToInt(rawError.error_code);
 
 			return {
-				code: !rawError.error_code || rawError.error_code <= 0 ? 500 : rawError.error_code,
+				code:
+					!rawError.error_code || rawError.error_code <= 0
+						? 500
+						: rawError.error_code,
 				type: matches[1] || 'UNKNOWN',
-				description: matches[3] || 'CODE#' + rawError.error_code + ' ' + rawError.error_message,
+				description:
+					matches[3] ||
+					'CODE#' +
+						rawError.error_code +
+						' ' +
+						rawError.error_message,
 				originalError: rawError,
 			};
 		};
@@ -918,14 +1097,21 @@ export default function MtpNetworkerFactoryModule() {
 				case 'msg_container':
 					len = message.messages.length;
 					for (let i = 0; i < len; i++) {
-						this.processMessage(message.messages[i], messageID, sessionID);
+						this.processMessage(
+							message.messages[i],
+							messageID,
+							sessionID
+						);
 					}
 					break;
 
 				case 'bad_server_salt':
 					logger('Bad server salt', message);
 					sentMessage = this.sentMessages[message.bad_msg_id];
-					if (!sentMessage || sentMessage.seq_no != message.bad_msg_seqno) {
+					if (
+						!sentMessage ||
+						sentMessage.seq_no != message.bad_msg_seqno
+					) {
 						logger(message.bad_msg_id, message.bad_msg_seqno);
 						throw new Error('Bad server salt for invalid message');
 					}
@@ -938,9 +1124,14 @@ export default function MtpNetworkerFactoryModule() {
 				case 'bad_msg_notification':
 					logger('Bad msg notification', message);
 					sentMessage = this.sentMessages[message.bad_msg_id];
-					if (!sentMessage || sentMessage.seq_no != message.bad_msg_seqno) {
+					if (
+						!sentMessage ||
+						sentMessage.seq_no != message.bad_msg_seqno
+					) {
 						logger(message.bad_msg_id, message.bad_msg_seqno);
-						throw new Error('Bad msg notification for invalid message');
+						throw new Error(
+							'Bad msg notification for invalid message'
+						);
 					}
 
 					if (message.error_code == 16 || message.error_code == 17) {
@@ -962,7 +1153,11 @@ export default function MtpNetworkerFactoryModule() {
 
 				case 'message':
 					this.serverMessages.push(message.msg_id);
-					this.processMessage(message.body, message.msg_id, sessionID);
+					this.processMessage(
+						message.body,
+						message.msg_id,
+						sessionID
+					);
 					break;
 
 				case 'new_session_created':
@@ -973,7 +1168,11 @@ export default function MtpNetworkerFactoryModule() {
 
 					// var self = this;
 					this.Storage.get('dc').then(baseDcID => {
-						if (baseDcID == this.dcID && !this.upload && updatesProcessor) {
+						if (
+							baseDcID == this.dcID &&
+							!this.upload &&
+							updatesProcessor
+						) {
 							updatesProcessor(message);
 						}
 					});
@@ -1002,7 +1201,11 @@ export default function MtpNetworkerFactoryModule() {
 						this.lastResendReq.req_msg_id == message.req_msg_id &&
 						this.pendingResends.length
 					) {
-						for (let i = 0; i < this.lastResendReq.resend_msg_ids.length; i++) {
+						for (
+							let i = 0;
+							i < this.lastResendReq.resend_msg_ids.length;
+							i++
+						) {
 							badMsgID = this.lastResendReq.resend_msg_ids[i];
 							pos = this.pendingResends.indexOf(badMsgID);
 							if (pos != -1) {
@@ -1030,12 +1233,19 @@ export default function MtpNetworkerFactoryModule() {
 						} else {
 							if (deferred) {
 								if (Config.Modes.debug) {
-									console.log(dT(), 'Rpc response', message.result);
+									console.log(
+										dT(),
+										'Rpc response',
+										message.result
+									);
 								} else {
 									let dRes = message.result._;
 									if (!dRes) {
 										if (message.result.length > 5) {
-											dRes = '[..' + message.result.length + '..]';
+											dRes =
+												'[..' +
+												message.result.length +
+												'..]';
 										} else {
 											dRes = message.result;
 										}

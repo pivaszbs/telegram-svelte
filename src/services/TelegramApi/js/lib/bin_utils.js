@@ -56,7 +56,8 @@ export function stringToChars(str) {
 	return result;
 }
 
-export const strDecToHex = str => toLower(bigInt2str(str2bigInt(str, 10, 0), 16));
+export const strDecToHex = str =>
+	toLower(bigInt2str(str2bigInt(str, 10, 0), 16));
 
 export function bytesToHex(bytes = []) {
 	const arr = [];
@@ -155,7 +156,11 @@ export function bytesFromBigInt(bigInt, len) {
 
 	if (len && bytes.length < len) {
 		var padding = [];
-		for (var i = 0, needPadding = len - bytes.length; i < needPadding; i++) {
+		for (
+			var i = 0, needPadding = len - bytes.length;
+			i < needPadding;
+			i++
+		) {
 			padding[i] = 0;
 		}
 		if (bytes instanceof ArrayBuffer) {
@@ -181,7 +186,10 @@ export function convertToArrayBuffer(bytes) {
 	if (bytes instanceof ArrayBuffer) {
 		return bytes;
 	}
-	if (bytes.buffer !== undefined && bytes.buffer.byteLength == bytes.length * bytes.BYTES_PER_ELEMENT) {
+	if (
+		bytes.buffer !== undefined &&
+		bytes.buffer.byteLength == bytes.length * bytes.BYTES_PER_ELEMENT
+	) {
 		return bytes.buffer;
 	}
 	return bytesToArrayBuffer(bytes);
@@ -216,8 +224,14 @@ export function bufferConcat(buffer1, buffer2) {
 	const l1 = buffer1.byteLength || buffer1.length;
 	const l2 = buffer2.byteLength || buffer2.length;
 	const tmp = new Uint8Array(l1 + l2);
-	tmp.set(buffer1 instanceof ArrayBuffer ? new Uint8Array(buffer1) : buffer1, 0);
-	tmp.set(buffer2 instanceof ArrayBuffer ? new Uint8Array(buffer2) : buffer2, l1);
+	tmp.set(
+		buffer1 instanceof ArrayBuffer ? new Uint8Array(buffer1) : buffer1,
+		0
+	);
+	tmp.set(
+		buffer2 instanceof ArrayBuffer ? new Uint8Array(buffer2) : buffer2,
+		l1
+	);
 
 	return tmp.buffer;
 }
@@ -330,7 +344,10 @@ export function addPadding(bytes, blockSize, zeroes) {
 			random(padding);
 		}
 
-		bytes = bytes instanceof ArrayBuffer ? bufferConcat(bytes, padding) : bytes.concat(padding);
+		bytes =
+			bytes instanceof ArrayBuffer
+				? bufferConcat(bytes, padding)
+				: bytes.concat(padding);
 	}
 
 	return bytes;
@@ -340,11 +357,15 @@ export function aesEncryptSync(bytes, keyBytes, ivBytes) {
 	// console.log(dT(), 'AES encrypt start', bytesToHex(keyBytes), bytesToHex(ivBytes));
 	bytes = addPadding(bytes);
 
-	const encryptedWords = CryptoJS.AES.encrypt(bytesToWords(bytes), bytesToWords(keyBytes), {
-		iv: bytesToWords(ivBytes),
-		padding: CryptoJS.pad.NoPadding,
-		mode: CryptoJS.mode.IGE,
-	}).ciphertext;
+	const encryptedWords = CryptoJS.AES.encrypt(
+		bytesToWords(bytes),
+		bytesToWords(keyBytes),
+		{
+			iv: bytesToWords(ivBytes),
+			padding: CryptoJS.pad.NoPadding,
+			mode: CryptoJS.mode.IGE,
+		}
+	).ciphertext;
 
 	const encryptedBytes = bytesFromWords(encryptedWords);
 	// console.log(dT(), 'AES encrypt finish')
@@ -354,11 +375,15 @@ export function aesEncryptSync(bytes, keyBytes, ivBytes) {
 
 export function aesDecryptSync(encryptedBytes, keyBytes, ivBytes) {
 	// console.log(dT(), 'AES decrypt start', encryptedBytes.length);
-	const decryptedWords = CryptoJS.AES.decrypt({ ciphertext: bytesToWords(encryptedBytes) }, bytesToWords(keyBytes), {
-		iv: bytesToWords(ivBytes),
-		padding: CryptoJS.pad.NoPadding,
-		mode: CryptoJS.mode.IGE,
-	});
+	const decryptedWords = CryptoJS.AES.decrypt(
+		{ ciphertext: bytesToWords(encryptedBytes) },
+		bytesToWords(keyBytes),
+		{
+			iv: bytesToWords(ivBytes),
+			padding: CryptoJS.pad.NoPadding,
+			mode: CryptoJS.mode.IGE,
+		}
+	);
 
 	const bytes = bytesFromWords(decryptedWords);
 	// console.log(dT(), 'AES decrypt finish')

@@ -1,8 +1,10 @@
 <script>
+	import { loadDialog } from './../../services/storeService.js';
 	import RightTop from './right-top.svelte';
 	import RightBottom from './right-bottom.svelte';
 	import Avatar from '../avatar/avatar.svelte';
 	import Ripple from '@smui/ripple';
+	import './dialog.scss';
 	export let photo;
 	photo = photo && photo.src;
 	export let unreadCount;
@@ -12,20 +14,26 @@
 	export let pinned;
 	export let fromName;
 	export let out;
+	export let id;
 	// const { out } = message_info; //needed from new API
 	export let read; //needed from new API
 	export let saved; //needed from store/API
 	export let online;
 	export let active;
+
+	const onClick = () => {
+		loadDialog(id);
+	};
 </script>
 
 <div
+	on:click="{onClick}"
 	tabindex="0"
 	use:Ripple="{{ ripple: true, color: 'secondary' }}"
 	class="dialog"
 >
-	<div class="avatar-wrapper">
-		<Avatar medium {photo} {online} {title} />
+	<div class:online class="avatar-wrapper">
+		<Avatar medium {photo} {title} />
 	</div>
 	<div class="name">{title}</div>
 	<div class="short">
@@ -40,6 +48,21 @@
 </div>
 
 <style lang="scss">
+	.online {
+		position: relative;
+		&::before {
+			position: absolute;
+			content: '';
+			height: 10px;
+			width: 10px;
+			border-radius: 50%;
+			background: var(--green);
+			border: 2px solid var(--white);
+			right: 0;
+			bottom: 2px;
+		}
+	}
+
 	.dialog {
 		padding: 4px 8px;
 		max-height: 10vh;

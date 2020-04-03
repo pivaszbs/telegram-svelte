@@ -72,8 +72,16 @@ export class TLSerialization {
 			return;
 		}
 
-		console.trace('Increase buffer', this.offset, needBytes, this.maxLength);
-		this.maxLength = Math.ceil(Math.max(this.maxLength * 2, this.offset + needBytes + 16) / 4) * 4;
+		console.trace(
+			'Increase buffer',
+			this.offset,
+			needBytes,
+			this.maxLength
+		);
+		this.maxLength =
+			Math.ceil(
+				Math.max(this.maxLength * 2, this.offset + needBytes + 16) / 4
+			) * 4;
 		const previousBuffer = this.buffer,
 			previousArray = new Int32Array(previousBuffer);
 
@@ -119,10 +127,18 @@ export class TLSerialization {
 		if (typeof sLong != 'string') {
 			sLong = sLong ? sLong.toString() : '0';
 		}
-		const divRem = bigStringInt(sLong).divideAndRemainder(bigint(0x100000000));
+		const divRem = bigStringInt(sLong).divideAndRemainder(
+			bigint(0x100000000)
+		);
 
-		this.writeInt(intToUint(divRem[1].intValue()), (field || '') + ':long[low]');
-		this.writeInt(intToUint(divRem[0].intValue()), (field || '') + ':long[high]');
+		this.writeInt(
+			intToUint(divRem[1].intValue()),
+			(field || '') + ':long[low]'
+		);
+		this.writeInt(
+			intToUint(divRem[0].intValue()),
+			(field || '') + ':long[high]'
+		);
 	};
 
 	storeDouble = f => {
@@ -253,7 +269,11 @@ export class TLSerialization {
 				type = condType[1];
 			}
 
-			this.storeObject(params[param.name], type, methodName + '[' + param.name + ']');
+			this.storeObject(
+				params[param.name],
+				type,
+				methodName + '[' + param.name + ']'
+			);
 		}
 
 		return methodData.type;
@@ -331,7 +351,10 @@ export class TLSerialization {
 		}
 
 		if (!isBare) {
-			this.writeInt(intToUint(constructorData.id), field + '[' + predicate + '][id]');
+			this.writeInt(
+				intToUint(constructorData.id),
+				field + '[' + predicate + '][id]'
+			);
 		}
 
 		let param, condType, fieldBit;
@@ -348,7 +371,11 @@ export class TLSerialization {
 				type = condType[1];
 			}
 
-			this.storeObject(obj[param.name], type, field + '[' + predicate + '][' + param.name + ']');
+			this.storeObject(
+				obj[param.name],
+				type,
+				field + '[' + predicate + '][' + param.name + ']'
+			);
 		}
 
 		return constructorData.type;
@@ -488,7 +515,10 @@ export default class TLDeserialization {
 
 		const len = bits / 8;
 		if (typed) {
-			const result = this.byteView.subarray(this.offset, this.offset + len);
+			const result = this.byteView.subarray(
+				this.offset,
+				this.offset + len
+			);
 			this.offset += len;
 			return result;
 		}
@@ -559,7 +589,9 @@ export default class TLDeserialization {
 
 				if (constructorCmp == 0x3072cfa1) {
 					// Gzip packed
-					const compressed = this.fetchBytes(field + '[packed_string]'),
+					const compressed = this.fetchBytes(
+							field + '[packed_string]'
+						),
 						uncompressed = gzipUncompress(compressed),
 						buffer = bytesToArrayBuffer(uncompressed),
 						newDeserializer = new TLDeserialization(buffer);
@@ -567,7 +599,9 @@ export default class TLDeserialization {
 					return newDeserializer.fetchObject(type, field);
 				}
 				if (constructorCmp != 0x1cb5c415) {
-					throw new Error('Invalid vector constructor ' + constructor);
+					throw new Error(
+						'Invalid vector constructor ' + constructor
+					);
 				}
 			}
 			const len = this.readInt(field + '[count]');
@@ -575,7 +609,9 @@ export default class TLDeserialization {
 			if (len > 0) {
 				const itemType = type.substr(7, type.length - 8); // for "Vector<itemType>"
 				for (let i = 0; i < len; i++) {
-					result.push(this.fetchObject(itemType, field + '[' + i + ']'));
+					result.push(
+						this.fetchObject(itemType, field + '[' + i + ']')
+					);
 				}
 			}
 
@@ -648,7 +684,12 @@ export default class TLDeserialization {
 			}
 			if (!constructorData) {
 				throw new Error(
-					'Constructor not found: ' + constructor + ' ' + this.fetchInt() + ' ' + this.fetchInt()
+					'Constructor not found: ' +
+						constructor +
+						' ' +
+						this.fetchInt() +
+						' ' +
+						this.fetchInt()
 				);
 			}
 		}
@@ -660,7 +701,10 @@ export default class TLDeserialization {
 			self = this;
 
 		if (this.override[overrideKey]) {
-			this.override[overrideKey].apply(this, [result, field + '[' + predicate + ']']);
+			this.override[overrideKey].apply(this, [
+				result,
+				field + '[' + predicate + ']',
+			]);
 		} else {
 			let i, param, type, isCond, condType, fieldBit, value;
 			const len = constructorData.params.length;
@@ -680,7 +724,10 @@ export default class TLDeserialization {
 					type = condType[1];
 				}
 
-				value = self.fetchObject(type, field + '[' + predicate + '][' + param.name + ']');
+				value = self.fetchObject(
+					type,
+					field + '[' + predicate + '][' + param.name + ']'
+				);
 
 				if (isCond && type === 'true') {
 					result.pFlags[param.name] = value;

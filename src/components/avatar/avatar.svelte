@@ -26,7 +26,6 @@
 			<img
 				class="avatar"
 				src="{avatar}"
-				class:online
 				class:small
 				class:medium
 				class:big
@@ -39,20 +38,3 @@
 		<DefaultAvatar {title} {...commonProps} />
 	{/await}
 {/if}
-
-<style lang="scss">
-	.online {
-		position: relative;
-		&::before {
-			position: absolute;
-			content: '';
-			height: 10px;
-			width: 10px;
-			border-radius: 50%;
-			background: var(--green);
-			border: 2px solid var(--white);
-			right: 0;
-			bottom: 2px;
-		}
-	}
-</style>

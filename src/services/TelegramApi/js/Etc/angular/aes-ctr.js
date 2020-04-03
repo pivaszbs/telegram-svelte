@@ -53,12 +53,22 @@ function createArray(length) {
 	return new Uint8Array(length);
 }
 
-function copyArray(sourceArray, targetArray, targetStart, sourceStart, sourceEnd) {
+function copyArray(
+	sourceArray,
+	targetArray,
+	targetStart,
+	sourceStart,
+	sourceEnd
+) {
 	if (sourceStart != null || sourceEnd != null) {
 		if (sourceArray.slice) {
 			sourceArray = sourceArray.slice(sourceStart, sourceEnd);
 		} else {
-			sourceArray = Array.prototype.slice.call(sourceArray, sourceStart, sourceEnd);
+			sourceArray = Array.prototype.slice.call(
+				sourceArray,
+				sourceStart,
+				sourceEnd
+			);
 		}
 	}
 	targetArray.set(sourceArray, targetStart);
@@ -97,11 +107,19 @@ var convertUtf8 = (function() {
 				result.push(String.fromCharCode(c));
 				i++;
 			} else if (c > 191 && c < 224) {
-				result.push(String.fromCharCode(((c & 0x1f) << 6) | (bytes[i + 1] & 0x3f)));
+				result.push(
+					String.fromCharCode(
+						((c & 0x1f) << 6) | (bytes[i + 1] & 0x3f)
+					)
+				);
 				i += 2;
 			} else {
 				result.push(
-					String.fromCharCode(((c & 0x0f) << 12) | ((bytes[i + 1] & 0x3f) << 6) | (bytes[i + 2] & 0x3f))
+					String.fromCharCode(
+						((c & 0x0f) << 12) |
+							((bytes[i + 1] & 0x3f) << 6) |
+							(bytes[i + 2] & 0x3f)
+					)
 				);
 				i += 3;
 			}
@@ -3804,7 +3822,12 @@ var U4 = [
 function convertToInt32(bytes) {
 	var result = [];
 	for (var i = 0; i < bytes.length; i += 4) {
-		result.push((bytes[i] << 24) | (bytes[i + 1] << 16) | (bytes[i + 2] << 8) | bytes[i + 3]);
+		result.push(
+			(bytes[i] << 24) |
+				(bytes[i + 1] << 16) |
+				(bytes[i + 2] << 8) |
+				bytes[i + 3]
+		);
 	}
 	return result;
 }
@@ -3940,7 +3963,11 @@ class AES {
 		for (let r = 1; r < rounds; r++) {
 			for (let c = 0; c < 4; c++) {
 				tt = this._Kd[r][c];
-				this._Kd[r][c] = U1[(tt >> 24) & 0xff] ^ U2[(tt >> 16) & 0xff] ^ U3[(tt >> 8) & 0xff] ^ U4[tt & 0xff];
+				this._Kd[r][c] =
+					U1[(tt >> 24) & 0xff] ^
+					U2[(tt >> 16) & 0xff] ^
+					U3[(tt >> 8) & 0xff] ^
+					U4[tt & 0xff];
 			}
 		}
 	}
@@ -3973,8 +4000,10 @@ class AES {
 		for (let i = 0; i < 4; i++) {
 			tt = this._Ke[rounds][i];
 			result[4 * i] = (S[(t[i] >> 24) & 0xff] ^ (tt >> 24)) & 0xff;
-			result[4 * i + 1] = (S[(t[(i + 1) % 4] >> 16) & 0xff] ^ (tt >> 16)) & 0xff;
-			result[4 * i + 2] = (S[(t[(i + 2) % 4] >> 8) & 0xff] ^ (tt >> 8)) & 0xff;
+			result[4 * i + 1] =
+				(S[(t[(i + 1) % 4] >> 16) & 0xff] ^ (tt >> 16)) & 0xff;
+			result[4 * i + 2] =
+				(S[(t[(i + 2) % 4] >> 8) & 0xff] ^ (tt >> 8)) & 0xff;
 			result[4 * i + 3] = (S[t[(i + 3) % 4] & 0xff] ^ tt) & 0xff;
 		}
 		return result;
@@ -4008,8 +4037,10 @@ class AES {
 		for (let i = 0; i < 4; i++) {
 			tt = this._Kd[rounds][i];
 			result[4 * i] = (Si[(t[i] >> 24) & 0xff] ^ (tt >> 24)) & 0xff;
-			result[4 * i + 1] = (Si[(t[(i + 3) % 4] >> 16) & 0xff] ^ (tt >> 16)) & 0xff;
-			result[4 * i + 2] = (Si[(t[(i + 2) % 4] >> 8) & 0xff] ^ (tt >> 8)) & 0xff;
+			result[4 * i + 1] =
+				(Si[(t[(i + 3) % 4] >> 16) & 0xff] ^ (tt >> 16)) & 0xff;
+			result[4 * i + 2] =
+				(Si[(t[(i + 2) % 4] >> 8) & 0xff] ^ (tt >> 8)) & 0xff;
 			result[4 * i + 3] = (Si[t[(i + 1) % 4] & 0xff] ^ tt) & 0xff;
 		}
 		return result;
@@ -4035,11 +4066,15 @@ class ModeOfOperationCTR {
 		var encrypted = coerceArray(plaintext, true);
 		for (let i = 0; i < encrypted.length; i++) {
 			if (this._remainingCounterIndex === 16) {
-				this._remainingCounter = this._aes.encrypt(this._counter._counter);
+				this._remainingCounter = this._aes.encrypt(
+					this._counter._counter
+				);
 				this._remainingCounterIndex = 0;
 				this._counter.increment();
 			}
-			encrypted[i] ^= this._remainingCounter[this._remainingCounterIndex++];
+			encrypted[i] ^= this._remainingCounter[
+				this._remainingCounterIndex++
+			];
 		}
 		return encrypted;
 	}

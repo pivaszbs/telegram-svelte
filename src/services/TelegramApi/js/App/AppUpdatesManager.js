@@ -20,7 +20,10 @@ class AppUpdatesManagerModule {
 			// console.log('Got event', data);
 			if (data._ === 'updateShort' || data._ === 'updates') {
 				this._parseUpdate(data);
-			} else if (data._ === 'updateShortMessage' || data._ === 'updateShortChatMessage') {
+			} else if (
+				data._ === 'updateShortMessage' ||
+				data._ === 'updateShortChatMessage'
+			) {
 				this._parseUpdate({ update: data });
 			}
 		};
@@ -47,7 +50,10 @@ class AppUpdatesManagerModule {
 		console.log('Got event', data);
 		if (data._ === 'updateShort' || data._ === 'updates') {
 			this._parseUpdate(data);
-		} else if (data._ === 'updateShortMessage' || data._ === 'updateShortChatMessage') {
+		} else if (
+			data._ === 'updateShortMessage' ||
+			data._ === 'updateShortChatMessage'
+		) {
 			this._parseUpdate({ update: data });
 		}
 	};
@@ -222,7 +228,10 @@ class AppUpdatesManagerModule {
 
 		const from_id = message.from_id;
 
-		const to_id = message.to_id.user_id || message.to_id.chat_id || message.to_id.channel_id;
+		const to_id =
+			message.to_id.user_id ||
+			message.to_id.chat_id ||
+			message.to_id.channel_id;
 
 		this.AppUsersManager.saveApiUsers(update.users);
 
@@ -266,7 +275,9 @@ class AppUpdatesManagerModule {
 	};
 
 	_dispatchForMessages = payload => {
-		this.subscribed.messages.forEach(el => this._dispatchEvent(el, payload));
+		this.subscribed.messages.forEach(el =>
+			this._dispatchEvent(el, payload)
+		);
 	};
 }
 

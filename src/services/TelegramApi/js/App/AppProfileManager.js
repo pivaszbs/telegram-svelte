@@ -117,7 +117,11 @@ class AppProfileManagerModule {
 
 	signIn2FA = async password => {
 		const currentState = await this.MtpPasswordManager.getState();
-		const result = await this.MtpPasswordManager.check(currentState, password, this.options);
+		const result = await this.MtpPasswordManager.check(
+			currentState,
+			password,
+			this.options
+		);
 
 		this.setUser(result.user);
 

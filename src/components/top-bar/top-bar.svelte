@@ -1,21 +1,25 @@
 <script>
+	import { topBar } from './../../stores/topBar.js';
+	import { dialogs } from './../../stores/dialogs.js';
+	import { clsx } from './../../helpers/index.js';
 	import More from 'images/more.svg';
 	import Search from 'images/search.svg';
 	import { user } from './../../stores/user.js';
-	import { loadStatus } from './status-helpers.js';
-	import { dialogs } from './../../stores/dialogs.js';
 	import Avatar from './../avatar/avatar.svelte';
 	import './top-bar.scss';
+	$: console.log($topBar);
 </script>
 
-{#if $dialogs[1]}
+{#if $topBar}
 	<div class="top-bar">
-		<Avatar
-			small
-			photo="{$dialogs[1].photo.src}"
-			title="{$dialogs[1].title}"
-		/>
-		<div class="name">{$dialogs[1].title}</div>
+		<Avatar small photo="{$topBar.photo.src}" title="{$topBar.title}" />
+		<div
+			class="{clsx('top-bar__online-info', $topBar.online && 'top-bar__online-info_online')}"
+		>
+			{$topBar.status}
+		</div>
+
+		<div class="name">{$topBar.title}</div>
 		<div class="top-bar__search icon">
 			<img src="{Search}" />
 		</div>

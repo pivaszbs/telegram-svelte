@@ -26,7 +26,12 @@ function MtpApiFileManagerModule() {
 
 		const downloadPull = downloadPulls[dcID];
 		return new Promise((resolve, reject) => {
-			downloadPull.push({ cb: cb, resolve: resolve, reject: reject, activeDelta: activeDelta });
+			downloadPull.push({
+				cb: cb,
+				resolve: resolve,
+				reject: reject,
+				activeDelta: activeDelta,
+			});
 			setZeroTimeout(() => {
 				downloadCheck(dcID);
 			});
@@ -37,7 +42,11 @@ function MtpApiFileManagerModule() {
 		const downloadPull = downloadPulls[dcID];
 		const downloadLimit = dcID == 'upload' ? 11 : 5;
 
-		if (downloadActives[dcID] >= downloadLimit || !downloadPull || !downloadPull.length) {
+		if (
+			downloadActives[dcID] >= downloadLimit ||
+			!downloadPull ||
+			!downloadPull.length
+		) {
 			return false;
 		}
 
@@ -117,49 +126,68 @@ function MtpApiFileManagerModule() {
 					downloadRequest(
 						'upload',
 						() => {
-							return new Promise((uploadResolve, uploadReject) => {
-								// var uploadDeferred = new Promise();
+							return new Promise(
+								(uploadResolve, uploadReject) => {
+									// var uploadDeferred = new Promise();
 
-								const reader = new FileReader();
-								const blob = file.slice(offset, offset + partSize);
+									const reader = new FileReader();
+									const blob = file.slice(
+										offset,
+										offset + partSize
+									);
 
-								reader.onloadend = e => {
-									if (canceled) {
-										uploadReject();
-										return;
-									}
-									if (e.target.readyState != FileReader.DONE) {
-										return;
-									}
-									MtpApiManager.invokeApi(
-										isBigFile ? 'upload.saveBigFilePart' : 'upload.saveFilePart',
-										{
-											file_id: fileID,
-											file_part: part,
-											file_total_parts: totalParts,
-											bytes: e.target.result,
-										},
-										{
-											startMaxLength: partSize + 256,
-											fileUpload: true,
-											singleInRequest: true,
+									reader.onloadend = e => {
+										if (canceled) {
+											uploadReject();
+											return;
 										}
-									).then(result => {
-										doneParts++;
-										uploadResolve();
-										if (doneParts >= totalParts) {
-											resolve(resultInputFile);
-											resolved = true;
-										} else {
-											logger('Progress', (doneParts * partSize) / fileSize);
-											progress(offset < fileSize ? offset : fileSize, fileSize);
-											// resolve({ done: doneParts * partSize, total: fileSize });
+										if (
+											e.target.readyState !=
+											FileReader.DONE
+										) {
+											return;
 										}
-									}, errorHandler);
-								};
+										MtpApiManager.invokeApi(
+											isBigFile
+												? 'upload.saveBigFilePart'
+												: 'upload.saveFilePart',
+											{
+												file_id: fileID,
+												file_part: part,
+												file_total_parts: totalParts,
+												bytes: e.target.result,
+											},
+											{
+												startMaxLength: partSize + 256,
+												fileUpload: true,
+												singleInRequest: true,
+											}
+										).then(result => {
+											doneParts++;
+											uploadResolve();
+											if (doneParts >= totalParts) {
+												resolve(resultInputFile);
+												resolved = true;
+											} else {
+												logger(
+													'Progress',
+													(doneParts * partSize) /
+														fileSize
+												);
+												progress(
+													offset < fileSize
+														? offset
+														: fileSize,
+													fileSize
+												);
+												// resolve({ done: doneParts * partSize, total: fileSize });
+											}
+										}, errorHandler);
+									};
 
-								reader.readAsArrayBuffer(blob);
-							});
+									reader.readAsArrayBuffer(blob);
+								}
+							);
 						},
 						activeDelta
 					);
@@ -191,7 +219,12 @@ function MtpApiFileManagerModule() {
 		return cachedDownloads[id] || cachedDownloadPromises[id];
 	};
 
-	const downloadDocument = (doc, progress = noop, autosave, useCached = true) => {
+	const downloadDocument = (
+		doc,
+		progress = noop,
+		autosave,
+		useCached = true
+	) => {
 		doc = doc || {};
 		doc.id = doc.id || 0;
 		doc.access_hash = doc.access_hash || 0;
@@ -277,19 +310,29 @@ function MtpApiFileManagerModule() {
 				_: inputType || 'inputMediaUploadedDocument',
 				file: inputFile,
 				mime_type: file.type,
-				attributes: [{ _: 'documentAttributeFilename', file_name: file.name }],
+				attributes: [
+					{ _: 'documentAttributeFilename', file_name: file.name },
+				],
 			};
 
 			return MtpApiManager.invokeApi('messages.sendMedia', {
 				peer,
 				media: inputMedia,
 				message: params.caption,
-				random_id: [nextRandomInt(0xffffffff), nextRandomInt(0xffffffff)],
+				random_id: [
+					nextRandomInt(0xffffffff),
+					nextRandomInt(0xffffffff),
+				],
 			});
 		});
 	};
 
-	const downloadPhoto = (photo, progress = noop, autosave, useCached = true) => {
+	const downloadPhoto = (
+		photo,
+		progress = noop,
+		autosave,
+		useCached = true
+	) => {
 		const photoSize = photo.sizes[photo.sizes.length - 1];
 		const location = {
 			_: 'inputPhotoFileLocation',
@@ -447,7 +490,9 @@ function MtpApiFileManagerModule() {
 		if (!(bytes instanceof Uint8Array)) {
 			return bytes;
 		}
-		const data = window.URL.createObjectURL(new Blob([bytes], { type: 'image/png' }));
+		const data = window.URL.createObjectURL(
+			new Blob([bytes], { type: 'image/png' })
+		);
 		if (id) {
 			saveLocalFile(id, data);
 		}
@@ -472,7 +517,9 @@ function MtpApiFileManagerModule() {
 			logger('GOT CACHED', sticker);
 			return sticker;
 		}
-		const decoded_text = new TextDecoder('utf-8').decode(await pako.inflate(sticker[0]));
+		const decoded_text = new TextDecoder('utf-8').decode(
+			await pako.inflate(sticker[0])
+		);
 		const data = JSON.parse(decoded_text);
 		if (id) {
 			logger('SAVING', data);

@@ -38,7 +38,9 @@ class AppUsersManagerModule {
 
 		if (
 			!isObject(apiUser) ||
-			(noReplace && isObject(this.users[apiUser.id]) && this.users[apiUser.id].first_name)
+			(noReplace &&
+				isObject(this.users[apiUser.id]) &&
+				this.users[apiUser.id].first_name)
 		) {
 			return;
 		}
@@ -79,7 +81,9 @@ class AppUsersManagerModule {
 		const { user: apiUser } = user;
 		if (
 			!isObject(user) ||
-			(noReplace && isObject(this.fullUsers[apiUser.id]) && this.fullUsers[apiUser.id].first_name)
+			(noReplace &&
+				isObject(this.fullUsers[apiUser.id]) &&
+				this.fullUsers[apiUser.id].first_name)
 		) {
 			return;
 		}
@@ -197,7 +201,7 @@ class AppUsersManagerModule {
 			return false;
 		}
 
-		return user.status && user.status === 'userStatusOnline';
+		return user.status?._ === 'userStatusOnline';
 	};
 
 	getUser = id => {

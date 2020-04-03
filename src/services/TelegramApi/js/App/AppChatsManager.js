@@ -70,7 +70,11 @@ class AppsChatsManagerModule {
 
 		let photo = dialogPeer.photo;
 
-		if (photo && photo._ !== 'userProfilePhotoEmpty' && photo._ !== 'chatPhotoEmpty') {
+		if (
+			photo &&
+			photo._ !== 'userProfilePhotoEmpty' &&
+			photo._ !== 'chatPhotoEmpty'
+		) {
 			photo = {
 				...photo,
 				src: MtpApiFileManager.getPeerPhoto(dialog.id),
@@ -83,16 +87,29 @@ class AppsChatsManagerModule {
 			if (dialogPeer._ !== 'user') {
 				return dialogPeer.title;
 			}
-			return (dialogPeer.first_name + ' ' + (dialogPeer.last_name || '')).trim();
+			return (
+				dialogPeer.first_name +
+				' ' +
+				(dialogPeer.last_name || '')
+			).trim();
 		})();
-		const topMessage = AppMessagesManager.getMessage(dialog.id, dialog.top_message);
+		const topMessage = AppMessagesManager.getMessage(
+			dialog.id,
+			dialog.top_message
+		);
 
 		dialog.text = topMessage.formattedText;
 		dialog.date = topMessage.date;
 		dialog.time = convertDate(topMessage.date);
 		dialog.pinned = tlFlags(dialog.flags, 2);
-		if (dialogPeer._ !== 'user' && !this.isChannel(dialog.id) && topMessage._ !== 'messageService') {
-			dialog.fromName = AppPeersManager.getPeer(topMessage.from_id).first_name;
+		if (
+			dialogPeer._ !== 'user' &&
+			!this.isChannel(dialog.id) &&
+			topMessage._ !== 'messageService'
+		) {
+			dialog.fromName = AppPeersManager.getPeer(
+				topMessage.from_id
+			).first_name;
 		}
 		dialog.out = topMessage.out;
 		dialog.saved = AppProfileManager.isSelf(dialog.id);
@@ -145,19 +162,31 @@ class AppsChatsManagerModule {
 		const dialog = this.dialogsManagerStorage[id];
 		const notifySettings = dialog && dialog.notifySettings;
 
-		return dialog && (tlFlags(notifySettings.flags, 1) || notifySettings.mute_until * 1000 > Date.now());
+		return (
+			dialog &&
+			(tlFlags(notifySettings.flags, 1) ||
+				notifySettings.mute_until * 1000 > Date.now())
+		);
 	};
 
 	isChannel = id => {
 		const chat = this.chatsManagerStorage[id];
 
-		return chat && (chat._ === 'channel' || chat._ === 'channelForbidden') && !tlFlags(chat.flags, 8);
+		return (
+			chat &&
+			(chat._ === 'channel' || chat._ === 'channelForbidden') &&
+			!tlFlags(chat.flags, 8)
+		);
 	};
 
 	isSupergroup = id => {
 		const chat = this.chatsManagerStorage[id];
 
-		return chat && (chat._ === 'channel' || chat._ === 'channelForbidden') && tlFlags(chat.flags, 8);
+		return (
+			chat &&
+			(chat._ === 'channel' || chat._ === 'channelForbidden') &&
+			tlFlags(chat.flags, 8)
+		);
 	};
 
 	isGroup = id => {
@@ -175,7 +204,8 @@ class AppsChatsManagerModule {
 		return {
 			_: 'inputChannel',
 			channel_id: id,
-			access_hash: this.getChat(id).access_hash || this.channelAccess[id] || 0,
+			access_hash:
+				this.getChat(id).access_hash || this.channelAccess[id] || 0,
 		};
 	};
 }
