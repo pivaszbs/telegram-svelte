@@ -119,6 +119,7 @@ class TelegramApi {
 	peerManager = {
 		getPeerById: this.AppPeersManager.getPeer,
 		getPeerId: this.AppPeersManager.getPeerId,
+		getDialog: this.AppChatsManager.getDialog,
 	};
 
 	checkPhone = phone_number => this.MtpApiManager.invokeApi('auth.checkPhone', { phone_number: phone_number });
