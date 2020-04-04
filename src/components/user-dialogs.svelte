@@ -1,19 +1,39 @@
 <script>
-	import { loadBotom } from './../services/storeService.js';
+	import { loadBotom, loadTop } from './../services/storeService.js';
 	import { onMount } from 'svelte';
 	import { loadFirstDialogs } from '../services/storeService';
-	import { dialogs, load } from '../stores/dialogs';
+	import { dialogs, load, topDialog } from '../stores/dialogs';
 	import Dialog from './dialog/dialog.svelte';
 	onMount(() => {
 		loadFirstDialogs();
 	});
 	let userDialogs;
+	let lastScroll = 0;
+	let globalScroll = 0;
+	let update = false;
+
 	const scrollY = e => {
-		if (userDialogs.scrollTop >= userDialogs.offsetHeight && !$load) {
-			loadBotom();
+		const isBottomScroll = lastScroll < userDialogs.scrollTop;
+		const isTopScroll = !isBottomScroll; 
+		if (isBottomScroll && !update) {
+			if (userDialogs.scrollTop >= userDialogs.offsetHeight && !$load) {
+				loadBotom();
+				globalScroll+=userDialogs.offsetHeight
+				update = true;
+				return;
+			}
+		} else if (isTopScroll && !update && userDialogs.scrollTop <= userDialogs.offsetHeight / 2 && !$load) {
+			if ($topDialog.id !== $dialogs[3].id) {
+				loadTop(globalScroll === userDialogs.offsetHeight);
+				globalScroll-=userDialogs.offsetHeight;
+				update = true;
+				return;
+			}
 		}
+		lastScroll = userDialogs.scrollTop;
+		update = false;
 	}
-	$: console.log($dialogs)
+
 </script>
 
 <div bind:this={userDialogs} on:scroll="{scrollY}" class="user-dialogs">

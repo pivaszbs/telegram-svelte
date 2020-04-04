@@ -6,7 +6,6 @@
 	import Ripple from '@smui/ripple';
 	import './dialog.scss';
 	export let photo;
-	photo = photo && photo.src;
 	export let unreadCount,
 		title,
 		text,

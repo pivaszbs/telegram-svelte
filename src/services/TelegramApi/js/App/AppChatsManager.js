@@ -117,8 +117,7 @@ class AppsChatsManagerModule {
 			!this.isChannel(dialog.id) &&
 			topMessage._ !== 'messageService'
 		) {
-			console.log('top message', topMessage);
-			dialog.fromName = AppPeersManager.getPeer(
+			dialog.fromName = topMessage.from_id && AppPeersManager.getPeer(
 				topMessage.from_id
 			).first_name;
 		}

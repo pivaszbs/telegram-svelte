@@ -11,6 +11,7 @@
 	export let medium;
 	export let big;
 	export let online;
+
 	const commonProps = { small, medium, big, online };
 </script>
 
