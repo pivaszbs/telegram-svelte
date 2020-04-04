@@ -64,8 +64,8 @@ class AppUsersManagerModule {
 		if (apiUser.pFlags.bot) {
 			apiUser.sortStatus = -1;
 		} else {
-			apiUser.sortStatus = this.getUserStatusForSort(apiUser.status);
-			apiUser.formattedStatus = this.statusTransform(apiUser.status);
+			apiUser.sortStatus = apiUser.status && this.getUserStatusForSort(apiUser.status);
+			apiUser.formattedStatus = apiUser.status && this.statusTransform(apiUser.status);
 		}
 
 		let result = this.users[userID];
