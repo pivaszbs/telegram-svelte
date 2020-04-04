@@ -117,6 +117,7 @@ class AppsChatsManagerModule {
 			!this.isChannel(dialog.id) &&
 			topMessage._ !== 'messageService'
 		) {
+			console.log('top message', topMessage);
 			dialog.fromName = AppPeersManager.getPeer(
 				topMessage.from_id
 			).first_name;
@@ -160,7 +161,7 @@ class AppsChatsManagerModule {
 		if (offset) {
 			const idx = dialogs.findIndex(el => el.date === offset);
 			if (idx) {
-				dialogs = dialogs.slice(max(0, idx - up), idx + down);
+				dialogs = dialogs.slice(Math.max(0, idx - up), idx + down);
 			}
 		} else {
 			dialogs = dialogs.slice(0, down);
@@ -173,10 +174,10 @@ class AppsChatsManagerModule {
 
 	isMuted = id => {
 		const dialog = this.dialogsManagerStorage[id];
-		const notifySettings = dialog && dialog.notifySettings;
+		const notifySettings = dialog?.notifySettings;
 
 		return (
-			dialog &&
+			dialog && notifySettings &&
 			(tlFlags(notifySettings.flags, 1) ||
 				notifySettings.mute_until * 1000 > Date.now())
 		);

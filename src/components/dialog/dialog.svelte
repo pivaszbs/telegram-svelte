@@ -7,19 +7,20 @@
 	import './dialog.scss';
 	export let photo;
 	photo = photo && photo.src;
-	export let unreadCount;
-	export let title;
-	export let text;
-	export let time;
-	export let pinned;
-	export let fromName;
-	export let out;
-	export let id;
-	// const { out } = message_info; //needed from new API
-	export let read; //needed from new API
-	export let saved; //needed from store/API
-	export let online;
-	export let active;
+	export let unreadCount,
+		title,
+		text,
+		time,
+		pinned,
+		fromName,
+		out,
+		id,
+		read, //needed from new API
+		saved, //needed from store/API
+		online,
+		active,
+		muted,
+		last;
 
 	const onClick = () => {
 		loadDialog(id);
@@ -44,7 +45,7 @@
 		{text}
 	</div>
 	<RightTop {out} {time} {read} />
-	<RightBottom {unreadCount} {pinned} />
+	<RightBottom {unreadCount} {pinned} {muted} />
 </div>
 
 <style lang="scss">

@@ -8,8 +8,6 @@
         fill: var(--special-gray);
         bottom: 6px;
         left: 6px;
-        width: 24px;
-        height: 24px;
     }
     background-color: var(--right-gray);
     min-width: 190px;
@@ -98,8 +96,6 @@
                 fill: var(--primary);
                 left: 6px;
                 bottom: 4px;
-                width: 24px;
-                height: 24px;
             }
             @media (max-width: 1060px) {
                 & {
@@ -134,8 +130,6 @@
             justify-content: flex-start;
             width: 200px;
             img {
-                width: 24px;
-                height: 24px;
                 margin-right: 25px;
             }
         }
