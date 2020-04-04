@@ -31,7 +31,7 @@ class AppProfileManagerModule {
 	};
 
 	isSelf = id => {
-		return this.getProfileId === id;
+		return this.getProfileId() === id;
 	};
 
 	getProfile = () => {

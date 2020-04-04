@@ -305,11 +305,11 @@ class TelegramApi {
 		});
 	};
 
-	fetchDialogs = async (limit = 50, offset = 0) => {
+	fetchDialogs = async (down, up, offset = 0) => {
 		const request = {
 			offset_peer: this.AppPeersManager.getInputPeerByID(0),
 			offset_date: offset,
-			limit: limit,
+			limit: down,
 		};
 
 		const dialogs = await this.MtpApiManager.invokeApi(
@@ -322,7 +322,7 @@ class TelegramApi {
 		this.AppMessagesManager.saveMessages(dialogs.messages);
 		this.AppChatsManager.saveDialogs(dialogs.dialogs);
 
-		return this.AppChatsManager.getDialogsSorted(offset, limit);
+		return this.AppChatsManager.getDialogsSorted(offset, up, down);
 	};
 
 	getFullChat = chat_id =>
