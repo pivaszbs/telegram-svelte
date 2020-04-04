@@ -118,6 +118,10 @@ class AppsChatsManagerModule {
 		}
 		dialog.muted = this.isMuted(dialog.id);
 
+		if (dialog.read_outbox_max_id >= topMessage.id) {
+			dialog.read = true;
+		}
+
 		if (this.dialogsManagerStorage[dialog.id] === undefined) {
 			this.dialogsManagerStorage[dialog.id] = dialog;
 		} else {
@@ -129,7 +133,7 @@ class AppsChatsManagerModule {
 	getFullChat = id => this.fullChats[id] || null;
 	getDialog = id => this.dialogsManagerStorage[id] || null;
 
-	getDialogsSorted = (offset, limit) => {
+	getDialogsSorted = (offset, up = 0, down = 0) => {
 		const pinned = [];
 		let dialogs = [];
 
@@ -146,11 +150,10 @@ class AppsChatsManagerModule {
 		if (offset) {
 			const idx = dialogs.findIndex(el => el.date === offset);
 			if (idx) {
-				dialogs = dialogs.slice(idx);
+				dialogs = dialogs.slice(max(0, idx - up), idx + down);
 			}
-		}
-		if (limit) {
-			dialogs = dialogs.slice(0, limit);
+		} else {
+			dialogs = dialogs.slice(0, down);
 		}
 
 		return [...pinned, ...dialogs];
