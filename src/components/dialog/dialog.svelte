@@ -19,7 +19,8 @@
 		online,
 		active,
 		muted,
-		last;
+		last,
+		scrollTopElement;
 
 	const onClick = () => {
 		loadDialog(id);

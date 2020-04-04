@@ -5,8 +5,8 @@ import { topBar } from '../stores/topBar';
 import { get } from 'svelte/store';
 
 let offset = 30;
-export const loadFirstDialogs = () => {
-	telegramApi.fetchDialogs(40).then(dialog_items => {
+export const loadFirstDialogs = async () => {
+	await telegramApi.fetchDialogs(40).then(dialog_items => {
 		dialogs.set(dialog_items);
 		topDialog.set(dialog_items[3]);
 	});
