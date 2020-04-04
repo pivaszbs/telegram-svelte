@@ -13,3 +13,9 @@
 		<Dialog {...dialog} />
 	{/each}
 </div>
+
+<style>
+	.user-dialogs {
+		overflow-y: auto;
+	}
+</style>

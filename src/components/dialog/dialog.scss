@@ -22,7 +22,6 @@
 		border-radius: 50%;
 		svg {
             fill: var(--white);
-            width: 24px;
 		}
 	}
 
@@ -35,6 +34,16 @@
 		background-color: var(--green);
 		.count {
 			padding: 0 6px;
+		}
+	}
+
+	.out {
+		position: relative;
+		height: 14px;
+		svg {
+			width: 14px;
+			height: 14px;
+			bottom: -2px;
 		}
 	}
 }

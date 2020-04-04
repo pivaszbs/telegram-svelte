@@ -20,6 +20,7 @@
 	export let saved; //needed from store/API
 	export let online;
 	export let active;
+	export let muted;
 
 	const onClick = () => {
 		loadDialog(id);
@@ -44,7 +45,7 @@
 		{text}
 	</div>
 	<RightTop {out} {time} {read} />
-	<RightBottom {unreadCount} {pinned} />
+	<RightBottom {unreadCount} {pinned} {muted} />
 </div>
 
 <style lang="scss">
