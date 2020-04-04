@@ -4,7 +4,7 @@ import telegramApi from './TelegramApi/index';
 import { topBar } from '../stores/topBar';
 
 export const loadFirstDialogs = () => {
-	telegramApi.fetchDialogs(0, 0, 20).then(dialog_items => {
+	telegramApi.fetchDialogs(20).then(dialog_items => {
 		dialogs.set(dialog_items);
 	});
 };

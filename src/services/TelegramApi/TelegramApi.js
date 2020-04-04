@@ -305,7 +305,7 @@ class TelegramApi {
 		});
 	};
 
-	fetchDialogs = async (offset = 0, up, down) => {
+	fetchDialogs = async (down, up, offset = 0) => {
 		const request = {
 			offset_peer: this.AppPeersManager.getInputPeerByID(0),
 			offset_date: offset,

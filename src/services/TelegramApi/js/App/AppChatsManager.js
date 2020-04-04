@@ -26,6 +26,16 @@ class AppsChatsManagerModule {
 			apiChat.pFlags = {};
 		}
 
+		if (apiChat.participants_count) {
+			console.log(apiChat.participants_count);
+			apiChat.formattedStatus =
+				apiChat.participants_count +
+				(this.isSupergroup(apiChat) || this.isGroup(apiChat)
+					? ' participants'
+					: ' subscribers');
+			console.log(apiChat.formattedStatus);
+		}
+
 		if (this.chatsManagerStorage[apiChat.id] === undefined) {
 			this.chatsManagerStorage[apiChat.id] = apiChat;
 		} else {
@@ -173,7 +183,7 @@ class AppsChatsManagerModule {
 	};
 
 	isChannel = id => {
-		const chat = this.chatsManagerStorage[id];
+		const chat = isObject(id) ? id : this.chatsManagerStorage[id];
 
 		return (
 			chat &&
@@ -183,7 +193,7 @@ class AppsChatsManagerModule {
 	};
 
 	isSupergroup = id => {
-		const chat = this.chatsManagerStorage[id];
+		const chat = isObject(id) ? id : this.chatsManagerStorage[id];
 
 		return (
 			chat &&
@@ -193,7 +203,7 @@ class AppsChatsManagerModule {
 	};
 
 	isGroup = id => {
-		const chat = this.chatsManagerStorage[id];
+		const chat = isObject(id) ? id : this.chatsManagerStorage[id];
 
 		return chat && (chat._ === 'chat' || chat._ === 'chatForbidden');
 	};
