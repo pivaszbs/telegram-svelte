@@ -74,7 +74,8 @@ class TelegramApi {
 
 	// MAIN METHODS ------------------------------------------------------
 
-	invokeApi = async (method, params) => await this.MtpApiManager.invokeApi(method, params);
+	invokeApi = async (method, params) =>
+		await this.MtpApiManager.invokeApi(method, params);
 
 	setConfig = config => {
 		config = config || {};
@@ -98,9 +99,15 @@ class TelegramApi {
 		Config.Modes.test = config.mode.test;
 		Config.Modes.debug = config.mode.debug;
 
-		this.MtpApiManager.invokeApi('help.getNearestDc', {}, this.options).then(nearestDcResult => {
+		this.MtpApiManager.invokeApi(
+			'help.getNearestDc',
+			{},
+			this.options
+		).then(nearestDcResult => {
 			if (nearestDcResult.nearest_dc != nearestDcResult.this_dc) {
-				this.MtpApiManager.getNetworker(nearestDcResult.nearest_dc, { createNetworker: true });
+				this.MtpApiManager.getNetworker(nearestDcResult.nearest_dc, {
+					createNetworker: true,
+				});
 			}
 		});
 	};
@@ -122,7 +129,10 @@ class TelegramApi {
 		getDialog: this.AppChatsManager.getDialog,
 	};
 
-	checkPhone = phone_number => this.MtpApiManager.invokeApi('auth.checkPhone', { phone_number: phone_number });
+	checkPhone = phone_number =>
+		this.MtpApiManager.invokeApi('auth.checkPhone', {
+			phone_number: phone_number,
+		});
 
 	// MESSAGES AND FILES ------------------------------------------------------
 
@@ -203,7 +213,9 @@ class TelegramApi {
 			console.log('SEARCH RES SERV', res);
 
 			res.messages.forEach(message => {
-				message_items.push(this._parseSearchMessage(message, res.chats, res.users));
+				message_items.push(
+					this._parseSearchMessage(message, res.chats, res.users)
+				);
 			});
 
 			return message_items;
@@ -211,43 +223,51 @@ class TelegramApi {
 	};
 
 	getPeerPhotos = async (peer_id, offset_id = 0, limit = 30) => {
-		return this.searchPeerMessages(peer_id, '', { _: 'inputMessagesFilterPhotos' }, limit, offset_id).then(
-			messages => {
-				const msg_photos = [];
+		return this.searchPeerMessages(
+			peer_id,
+			'',
+			{ _: 'inputMessagesFilterPhotos' },
+			limit,
+			offset_id
+		).then(messages => {
+			const msg_photos = [];
 
-				messages.messages.forEach(msg => {
-					msg_photos.push({
-						photo: msg.media.photo,
-						caption: msg.message,
-						id: msg.media.photo.id,
-						msg_id: msg.id,
-					});
+			messages.messages.forEach(msg => {
+				msg_photos.push({
+					photo: msg.media.photo,
+					caption: msg.message,
+					id: msg.media.photo.id,
+					msg_id: msg.id,
 				});
+			});
 
-				return this._fillPhotosPromises(msg_photos);
-			}
-		);
+			return this._fillPhotosPromises(msg_photos);
+		});
 	};
 
 	getPeerDocuments = async (peer_id, offset_id = 0, limit = 100) => {
-		return this.searchPeerMessages(peer_id, '', { _: 'inputMessagesFilterDocument' }, limit, offset_id).then(
-			messages => {
-				const msg_docs = [];
-				console.log(messages.messages);
+		return this.searchPeerMessages(
+			peer_id,
+			'',
+			{ _: 'inputMessagesFilterDocument' },
+			limit,
+			offset_id
+		).then(messages => {
+			const msg_docs = [];
+			console.log(messages.messages);
 
-				messages.messages.forEach(msg => {
-					msg_docs.push({
-						document: msg.media.document,
-						caption: msg.message,
-						id: msg.media.document.id,
-						msg_id: msg.id,
-						thumbs: msg.media.document.thumbs,
-					});
+			messages.messages.forEach(msg => {
+				msg_docs.push({
+					document: msg.media.document,
+					caption: msg.message,
+					id: msg.media.document.id,
+					msg_id: msg.id,
+					thumbs: msg.media.document.thumbs,
 				});
+			});
 
-				return this._fillDocumentsPromises(msg_docs);
-			}
-		);
+			return this._fillDocumentsPromises(msg_docs);
+		});
 	};
 
 	// CHATS ------------------------------------------------------
@@ -272,10 +292,13 @@ class TelegramApi {
 		}).then(updates => {
 			// TODO: Remove
 			if (updates.chats && updates.chats[0]) {
-				return this.MtpApiManager.invokeApi('messages.toggleChatAdmins', {
-					chat_id: updates.chats[0].id,
-					enabled: true,
-				});
+				return this.MtpApiManager.invokeApi(
+					'messages.toggleChatAdmins',
+					{
+						chat_id: updates.chats[0].id,
+						enabled: true,
+					}
+				);
 			} else {
 				return updates;
 			}
@@ -289,7 +312,10 @@ class TelegramApi {
 			limit: limit,
 		};
 
-		const dialogs = await this.MtpApiManager.invokeApi('messages.getDialogs', request);
+		const dialogs = await this.MtpApiManager.invokeApi(
+			'messages.getDialogs',
+			request
+		);
 
 		this.AppUsersManager.saveApiUsers(dialogs.users);
 		this.AppChatsManager.saveApiChats(dialogs.chats);
@@ -299,7 +325,8 @@ class TelegramApi {
 		return this.AppChatsManager.getDialogsSorted(offset, limit);
 	};
 
-	getFullChat = chat_id => this.MtpApiManager.invokeApi('messages.getFullChat', { chat_id });
+	getFullChat = chat_id =>
+		this.MtpApiManager.invokeApi('messages.getFullChat', { chat_id });
 
 	getChatParticipants = async chat_id => {
 		const chat = await this.getFullPeer(chat_id, 'chat');
@@ -312,27 +339,36 @@ class TelegramApi {
 
 			chat.users.forEach(user => {
 				if (user.status && user._ !== 'userEmpty') {
-					user.status._ === 'userStatusOnline' ? onlineUsers.push(user) : offlineUsers.push(user);
+					user.status._ === 'userStatusOnline'
+						? onlineUsers.push(user)
+						: offlineUsers.push(user);
 				}
 			});
 
 			return { onlineUsers, offlineUsers };
-		} else if (chat && chat.full_chat && chat.full_chat._ === 'channelFull') {
+		} else if (
+			chat &&
+			chat.full_chat &&
+			chat.full_chat._ === 'channelFull'
+		) {
 			const channel_peer = await this.getPeerByID(chat_id, 'chat');
 
 			if (!this._checkFlag(channel_peer.flags, 8)) {
 				return { onlineUsers: [], offlineUsers: [] };
 			}
 
-			const channel_users = await this.invokeApi('channels.getParticipants', {
-				channel: this.mapPeerToInputPeer(channel_peer),
-				filter: {
-					_: 'channelParticipantsRecent',
-				},
-				offset: 0,
-				limit: 200,
-				hash: Math.round(Math.random() * 100),
-			});
+			const channel_users = await this.invokeApi(
+				'channels.getParticipants',
+				{
+					channel: this.mapPeerToInputPeer(channel_peer),
+					filter: {
+						_: 'channelParticipantsRecent',
+					},
+					offset: 0,
+					limit: 200,
+					hash: Math.round(Math.random() * 100),
+				}
+			);
 
 			this.AppUsersManager.saveApiUsers(channel_users.users);
 
@@ -341,7 +377,9 @@ class TelegramApi {
 
 			channel_users.users.forEach(user => {
 				if (user.status && user._ !== 'userEmpty') {
-					user.status._ === 'userStatusOnline' ? onlineUsers.push(user) : offlineUsers.push(user);
+					user.status._ === 'userStatusOnline'
+						? onlineUsers.push(user)
+						: offlineUsers.push(user);
 				}
 			});
 
@@ -463,10 +501,15 @@ class TelegramApi {
 
 		switch (mapped_peer._) {
 			case 'inputUser':
-				if (mapped_peer.user_id === (await this.MtpApiManager.getUserID())) {
+				if (
+					mapped_peer.user_id ===
+					(await this.MtpApiManager.getUserID())
+				) {
 					return await this.getFullUserInfo();
 				}
-				saved_peer = this.AppUsersManager.getFullUser(mapped_peer.user_id);
+				saved_peer = this.AppUsersManager.getFullUser(
+					mapped_peer.user_id
+				);
 				if (saved_peer && (!saved_peer.id || !saved_peer.deleted)) {
 					return saved_peer;
 				}
@@ -477,7 +520,9 @@ class TelegramApi {
 					return fullUser;
 				});
 			case 'inputChat':
-				saved_peer = this.AppChatsManager.getFullChat(mapped_peer.chat_id);
+				saved_peer = this.AppChatsManager.getFullChat(
+					mapped_peer.chat_id
+				);
 				if (saved_peer && (!saved_peer.id || !saved_peer.deleted)) {
 					return saved_peer;
 				}
@@ -528,14 +573,20 @@ class TelegramApi {
 
 		const { out, channel_post } = this._checkMessageFlags(message.flags);
 
-		const to_peer = (to_id && chats.filter(el => el.id === to_id)[0]) || users.filter(el => el.id === to_id)[0];
+		const to_peer =
+			(to_id && chats.filter(el => el.id === to_id)[0]) ||
+			users.filter(el => el.id === to_id)[0];
 		const from_peer = from_id && users.filter(el => el.id === from_id)[0];
 
 		if (channel_post) {
 			msg_type = 'channel';
 			title = to_peer.title;
 
-			if (to_peer && to_peer.photo && to_peer.photo._ !== 'chatPhotoEmpty') {
+			if (
+				to_peer &&
+				to_peer.photo &&
+				to_peer.photo._ !== 'chatPhotoEmpty'
+			) {
 				photo = this.getPeerPhoto(to_id);
 			}
 		}
@@ -546,16 +597,28 @@ class TelegramApi {
 				title = to_peer.title;
 				from_name = from_peer.first_name;
 
-				if (to_peer && to_peer.photo && to_peer.photo._ !== 'chatPhotoEmpty') {
+				if (
+					to_peer &&
+					to_peer.photo &&
+					to_peer.photo._ !== 'chatPhotoEmpty'
+				) {
 					photo = this.getPeerPhoto(to_id);
 				}
 			} else {
 				msg_type = 'pm';
-				title = (from_peer.first_name + ' ' + (from_peer.last_name || '')).trim();
+				title = (
+					from_peer.first_name +
+					' ' +
+					(from_peer.last_name || '')
+				).trim();
 
 				if (out) {
 					photo = this.getUserPhoto();
-				} else if (from_peer && from_peer.photo && from_peer.photo._ !== 'userProfilePhotoEmpty') {
+				} else if (
+					from_peer &&
+					from_peer.photo &&
+					from_peer.photo._ !== 'userProfilePhotoEmpty'
+				) {
 					photo = this.getPeerPhoto(from_id);
 				}
 			}
@@ -584,7 +647,11 @@ class TelegramApi {
 		if (from_peer.id === this.user.id) {
 			name = 'You';
 		} else {
-			name = (from_peer.first_name + ' ' + (from_peer.last_name || '')).trim();
+			name = (
+				from_peer.first_name +
+				' ' +
+				(from_peer.last_name || '')
+			).trim();
 		}
 
 		const { action } = message;
@@ -597,7 +664,8 @@ class TelegramApi {
 				result.text = name + ' created the chat';
 				break;
 			case 'messageActionChatEditTitle':
-				result.text = name + ' changed the chat title to ' + action.title;
+				result.text =
+					name + ' changed the chat title to ' + action.title;
 				break;
 			case 'messageActionChatEditPhoto':
 				result.text = name + ' changed the chat photo';
@@ -613,12 +681,20 @@ class TelegramApi {
 						return (prev || '') + name + ' joined the group\n';
 					}
 					return (
-						(prev || '') + name + ' added ' + new_peer.first_name + ' ' + (new_peer.last_name || '') + '\n'
+						(prev || '') +
+						name +
+						' added ' +
+						new_peer.first_name +
+						' ' +
+						(new_peer.last_name || '') +
+						'\n'
 					);
 				}, 0);
 				break;
 			case 'messageActionChatDeleteUser':
-				const deleted_peer = this.AppUsersManager.getUser(action.user_id);
+				const deleted_peer = this.AppUsersManager.getUser(
+					action.user_id
+				);
 				if (from_peer.id === deleted_peer.id) {
 					result.text = name + ' left the group';
 				} else {
@@ -646,7 +722,10 @@ class TelegramApi {
 	_getMessageText = message => {
 		let text = message.message;
 
-		if (!text || (message.media && message.media._ !== 'messageMediaEmpty')) {
+		if (
+			!text ||
+			(message.media && message.media._ !== 'messageMediaEmpty')
+		) {
 			if (message._ === 'messageService') {
 				text = this._getServiceMessage(message).text;
 			} else {
@@ -674,7 +753,11 @@ class TelegramApi {
 								if (this._checkFlag(attr.flags, 10)) {
 									fin_text = 'Voice Message';
 								} else {
-									fin_text = '🎵' + attr.title + ' - ' + attr.performer;
+									fin_text =
+										'🎵' +
+										attr.title +
+										' - ' +
+										attr.performer;
 								}
 							}
 							if (attr._ === 'documentAttributeFilename') {
@@ -744,7 +827,9 @@ class TelegramApi {
 				return {
 					...peer,
 					_: 'inputUser',
-					user_id: peer.user_id ? peer.user_id.toString() : peer.id.toString(),
+					user_id: peer.user_id
+						? peer.user_id.toString()
+						: peer.id.toString(),
 				};
 
 			case 'inputPeerChat':
@@ -752,7 +837,9 @@ class TelegramApi {
 				return {
 					...peer,
 					_: 'inputChat',
-					chat_id: peer.chat_id ? peer.chat_id.toString() : peer.id.toString(),
+					chat_id: peer.chat_id
+						? peer.chat_id.toString()
+						: peer.id.toString(),
 				};
 
 			case 'inputPeerChannel':
@@ -760,7 +847,9 @@ class TelegramApi {
 				return {
 					...peer,
 					_: 'inputChannel',
-					channel_id: peer.channel_id ? peer.channel_id.toString() : peer.id.toString(),
+					channel_id: peer.channel_id
+						? peer.channel_id.toString()
+						: peer.id.toString(),
 				};
 
 			default:
@@ -815,7 +904,9 @@ class TelegramApi {
 				return {
 					...peer,
 					_: 'inputPeerChannel',
-					channel_id: peer.channel_id ? peer.channel_id.toString() : peer.id,
+					channel_id: peer.channel_id
+						? peer.channel_id.toString()
+						: peer.id,
 				};
 
 			default:

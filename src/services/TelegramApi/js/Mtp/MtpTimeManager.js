@@ -23,7 +23,11 @@ export default function MtpTimeManagerModule() {
 			random = nextRandomInt(0xffff);
 
 		let messageID = [timeSec, (timeMSec << 21) | (random << 3) | 4];
-		if (lastMessageID[0] > messageID[0] || (lastMessageID[0] == messageID[0] && lastMessageID[1] >= messageID[1])) {
+		if (
+			lastMessageID[0] > messageID[0] ||
+			(lastMessageID[0] == messageID[0] &&
+				lastMessageID[1] >= messageID[1])
+		) {
 			messageID = [lastMessageID[0], lastMessageID[1] + 4];
 		}
 
@@ -33,13 +37,20 @@ export default function MtpTimeManagerModule() {
 	};
 
 	const applyServerTime = (serverTime, localTime) => {
-		const newTimeOffset = serverTime - Math.floor((localTime || tsNow()) / 1000),
+		const newTimeOffset =
+				serverTime - Math.floor((localTime || tsNow()) / 1000),
 			changed = Math.abs(timeOffset - newTimeOffset) > 10;
 		Storage.set({ server_time_offset: newTimeOffset });
 
 		window.lastMessageID = [0, 0];
 		window.timeOffset = newTimeOffset;
-		logger('Apply server time', serverTime, localTime, newTimeOffset, changed);
+		logger(
+			'Apply server time',
+			serverTime,
+			localTime,
+			newTimeOffset,
+			changed
+		);
 
 		return changed;
 	};

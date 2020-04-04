@@ -61,7 +61,9 @@ function MtpApiManagerModule() {
 			const logoutPromises = [];
 			for (let i = 0; i < storageResult.length; i++) {
 				if (storageResult[i]) {
-					logoutPromises.push(mtpInvokeApi('auth.logOut', {}, { dcID: i + 1 }));
+					logoutPromises.push(
+						mtpInvokeApi('auth.logOut', {}, { dcID: i + 1 })
+					);
 				}
 			}
 			return Promise.all(logoutPromises).then(
@@ -84,7 +86,10 @@ function MtpApiManagerModule() {
 	const mtpGetNetworker = (dcID, options) => {
 		options = options || {};
 
-		const cache = options.fileUpload || options.fileDownload ? cachedUploadNetworkers : cachedNetworkers;
+		const cache =
+			options.fileUpload || options.fileDownload
+				? cachedUploadNetworkers
+				: cachedNetworkers;
 		if (!dcID) {
 			throw new Exception('get Networker without dcID');
 		}
@@ -108,7 +113,12 @@ function MtpApiManagerModule() {
 				const authKey = bytesFromHex(authKeyHex);
 				const serverSalt = bytesFromHex(serverSaltHex);
 
-				return (cache[dcID] = MtpNetworkerFactory.getNetworker(dcID, authKey, serverSalt, options));
+				return (cache[dcID] = MtpNetworkerFactory.getNetworker(
+					dcID,
+					authKey,
+					serverSalt,
+					options
+				));
 			}
 
 			if (!options.createNetworker) {
@@ -154,10 +164,15 @@ function MtpApiManagerModule() {
 				if (!options.noErrorBox) {
 					error.input = method;
 					error.stack =
-						(error.originalError && error.originalError.stack) || error.stack || new Error().stack;
+						(error.originalError && error.originalError.stack) ||
+						error.stack ||
+						new Error().stack;
 					setTimeout(function() {
 						if (!error.handled) {
-							if (error.code == 401 && error.type !== 'SESSION_PASSWORD_NEEDED') {
+							if (
+								error.code == 401 &&
+								error.type !== 'SESSION_PASSWORD_NEEDED'
+							) {
 								mtpLogOut();
 								// console.error('THERE SHOULD BE LOG OUT!!!!!!!!!');
 							}
@@ -180,92 +195,62 @@ function MtpApiManagerModule() {
 			}
 
 			const performRequest = networker => {
-				return (cachedNetworker = networker).wrapApiCall(method, params, options).then(
-					result => {
-						resolve(result);
-					},
-					error => {
-						if (Config.Modes.debug) {
-							console.error(dT(), 'Error', error.code, error.type, baseDcID, dcID);
-						}
-						if (error.code == 401 && baseDcID == dcID && error.type !== 'SESSION_PASSWORD_NEEDED') {
-							Storage.remove('dc', 'user_auth');
-							telegramMeNotify(false);
-							rejectPromise(error);
-						} else if (error.code == 401 && baseDcID && dcID != baseDcID) {
-							logger('Exporting auth...');
-							if (cachedExportPromise[dcID] === undefined) {
-								const exportPromise = new Promise((exportResolve, exportReject) => {
-									mtpInvokeApi(
-										'auth.exportAuthorization',
-										{ dc_id: dcID },
-										{ noErrorBox: true }
-									).then(
-										exportedAuth => {
-											mtpInvokeApi(
-												'auth.importAuthorization',
-												{
-													id: exportedAuth.id,
-													bytes: exportedAuth.bytes,
-												},
-												{ dcID: dcID, noErrorBox: true }
-											).then(
-												() => {
-													exportResolve();
-												},
-												e => {
-													exportReject(e);
-												}
-											);
-										},
-										e => {
-											exportReject(e);
-										}
-									);
-								});
-
-								cachedExportPromise[dcID] = exportPromise;
+				return (cachedNetworker = networker)
+					.wrapApiCall(method, params, options)
+					.then(
+						result => {
+							resolve(result);
+						},
+						error => {
+							if (Config.Modes.debug) {
+								console.error(
+									dT(),
+									'Error',
+									error.code,
+									error.type,
+									baseDcID,
+									dcID
+								);
 							}
-
-							cachedExportPromise[dcID].then(() => {
-								(cachedNetworker = networker).wrapApiCall(method, params, options).then(result => {
-									resolve(result);
-								}, rejectPromise);
-							}, rejectPromise);
-						} else if (error.code == 303) {
-							let fileMigrateDC = error.type.match(/^(|FILE_MIGRATE_)(\d+)/);
-							if (fileMigrateDC) {
-								fileMigrateDC = Number(fileMigrateDC[2]);
-								if (fileMigrateDC !== dcID) {
-									// const newOptions = {
-									// 	dcID: fileMigrateDC,
-									// 	fileDownload: true,
-									// 	createNetworker: true,
-									// 	...options,
-									// };
-									// baseDcID = fileMigrateDC;
-									if (cachedExportPromise[fileMigrateDC] === undefined) {
-										const exportPromise = new Promise((exportResolve, exportReject) => {
+							if (
+								error.code == 401 &&
+								baseDcID == dcID &&
+								error.type !== 'SESSION_PASSWORD_NEEDED'
+							) {
+								Storage.remove('dc', 'user_auth');
+								telegramMeNotify(false);
+								rejectPromise(error);
+							} else if (
+								error.code == 401 &&
+								baseDcID &&
+								dcID != baseDcID
+							) {
+								logger('Exporting auth...');
+								if (cachedExportPromise[dcID] === undefined) {
+									const exportPromise = new Promise(
+										(exportResolve, exportReject) => {
 											mtpInvokeApi(
 												'auth.exportAuthorization',
-												{ dc_id: fileMigrateDC },
+												{ dc_id: dcID },
 												{ noErrorBox: true }
 											).then(
 												exportedAuth => {
-													logger(exportedAuth);
 													mtpInvokeApi(
 														'auth.importAuthorization',
 														{
 															id: exportedAuth.id,
-															bytes: new Uint8Array(exportedAuth.bytes),
+															bytes:
+																exportedAuth.bytes,
 														},
-														{ dcID: fileMigrateDC, noErrorBox: true, createNetworker: true }
+														{
+															dcID: dcID,
+															noErrorBox: true,
+														}
 													).then(
 														() => {
 															exportResolve();
 														},
 														e => {
-															console.error('INport rejected', e);
 															exportReject(e);
 														}
 													);
@@ -274,76 +259,205 @@ function MtpApiManagerModule() {
 													exportReject(e);
 												}
 											);
-										});
-										cachedExportPromise[fileMigrateDC] = exportPromise;
-									}
+										}
+									);
 
-									cachedExportPromise[fileMigrateDC].then(() => {
-										mtpGetNetworker(fileMigrateDC, options).then(networker => {
-											networker.wrapApiCall(method, params, options).then(
-												result => {
-													resolve(result);
-												},
-												e => {
-													logger('WRAP FAILED', e);
-													return rejectPromise;
-												}
-											);
-										});
-									}, rejectPromise);
+									cachedExportPromise[dcID] = exportPromise;
 								}
-							} else {
-								const newDcID = error.type.match(
-									/^(PHONE_MIGRATE_|NETWORK_MIGRATE_|USER_MIGRATE_)(\d+)/
-								)[2];
-								if (newDcID != dcID) {
-									if (options.dcID) {
-										options.dcID = newDcID;
-									} else {
-										Storage.set({ dc: (baseDcID = newDcID) });
-									}
 
-									mtpGetNetworker(newDcID, options).then(networker => {
-										networker.wrapApiCall(method, params, options).then(result => {
+								cachedExportPromise[dcID].then(() => {
+									(cachedNetworker = networker)
+										.wrapApiCall(method, params, options)
+										.then(result => {
 											resolve(result);
 										}, rejectPromise);
-									}, rejectPromise);
+								}, rejectPromise);
+							} else if (error.code == 303) {
+								let fileMigrateDC = error.type.match(
+									/^(|FILE_MIGRATE_)(\d+)/
+								);
+								if (fileMigrateDC) {
+									fileMigrateDC = Number(fileMigrateDC[2]);
+									if (fileMigrateDC !== dcID) {
+										// const newOptions = {
+										// 	dcID: fileMigrateDC,
+										// 	fileDownload: true,
+										// 	createNetworker: true,
+										// 	...options,
+										// };
+										// baseDcID = fileMigrateDC;
+										if (
+											cachedExportPromise[
+												fileMigrateDC
+											] === undefined
+										) {
+											const exportPromise = new Promise(
+												(
+													exportResolve,
+													exportReject
+												) => {
+													mtpInvokeApi(
+														'auth.exportAuthorization',
+														{
+															dc_id: fileMigrateDC,
+														},
+														{ noErrorBox: true }
+													).then(
+														exportedAuth => {
+															logger(
+																exportedAuth
+															);
+															mtpInvokeApi(
+																'auth.importAuthorization',
+																{
+																	id:
+																		exportedAuth.id,
+																	bytes: new Uint8Array(
+																		exportedAuth.bytes
+																	),
+																},
+																{
+																	dcID: fileMigrateDC,
+																	noErrorBox: true,
+																	createNetworker: true,
+																}
+															).then(
+																() => {
+																	exportResolve();
+																},
+																e => {
+																	console.error(
+																		'INport rejected',
+																		e
+																	);
+																	exportReject(
+																		e
+																	);
+																}
+															);
+														},
+														e => {
+															exportReject(e);
+														}
+													);
+												}
+											);
+											cachedExportPromise[
+												fileMigrateDC
+											] = exportPromise;
+										}
+
+										cachedExportPromise[fileMigrateDC].then(
+											() => {
+												mtpGetNetworker(
+													fileMigrateDC,
+													options
+												).then(networker => {
+													networker
+														.wrapApiCall(
+															method,
+															params,
+															options
+														)
+														.then(
+															result => {
+																resolve(result);
+															},
+															e => {
+																logger(
+																	'WRAP FAILED',
+																	e
+																);
+																return rejectPromise;
+															}
+														);
+												});
+											},
+											rejectPromise
+										);
+									}
+								} else {
+									const newDcID = error.type.match(
+										/^(PHONE_MIGRATE_|NETWORK_MIGRATE_|USER_MIGRATE_)(\d+)/
+									)[2];
+									if (newDcID != dcID) {
+										if (options.dcID) {
+											options.dcID = newDcID;
+										} else {
+											Storage.set({
+												dc: (baseDcID = newDcID),
+											});
+										}
+
+										mtpGetNetworker(newDcID, options).then(
+											networker => {
+												networker
+													.wrapApiCall(
+														method,
+														params,
+														options
+													)
+													.then(result => {
+														resolve(result);
+													}, rejectPromise);
+											},
+											rejectPromise
+										);
+									}
 								}
-							}
-						} else if (!options.rawError && error.code == 420) {
-							const waitTime = error.type.match(/^FLOOD_WAIT_(\d+)/)[1] || 10;
-							if (waitTime > (options.timeout || 60)) {
-								return rejectPromise(error);
-							}
-							setTimeout(() => {
-								performRequest(cachedNetworker);
-							}, waitTime * 1000);
-						} else if (!options.rawError && (error.code == 500 || error.type == 'MSG_WAIT_FAILED')) {
-							const now = tsNow();
-							if (options.stopTime) {
-								if (now >= options.stopTime) {
+							} else if (!options.rawError && error.code == 420) {
+								const waitTime =
+									error.type.match(/^FLOOD_WAIT_(\d+)/)[1] ||
+									10;
+								if (waitTime > (options.timeout || 60)) {
 									return rejectPromise(error);
 								}
+								setTimeout(() => {
+									performRequest(cachedNetworker);
+								}, waitTime * 1000);
+							} else if (
+								!options.rawError &&
+								(error.code == 500 ||
+									error.type == 'MSG_WAIT_FAILED')
+							) {
+								const now = tsNow();
+								if (options.stopTime) {
+									if (now >= options.stopTime) {
+										return rejectPromise(error);
+									}
+								} else {
+									options.stopTime =
+										now +
+										(options.timeout !== undefined
+											? options.timeout
+											: 10) *
+											1000;
+								}
+								options.waitTime = options.waitTime
+									? Math.min(60, options.waitTime * 1.5)
+									: 1;
+								setTimeout(() => {
+									performRequest(cachedNetworker);
+								}, options.waitTime * 1000);
 							} else {
-								options.stopTime = now + (options.timeout !== undefined ? options.timeout : 10) * 1000;
+								rejectPromise(error);
 							}
-							options.waitTime = options.waitTime ? Math.min(60, options.waitTime * 1.5) : 1;
-							setTimeout(() => {
-								performRequest(cachedNetworker);
-							}, options.waitTime * 1000);
-						} else {
-							rejectPromise(error);
 						}
-					}
-				);
+					);
 			};
 
 			dcID = options.dcID || baseDcID;
 			if (dcID) {
-				mtpGetNetworker(dcID, options).then(performRequest, rejectPromise);
+				mtpGetNetworker(dcID, options).then(
+					performRequest,
+					rejectPromise
+				);
 			} else {
 				Storage.get('dc').then(baseDcID => {
-					mtpGetNetworker((dcID = baseDcID || 2), options).then(performRequest, rejectPromise);
+					mtpGetNetworker((dcID = baseDcID || 2), options).then(
+						performRequest,
+						rejectPromise
+					);
 				});
 			}
 		});

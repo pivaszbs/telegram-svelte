@@ -11,8 +11,13 @@ export default class WebSocketManager {
 		this.socket.binaryType = 'arraybuffer';
 		this.socket.onopen = this.onWebsocketOpen;
 		this.socket.onmessage = async data => {
-			let deobfuscated = this.mtpTransport.deobfuscate(new Uint8Array(data.data));
-			deobfuscated = deobfuscated[0] == 127 ? deobfuscated.slice(4) : deobfuscated.slice(1);
+			let deobfuscated = this.mtpTransport.deobfuscate(
+				new Uint8Array(data.data)
+			);
+			deobfuscated =
+				deobfuscated[0] == 127
+					? deobfuscated.slice(4)
+					: deobfuscated.slice(1);
 			handler(deobfuscated);
 		};
 		this.socket.onclose = event => {
@@ -25,7 +30,9 @@ export default class WebSocketManager {
 	}
 
 	onWebsocketOpen = async data => {
-		const initMessage = (await this.mtpTransport.generateObfuscatedInitMessage()) || new Uint8Array(64);
+		const initMessage =
+			(await this.mtpTransport.generateObfuscatedInitMessage()) ||
+			new Uint8Array(64);
 
 		this.socket.send(initMessage);
 		this.inited = true;

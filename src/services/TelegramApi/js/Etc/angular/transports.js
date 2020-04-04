@@ -2,16 +2,30 @@ import { ModeOfOperationCTR } from './aes-ctr';
 
 export default class Abridged {
 	protocol = 0xefefefef;
-	fromHexString = hexString => new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+	fromHexString = hexString =>
+		new Uint8Array(
+			hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16))
+		);
 
-	forbidden = [0x44414548, 0x54534f50, 0x20544547, 0x4954504f, 0xdddddddd, 0xeeeeeeee];
+	forbidden = [
+		0x44414548,
+		0x54534f50,
+		0x20544547,
+		0x4954504f,
+		0xdddddddd,
+		0xeeeeeeee,
+	];
 
 	getRandomBytes(len) {
 		const buffer = new Uint8Array(len);
 		crypto.getRandomValues(buffer);
 		const first_int = new DataView(buffer.buffer.slice(0, 4)).getUint32();
 		const second_int = new DataView(buffer.buffer.slice(4, 8)).getUint32();
-		if (buffer[0] == 0xef || this.forbidden.includes(first_int) || second_int == 0x00000000) {
+		if (
+			buffer[0] == 0xef ||
+			this.forbidden.includes(first_int) ||
+			second_int == 0x00000000
+		) {
 			console.log('Regenerating...');
 			return this.getRandomBytes(len);
 		}

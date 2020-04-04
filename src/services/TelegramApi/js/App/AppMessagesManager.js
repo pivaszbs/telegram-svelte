@@ -20,12 +20,19 @@ class AppMessagesManagerModule {
 			return message.to_id.channel_id;
 		}
 
-		if (message.to_id._ === 'peerChat' || message.to_id._ === 'peerChannel') {
+		if (
+			message.to_id._ === 'peerChat' ||
+			message.to_id._ === 'peerChannel'
+		) {
 			return message.to_id.channel_id || message.to_id.chat_id;
 		}
 
 		if (message.from_id === AppProfileManager.getProfileId()) {
-			return message.to_id.channel_id || message.to_id.chat_id || message.to_id.user_id;
+			return (
+				message.to_id.channel_id ||
+				message.to_id.chat_id ||
+				message.to_id.user_id
+			);
 		}
 
 		return message.from_id;
@@ -49,7 +56,8 @@ class AppMessagesManagerModule {
 	saveMessage = message => {
 		const peerId = this._getMessagePeerId(message);
 
-		const peerMessages = (this.messages[peerId] = this.messages[peerId] || {});
+		const peerMessages = (this.messages[peerId] =
+			this.messages[peerId] || {});
 
 		peerMessages[message.id] = {
 			...message,
@@ -94,7 +102,10 @@ class AppMessagesManagerModule {
 	_getMessageText = message => {
 		let text = message.message;
 
-		if (!text || (message.media && message.media._ !== 'messageMediaEmpty')) {
+		if (
+			!text ||
+			(message.media && message.media._ !== 'messageMediaEmpty')
+		) {
 			if (message._ === 'messageService') {
 				text = this._getServiceMessage(message).text;
 			} else {
@@ -122,7 +133,11 @@ class AppMessagesManagerModule {
 								if (tlFlags(attr.flags, 10)) {
 									fin_text = 'Voice Message';
 								} else {
-									fin_text = '🎵' + attr.title + ' - ' + attr.performer;
+									fin_text =
+										'🎵' +
+										attr.title +
+										' - ' +
+										attr.performer;
 								}
 							}
 							if (attr._ === 'documentAttributeFilename') {
@@ -176,7 +191,11 @@ class AppMessagesManagerModule {
 		if (from_peer.id === AppProfileManager.getProfileId()) {
 			name = 'You';
 		} else {
-			name = (from_peer.first_name + ' ' + (from_peer.last_name || '')).trim();
+			name = (
+				from_peer.first_name +
+				' ' +
+				(from_peer.last_name || '')
+			).trim();
 		}
 
 		const { action } = message;
@@ -189,7 +208,8 @@ class AppMessagesManagerModule {
 				result.text = name + ' created the chat';
 				break;
 			case 'messageActionChatEditTitle':
-				result.text = name + ' changed the chat title to ' + action.title;
+				result.text =
+					name + ' changed the chat title to ' + action.title;
 				break;
 			case 'messageActionChatEditPhoto':
 				result.text = name + ' changed the chat photo';
@@ -206,12 +226,20 @@ class AppMessagesManagerModule {
 						return (prev || '') + name + ' joined the group\n';
 					}
 					return (
-						(prev || '') + name + ' added ' + new_peer.first_name + ' ' + (new_peer.last_name || '') + '\n'
+						(prev || '') +
+						name +
+						' added ' +
+						new_peer.first_name +
+						' ' +
+						(new_peer.last_name || '') +
+						'\n'
 					);
 				}, 0);
 				break;
 			case 'messageActionChatDeleteUser':
-				const deleted_peer = this.AppUsersManager.getUser(action.user_id);
+				const deleted_peer = this.AppUsersManager.getUser(
+					action.user_id
+				);
 				if (from_peer.id === deleted_peer.id) {
 					result.text = name + ' left the group';
 				} else {
