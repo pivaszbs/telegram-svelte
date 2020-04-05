@@ -21,7 +21,9 @@
   img,
   svg,
   .icon {
-	transition: 0.4s;
+	transition: all 0.2s;
+	width: 24px;
+	height: 24px;
   }
 
   * {

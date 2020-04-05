@@ -1,3 +1,3 @@
 export default function $interval() {
-    setInterval(...arguments);
+	setInterval(...arguments);
 }

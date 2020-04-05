@@ -26,8 +26,11 @@ import logger from '../lib/logger';
 
 export default class MtpAuthorizerModule {
 	chromeMatches = navigator.userAgent.match(/Chrome\/(\d+(\.\d+)?)/);
-	chromeVersion = (this.chromeMatches && parseFloat(this.chromeMatches[1])) || false;
-	xhrSendBuffer = !('ArrayBufferView' in window) && (!this.chromeVersion || this.chromeVersion < 30);
+	chromeVersion =
+		(this.chromeMatches && parseFloat(this.chromeMatches[1])) || false;
+	xhrSendBuffer =
+		!('ArrayBufferView' in window) &&
+		(!this.chromeVersion || this.chromeVersion < 30);
 
 	MtpTimeManager = new MtpTimeManagerModule();
 	MtpRsaKeysManager = new MtpRsaKeysManagerModule();
@@ -87,7 +90,9 @@ export default class MtpAuthorizerModule {
 			this.pendingCallbacks.push(pendingPromise);
 		} catch (e) {
 			logger('SMTH wrong with http');
-			requestPromise = Promise.reject(extend(baseError, { originalError: e }));
+			requestPromise = Promise.reject(
+				extend(baseError, { originalError: e })
+			);
 		}
 
 		return requestPromise.then(
@@ -100,13 +105,17 @@ export default class MtpAuthorizerModule {
 				let deserializer, auth_key_id, msg_id, msg_len;
 
 				try {
-					deserializer = new TLDeserialization(result.data, { mtproto: true });
+					deserializer = new TLDeserialization(result.data, {
+						mtproto: true,
+					});
 					auth_key_id = deserializer.fetchLong('auth_key_id');
 					msg_id = deserializer.fetchLong('msg_id');
 					msg_len = deserializer.fetchInt('msg_len');
 				} catch (e) {
 					logger('SMTH wrong with deser');
-					return Promise.reject(extend(baseError, { originalError: e }));
+					return Promise.reject(
+						extend(baseError, { originalError: e })
+					);
 				}
 
 				return deserializer;
@@ -135,7 +144,9 @@ export default class MtpAuthorizerModule {
 
 					if (response._ != 'resPQ') {
 						logger('resPQ response invalid: ' + response._);
-						throw new Error('resPQ response invalid: ' + response._);
+						throw new Error(
+							'resPQ response invalid: ' + response._
+						);
 					}
 
 					if (!bytesCmp(auth.nonce, response.nonce)) {
@@ -147,9 +158,16 @@ export default class MtpAuthorizerModule {
 					auth.pq = response.pq;
 					auth.fingerprints = response.server_public_key_fingerprints;
 
-					logger('Got ResPQ', bytesToHex(auth.serverNonce), bytesToHex(auth.pq), auth.fingerprints);
+					logger(
+						'Got ResPQ',
+						bytesToHex(auth.serverNonce),
+						bytesToHex(auth.pq),
+						auth.fingerprints
+					);
 
-					auth.publicKey = this.MtpRsaKeysManager.select(auth.fingerprints);
+					auth.publicKey = this.MtpRsaKeysManager.select(
+						auth.fingerprints
+					);
 
 					if (!auth.publicKey) {
 						logger('No public key found');
@@ -203,7 +221,9 @@ export default class MtpAuthorizerModule {
 				'DECRYPTED_DATA'
 			);
 
-			const dataWithHash = sha1BytesSync(data.getBuffer()).concat(data.getBytes());
+			const dataWithHash = sha1BytesSync(data.getBuffer()).concat(
+				data.getBytes()
+			);
 
 			const request = new TLSerialization({ mtproto: true });
 			request.storeMethod('req_DH_params', {
@@ -218,10 +238,21 @@ export default class MtpAuthorizerModule {
 			logger('Send req_DH_params');
 			this.mtpSendPlainRequest(auth.dcID, request.getBuffer()).then(
 				deserializer => {
-					const response = deserializer.fetchObject('Server_DH_Params', 'RESPONSE');
+					const response = deserializer.fetchObject(
+						'Server_DH_Params',
+						'RESPONSE'
+					);
 
-					if (response._ != 'server_DH_params_fail' && response._ != 'server_DH_params_ok') {
-						reject(new Error('Server_DH_Params response invalid: ' + response._));
+					if (
+						response._ != 'server_DH_params_fail' &&
+						response._ != 'server_DH_params_ok'
+					) {
+						reject(
+							new Error(
+								'Server_DH_Params response invalid: ' +
+									response._
+							)
+						);
 						return false;
 					}
 
@@ -231,14 +262,22 @@ export default class MtpAuthorizerModule {
 					}
 
 					if (!bytesCmp(auth.serverNonce, response.server_nonce)) {
-						reject(new Error('Server_DH_Params server_nonce mismatch'));
+						reject(
+							new Error('Server_DH_Params server_nonce mismatch')
+						);
 						return false;
 					}
 
 					if (response._ == 'server_DH_params_fail') {
-						const newNonceHash = sha1BytesSync(auth.newNonce).slice(-16);
+						const newNonceHash = sha1BytesSync(auth.newNonce).slice(
+							-16
+						);
 						if (!bytesCmp(newNonceHash, response.new_nonce_hash)) {
-							reject(new Error('server_DH_params_fail new_nonce_hash mismatch'));
+							reject(
+								new Error(
+									'server_DH_params_fail new_nonce_hash mismatch'
+								)
+							);
 							return false;
 						}
 						reject(new Error('server_DH_params_fail'));
@@ -246,7 +285,10 @@ export default class MtpAuthorizerModule {
 					}
 
 					try {
-						this.mtpDecryptServerDhDataAnswer(auth, response.encrypted_answer);
+						this.mtpDecryptServerDhDataAnswer(
+							auth,
+							response.encrypted_answer
+						);
 					} catch (e) {
 						reject(e);
 						return false;
@@ -265,14 +307,23 @@ export default class MtpAuthorizerModule {
 	mtpDecryptServerDhDataAnswer = (auth, encryptedAnswer) => {
 		auth.localTime = tsNow();
 
-		auth.tmpAesKey = sha1BytesSync(auth.newNonce.concat(auth.serverNonce)).concat(
+		auth.tmpAesKey = sha1BytesSync(
+			auth.newNonce.concat(auth.serverNonce)
+		).concat(
 			sha1BytesSync(auth.serverNonce.concat(auth.newNonce)).slice(0, 12)
 		);
 		auth.tmpAesIv = sha1BytesSync(auth.serverNonce.concat(auth.newNonce))
 			.slice(12)
-			.concat(sha1BytesSync([].concat(auth.newNonce, auth.newNonce)), auth.newNonce.slice(0, 4));
+			.concat(
+				sha1BytesSync([].concat(auth.newNonce, auth.newNonce)),
+				auth.newNonce.slice(0, 4)
+			);
 
-		const answerWithHash = aesDecryptSync(encryptedAnswer, auth.tmpAesKey, auth.tmpAesIv);
+		const answerWithHash = aesDecryptSync(
+			encryptedAnswer,
+			auth.tmpAesKey,
+			auth.tmpAesIv
+		);
 
 		const hash = answerWithHash.slice(0, 20);
 		const answerWithPadding = answerWithHash.slice(20);
@@ -282,7 +333,9 @@ export default class MtpAuthorizerModule {
 		const response = deserializer.fetchObject('Server_DH_inner_data');
 
 		if (response._ != 'server_DH_inner_data') {
-			throw new Error('server_DH_inner_data response invalid: ' + constructor);
+			throw new Error(
+				'server_DH_inner_data response invalid: ' + constructor
+			);
 		}
 
 		if (!bytesCmp(auth.nonce, response.nonce)) {
@@ -302,7 +355,9 @@ export default class MtpAuthorizerModule {
 
 		const offset = deserializer.getOffset();
 
-		if (!bytesCmp(hash, sha1BytesSync(answerWithPadding.slice(0, offset)))) {
+		if (
+			!bytesCmp(hash, sha1BytesSync(answerWithPadding.slice(0, offset)))
+		) {
 			throw new Error('server_DH_inner_data SHA1-hash mismatch');
 		}
 
@@ -330,9 +385,15 @@ export default class MtpAuthorizerModule {
 						'Client_DH_Inner_Data'
 					);
 
-					const dataWithHash = sha1BytesSync(data.getBuffer()).concat(data.getBytes());
+					const dataWithHash = sha1BytesSync(data.getBuffer()).concat(
+						data.getBytes()
+					);
 
-					const encryptedData = aesEncryptSync(dataWithHash, auth.tmpAesKey, auth.tmpAesIv);
+					const encryptedData = aesEncryptSync(
+						dataWithHash,
+						auth.tmpAesKey,
+						auth.tmpAesIv
+					);
 
 					const request = new TLSerialization({ mtproto: true });
 					request.storeMethod('set_client_DH_params', {
@@ -342,48 +403,91 @@ export default class MtpAuthorizerModule {
 					});
 
 					logger('Send set_client_DH_params');
-					this.mtpSendPlainRequest(auth.dcID, request.getBuffer()).then(
+					this.mtpSendPlainRequest(
+						auth.dcID,
+						request.getBuffer()
+					).then(
 						deserializer => {
-							const response = deserializer.fetchObject('Set_client_DH_params_answer');
+							const response = deserializer.fetchObject(
+								'Set_client_DH_params_answer'
+							);
 
 							if (
 								response._ != 'dh_gen_ok' &&
 								response._ != 'dh_gen_retry' &&
 								response._ != 'dh_gen_fail'
 							) {
-								reject(new Error('Set_client_DH_params_answer response invalid: ' + response._));
+								reject(
+									new Error(
+										'Set_client_DH_params_answer response invalid: ' +
+											response._
+									)
+								);
 								return false;
 							}
 
 							if (!bytesCmp(auth.nonce, response.nonce)) {
-								reject(new Error('Set_client_DH_params_answer nonce mismatch'));
+								reject(
+									new Error(
+										'Set_client_DH_params_answer nonce mismatch'
+									)
+								);
 								return false;
 							}
 
-							if (!bytesCmp(auth.serverNonce, response.server_nonce)) {
-								reject(new Error('Set_client_DH_params_answer server_nonce mismatch'));
+							if (
+								!bytesCmp(
+									auth.serverNonce,
+									response.server_nonce
+								)
+							) {
+								reject(
+									new Error(
+										'Set_client_DH_params_answer server_nonce mismatch'
+									)
+								);
 								return false;
 							}
 
-							this.CryptoWorker.modPow(auth.gA, auth.b, auth.dhPrime).then(
+							this.CryptoWorker.modPow(
+								auth.gA,
+								auth.b,
+								auth.dhPrime
+							).then(
 								authKey => {
 									const authKeyHash = sha1BytesSync(authKey),
 										authKeyAux = authKeyHash.slice(0, 8),
 										authKeyID = authKeyHash.slice(-8);
 
-									logger('Got Set_client_DH_params_answer', response._);
+									logger(
+										'Got Set_client_DH_params_answer',
+										response._
+									);
 
-									let newNonceHash1, newNonceHash2, newNonceHash3, serverSalt;
+									let newNonceHash1,
+										newNonceHash2,
+										newNonceHash3,
+										serverSalt;
 
 									switch (response._) {
 										case 'dh_gen_ok':
-											newNonceHash1 = sha1BytesSync(auth.newNonce.concat([1], authKeyAux)).slice(
-												-16
-											);
+											newNonceHash1 = sha1BytesSync(
+												auth.newNonce.concat(
+													[1],
+													authKeyAux
+												)
+											).slice(-16);
 
-											if (!bytesCmp(newNonceHash1, response.new_nonce_hash1)) {
+											if (
+												!bytesCmp(
+													newNonceHash1,
+													response.new_nonce_hash1
+												)
+											) {
 												reject(
-													new Error('Set_client_DH_params_answer new_nonce_hash1 mismatch')
+													new Error(
+														'Set_client_DH_params_answer new_nonce_hash1 mismatch'
+													)
 												);
 												return false;
 											}
@@ -402,33 +506,59 @@ export default class MtpAuthorizerModule {
 											break;
 
 										case 'dh_gen_retry':
-											newNonceHash2 = sha1BytesSync(auth.newNonce.concat([2], authKeyAux)).slice(
-												-16
-											);
-											if (!bytesCmp(newNonceHash2, response.new_nonce_hash2)) {
+											newNonceHash2 = sha1BytesSync(
+												auth.newNonce.concat(
+													[2],
+													authKeyAux
+												)
+											).slice(-16);
+											if (
+												!bytesCmp(
+													newNonceHash2,
+													response.new_nonce_hash2
+												)
+											) {
 												reject(
-													new Error('Set_client_DH_params_answer new_nonce_hash2 mismatch')
+													new Error(
+														'Set_client_DH_params_answer new_nonce_hash2 mismatch'
+													)
 												);
 												return false;
 											}
 
-											mtpSendSetClientDhParams(auth).then(result => {
-												resolve(result);
-											});
+											mtpSendSetClientDhParams(auth).then(
+												result => {
+													resolve(result);
+												}
+											);
 											break;
 
 										case 'dh_gen_fail':
-											newNonceHash3 = sha1BytesSync(auth.newNonce.concat([3], authKeyAux)).slice(
-												-16
-											);
-											if (!bytesCmp(newNonceHash3, response.new_nonce_hash3)) {
+											newNonceHash3 = sha1BytesSync(
+												auth.newNonce.concat(
+													[3],
+													authKeyAux
+												)
+											).slice(-16);
+											if (
+												!bytesCmp(
+													newNonceHash3,
+													response.new_nonce_hash3
+												)
+											) {
 												reject(
-													new Error('Set_client_DH_params_answer new_nonce_hash3 mismatch')
+													new Error(
+														'Set_client_DH_params_answer new_nonce_hash3 mismatch'
+													)
 												);
 												return false;
 											}
 
-											reject(new Error('Set_client_DH_params_answer fail'));
+											reject(
+												new Error(
+													'Set_client_DH_params_answer fail'
+												)
+											);
 											return false;
 									}
 								},

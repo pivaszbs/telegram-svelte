@@ -50,7 +50,10 @@ export default function StorageModule() {
 						useLs = false;
 					}
 					try {
-						value = value === undefined || value === null ? false : JSON.parse(value);
+						value =
+							value === undefined || value === null
+								? false
+								: JSON.parse(value);
 					} catch (e) {
 						value = false;
 					}
@@ -72,7 +75,10 @@ export default function StorageModule() {
 				for (i = 0; i < keys.length; i++) {
 					key = keys[i];
 					value = resultObj[key];
-					value = value === undefined || value === null ? false : JSON.parse(value);
+					value =
+						value === undefined || value === null
+							? false
+							: JSON.parse(value);
 					result.push((cache[key] = value));
 				}
 

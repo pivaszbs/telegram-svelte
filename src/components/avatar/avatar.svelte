@@ -11,49 +11,31 @@
 	export let medium;
 	export let big;
 	export let online;
+
 	const commonProps = { small, medium, big, online };
 </script>
-
-<style lang="scss">
-	 .online {
-        position: relative;
-        &::before {
-            position: absolute;
-            content: "";
-            height: 10px;
-            width: 10px;
-            border-radius: 50%;
-            background: var(--green);
-            border: 2px solid var(--white);
-            right: 0;
-            bottom: 2px;
-        }
-	}
-</style>
 
 {#if saved}
 	<SavedAvatar {...commonProps} />
 {:else if telegram}
-	<TelegramAvatar {...commonProps}/>
+	<TelegramAvatar {...commonProps} />
 {:else}
 	{#await photo}
-		<DefaultAvatar {title} {...commonProps}/>
+		<DefaultAvatar {title} {...commonProps} />
 	{:then avatar}
-		{@debug avatar}
 		{#if avatar}
 			<img
-				class='avatar'
-				src={avatar} 
-				class:online
+				class="avatar"
+				src="{avatar}"
 				class:small
 				class:medium
 				class:big
-				alt='avatar'
+				alt="avatar"
 			/>
 		{:else}
-			<DefaultAvatar {title} {...commonProps}/>
+			<DefaultAvatar {title} {...commonProps} />
 		{/if}
 	{:catch error}
-		<DefaultAvatar {title} {...commonProps}/>
+		<DefaultAvatar {title} {...commonProps} />
 	{/await}
 {/if}

@@ -1,5 +1,6 @@
 import Abridged from './transports';
 import { noop } from '../Helper';
+import logger from '../../lib/logger';
 
 export default class WebSocketManager {
 	mtpTransport = new Abridged();
@@ -10,22 +11,28 @@ export default class WebSocketManager {
 		this.socket.binaryType = 'arraybuffer';
 		this.socket.onopen = this.onWebsocketOpen;
 		this.socket.onmessage = async data => {
-			console.log('[WS] Response');
-			let deobfuscated = this.mtpTransport.deobfuscate(new Uint8Array(data.data));
-			deobfuscated = deobfuscated[0] == 127 ? deobfuscated.slice(4) : deobfuscated.slice(1);
+			let deobfuscated = this.mtpTransport.deobfuscate(
+				new Uint8Array(data.data)
+			);
+			deobfuscated =
+				deobfuscated[0] == 127
+					? deobfuscated.slice(4)
+					: deobfuscated.slice(1);
 			handler(deobfuscated);
 		};
 		this.socket.onclose = event => {
-			console.log('Socket is close because of ', event);
+			logger('Socket is close because of ', event);
 		};
 		this.socket.onerror = event => {
-			console.log('Socket error', event);
+			logger('Socket error', event);
 		};
 		this.handler = handler;
 	}
 
 	onWebsocketOpen = async data => {
-		const initMessage = (await this.mtpTransport.generateObfuscatedInitMessage()) || new Uint8Array(64);
+		const initMessage =
+			(await this.mtpTransport.generateObfuscatedInitMessage()) ||
+			new Uint8Array(64);
 
 		this.socket.send(initMessage);
 		this.inited = true;

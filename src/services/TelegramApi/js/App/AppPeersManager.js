@@ -1,45 +1,75 @@
 import AppsChatsManagerModule from './AppChatsManager';
 import AppUsersManagerModule from './AppUsersManager';
-import { isObject } from '../Etc/Helper';
 
-export default class AppPeersManagerModule {
-	AppChatsManager = new AppsChatsManagerModule();
-	AppUsersManager = new AppUsersManagerModule();
+class AppPeersManagerModule {
+	AppChatsManager = AppsChatsManagerModule;
+	AppUsersManager = AppUsersManagerModule;
+
+	getPeerId = peer => {
+		if (peer.id) {
+			return peer.id;
+		}
+		return peer.user_id || peer.channel_id || peer.chat_id;
+	};
 
 	getInputPeerByID = peerID => {
-		if (!peerID) {
-			return { _: 'inputPeerEmpty' };
-		}
-		if (peerID < 0) {
-			const chatID = -peerID;
-			if (!this.AppChatsManager.isChannel(chatID)) {
+		const peer = this.getPeer(peerID);
+
+		if (peer) {
+			if (peer._ === 'chat') {
 				return {
 					_: 'inputPeerChat',
-					chat_id: chatID,
+					chat_id: peer.id,
 				};
-			} else {
+			}
+			if (peer._ === 'channel') {
 				return {
 					_: 'inputPeerChannel',
-					channel_id: chatID,
-					access_hash: this.AppChatsManager.getChat(chatID).access_hash || 0,
+					channel_id: peer.id,
+					access_hash: peer.access_hash,
+				};
+			}
+			if (peer._ === 'user') {
+				return {
+					_: 'inputPeerUser',
+					user_id: peer.id,
+					access_hash: peer.access_hash,
 				};
 			}
 		}
 		return {
-			_: 'inputPeerUser',
-			user_id: peerID,
-			access_hash: this.AppUsersManager.getUser(peerID).access_hash || 0,
+			_: 'inputPeerEmpty',
 		};
 	};
 
-	getPeerID = peerString => {
-		if (isObject(peerString)) {
-			return peerString.user_id ? peerString.user_id : -(peerString.channel_id || peerString.chat_id);
-		}
-		const isUser = peerString.charAt(0) == 'u',
-			peerParams = peerString.substr(1).split('_');
+	getInputByID = peerID => {
+		const peer = this.getPeer(peerID);
 
-		return isUser ? peerParams[0] : -peerParams[0] || 0;
+		if (peer) {
+			if (peer._ === 'chat') {
+				return {
+					_: 'inputChat',
+					chat_id: peer.id.toString(),
+				};
+			}
+			if (peer._ === 'channel') {
+				return {
+					_: 'inputChannel',
+					channel_id: peer.id.toString(),
+					access_hash: peer.access_hash,
+				};
+			}
+			if (peer._ === 'user') {
+				return {
+					_: 'inputUser',
+					user_id: peer.id.toString(),
+					access_hash: peer.access_hash,
+				};
+			}
+		}
+		return {
+			_: 'inputPeerEmpty',
+		};
 	};
 
 	getPeer = peerID => {
@@ -51,6 +81,6 @@ export default class AppPeersManagerModule {
 
 		return this.AppChatsManager.getChat(peerID);
 	};
-
-	isChannel = peerID => peerID < 0 && this.AppChatsManager.isChannel(-peerID);
 }
+
+export default new AppPeersManagerModule();

@@ -14,6 +14,7 @@ const common = {
 			Source: path.resolve(__dirname, 'src'),
 			svelte: path.resolve('node_modules', 'svelte'),
 			images: path.resolve(__dirname, 'src/assets/images'),
+			inline: path.resolve(__dirname, 'src/assets/inline'),
 		},
 		extensions: ['.mjs', '.js', '.json', '.svelte', '.html'],
 	},
@@ -50,13 +51,27 @@ const common = {
 				],
 			},
 			{
-				test: /\.(png|jpe?g|gif)(\?v=\d+\.\d+\.\d+)?$/,
+				test: /\.(png|jpe?g|gif|svg)(\?v=\d+\.\d+\.\d+)?$/,
+				include: path.resolve(__dirname, 'src/assets/images'),
 				use: [
 					{
 						loader: 'file-loader',
 						options: {
 							name: '[name].[ext]',
 							outputPath: 'images/',
+						},
+					},
+				],
+			},
+			{
+				test: /\.(svg)(\?v=\d+\.\d+\.\d+)?$/,
+				include: path.resolve(__dirname, 'src/assets/inline'),
+				use: [
+					{
+						loader: 'svg-inline-loader',
+						options: {
+							name: '[name].[ext]',
+							outputPath: 'icons/',
 						},
 					},
 				],
@@ -69,18 +84,6 @@ const common = {
 						options: {
 							name: '[name].[ext]',
 							outputPath: 'fonts/',
-						},
-					},
-				],
-			},
-			{
-				test: /\.(svg)(\?v=\d+\.\d+\.\d+)?$/,
-				use: [
-					{
-						loader: 'file-loader',
-						options: {
-							name: '[name].[ext]',
-							outputPath: 'icons/',
 						},
 					},
 				],

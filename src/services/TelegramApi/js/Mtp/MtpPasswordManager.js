@@ -7,14 +7,16 @@ import { Config } from '../lib/config';
 import logger from '../lib/logger';
 
 export default class MtpPasswordManagerModule {
-	MtpApiManager = MtpApiManagerModule();
+	MtpApiManager = MtpApiManagerModule;
 	CryptoWorker = new CryptoWorkerModule();
 
 	getState = options =>
-		this.MtpApiManager.invokeApi('account.getPassword', {}, options).then(result => {
-			logger(result);
-			return result;
-		});
+		this.MtpApiManager.invokeApi('account.getPassword', {}, options).then(
+			result => {
+				logger(result);
+				return result;
+			}
+		);
 
 	updateSettings = (state, settings) => {
 		logger(settings);
@@ -30,17 +32,30 @@ export default class MtpPasswordManagerModule {
 			},
 		};
 
-		if (typeof settings.cur_password === 'string' && state.current_salt && settings.cur_password.length > 0) {
-			currentHashPromise = this.makePasswordHash(state.current_salt, settings.cur_password);
+		if (
+			typeof settings.cur_password === 'string' &&
+			state.current_salt &&
+			settings.cur_password.length > 0
+		) {
+			currentHashPromise = this.makePasswordHash(
+				state.current_salt,
+				settings.cur_password
+			);
 		} else {
 			currentHashPromise = Promise.resolve([]);
 		}
 
-		if (typeof settings.new_password === 'string' && settings.new_password.length > 0) {
+		if (
+			typeof settings.new_password === 'string' &&
+			settings.new_password.length > 0
+		) {
 			const saltRandom = new Array(8);
 			const newSalt = bufferConcat(state.new_salt, saltRandom);
 			MtpSecureRandom(saltRandom);
-			newHashPromise = this.makePasswordHash(newSalt, settings.new_password);
+			newHashPromise = this.makePasswordHash(
+				newSalt,
+				settings.new_password
+			);
 			params.new_settings.new_salt = newSalt;
 			params.new_settings.flags |= 1;
 		} else {
@@ -56,12 +71,17 @@ export default class MtpPasswordManagerModule {
 			params.new_settings.email = settings.email || '';
 		}
 
-		return Promise.all([currentHashPromise, newHashPromise]).then(hashes => {
-			params.current_password_hash = hashes[0];
-			params.new_settings.new_password_hash = hashes[1];
+		return Promise.all([currentHashPromise, newHashPromise]).then(
+			hashes => {
+				params.current_password_hash = hashes[0];
+				params.new_settings.new_password_hash = hashes[1];
 
-			return this.MtpApiManager.invokeApi('account.updatePasswordSettings', params);
-		});
+				return this.MtpApiManager.invokeApi(
+					'account.updatePasswordSettings',
+					params
+				);
+			}
+		);
 	};
 
 	check = (state, password, options) =>
@@ -83,7 +103,12 @@ export default class MtpPasswordManagerModule {
 				console.error('Some shit happened', err);
 			});
 
-	requestRecovery = (state, options) => this.MtpApiManager.invokeApi('auth.requestPasswordRecovery', {}, options);
+	requestRecovery = (state, options) =>
+		this.MtpApiManager.invokeApi(
+			'auth.requestPasswordRecovery',
+			{},
+			options
+		);
 
 	recover = (code, options) =>
 		this.MtpApiManager.invokeApi(

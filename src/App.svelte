@@ -1,4 +1,5 @@
 <script>
+	import { user } from './stores/user.js';
 	import LoginForm from './pages/login-form.svelte';
 	import LoginCode from './pages/login-code.svelte';
 	import LoginPassword from './pages/login-password.svelte';
@@ -8,7 +9,7 @@
 	import Settings from './components/settings.svelte'
 	import { router } from './stores/router';
 	import telegramApi from './services/TelegramApi';
-	
+
 	const routes = {
 		'login-form': LoginForm,
 		'login-code': LoginCode,
@@ -19,14 +20,18 @@
 	};
 
 	telegramApi.getUserInfo().then(data => {
+		user.set(data);
 		if (data.id) {
-			router.setRoute('chat-page')
+			router.setRoute('chat-page');
 		} else {
 			router.setRoute('login-form');
 		}
-	})
-
+	});
 </script>
+
+<main>
+	<svelte:component this="{routes[$router.route]}" {...$router.props} />
+</main>
 
 <style>
 	:root {
@@ -38,6 +43,7 @@
 		--dark-gray: rgb(106, 108, 111);
 		--gray-300: #e0e0e0;
 		--pinned: #c4c9cc;
+		--special-gray: var(--secondary);
 
 		--green: #4dcd5e;
 		--shadow: rgba(0, 0, 0, 0.75);
@@ -46,7 +52,6 @@
 		--black: #000;
 		--light-green: #eeffdf;
 		--border-color: rgba(218, 220, 224, 0.75);
-
 
 		--ripple-background: var(--black);
 		--ripple-opacity: 0.08;
@@ -59,7 +64,3 @@
 		height: 100vh;
 	}
 </style>
-
-<main>
-	<svelte:component this={routes[$router.route]} {...$router.props} />
-</main>

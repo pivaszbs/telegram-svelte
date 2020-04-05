@@ -1,4 +1,4 @@
-import telegramApi from "../services/TelegramApi/index";
+import telegramApi from '../services/TelegramApi/index';
 
 export const cc = (cls, condition = true) => ({ class: cls, condition });
 export const tc = (cls1, cls2, conditional) => cc(conditional ? cls1 : cls2);
@@ -22,7 +22,8 @@ export const clsx = (...clss) =>
 		.join(' ');
 
 export const subscribe = element => {
-	const el = typeof element === 'string' ? document.querySelector(element) : element;
+	const el =
+		typeof element === 'string' ? document.querySelector(element) : element;
 	return function(...args) {
 		el.addEventListener(...args);
 	};
@@ -70,7 +71,13 @@ export const startLoading = elem => {
 	elem.classList.add('loading');
 };
 
-export const startLoadingProgress = (elem, spin = true, size = 120, clear = true, color) => {
+export const startLoadingProgress = (
+	elem,
+	spin = true,
+	size = 120,
+	clear = true,
+	color
+) => {
 	if (clear) {
 		elem.innerHTML = '';
 	}
@@ -164,9 +171,12 @@ export const getName = (first, second) => {
 };
 
 export const getNotificationsModeBoolByPeer = peer => {
-	return (peer.notify_settings && (peer.notify_settings.flags == 0 || peer.notify_settings.mute_until == 0)) ||
+	return (peer.notify_settings &&
+		(peer.notify_settings.flags == 0 ||
+			peer.notify_settings.mute_until == 0)) ||
 		(peer.full_chat &&
-			(peer.full_chat.notify_settings.flags == 0 || peer.full_chat.notify_settings.mute_until == 0))
+			(peer.full_chat.notify_settings.flags == 0 ||
+				peer.full_chat.notify_settings.mute_until == 0))
 		? true
 		: false;
 };
@@ -175,7 +185,10 @@ export const getRightSidebarFieldsFromPeer = peer => {
 	const generalizedPeer = {};
 	if (peer._ === 'userFull') {
 		generalizedPeer.type = 'user';
-		generalizedPeer.name = getName(peer.user.first_name, peer.user.last_name);
+		generalizedPeer.name = getName(
+			peer.user.first_name,
+			peer.user.last_name
+		);
 		generalizedPeer.bio = peer.about || '';
 		generalizedPeer.username = peer.user.username;
 		generalizedPeer.phone = peer.user.phone || '';
@@ -189,12 +202,16 @@ export const getRightSidebarFieldsFromPeer = peer => {
 		}
 		generalizedPeer.name = peer.chats[0].title;
 		generalizedPeer.about = peer.full_chat.about;
-		generalizedPeer.link = (peer.full_chat.username && 't.me/' + peer.full_chat.username) || '';
+		generalizedPeer.link =
+			(peer.full_chat.username && 't.me/' + peer.full_chat.username) ||
+			'';
 	} else {
 		generalizedPeer.type = 'groupChat';
 		generalizedPeer.name = peer.chats[0].title;
 		generalizedPeer.about = peer.full_chat.about;
-		generalizedPeer.link = (peer.full_chat.username && 't.me/' + peer.full_chat.username) || '';
+		generalizedPeer.link =
+			(peer.full_chat.username && 't.me/' + peer.full_chat.username) ||
+			'';
 	}
 	generalizedPeer.notifications = getNotificationsModeBoolByPeer(peer);
 	generalizedPeer.avatar = peer.avatar;
@@ -229,7 +246,11 @@ export const onScrollBottom = (element, callback) => {
 	let lastScroll = 0;
 	element.addEventListener('scroll', () => {
 		const lt = window.pageYOffset || element.scrollTop;
-		if (element.scrollTop + element.clientHeight >= element.scrollHeight - 500 && lastScroll < lt) {
+		if (
+			element.scrollTop + element.clientHeight >=
+				element.scrollHeight - 500 &&
+			lastScroll < lt
+		) {
 			callback();
 		}
 		lastScroll = lt;
@@ -250,7 +271,8 @@ export const sanitize = value => {
 		.replace(ic, '&#34;');
 };
 
-export const capitalise = string => string.charAt(0).toUpperCase() + string.slice(1);
+export const capitalise = string =>
+	string.charAt(0).toUpperCase() + string.slice(1);
 export const peerToId = peer => {
 	return peer.user_id || peer.channel_id || peer.chat_id;
 };

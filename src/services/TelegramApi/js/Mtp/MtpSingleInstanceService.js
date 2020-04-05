@@ -39,7 +39,9 @@ export default function MtpSingleInstanceServiceModule() {
 	};
 
 	const clearInstance = () => {
-		Storage.methods.remove(masterInstance ? 'xt_instance' : 'xt_idle_instance');
+		Storage.methods.remove(
+			masterInstance ? 'xt_instance' : 'xt_idle_instance'
+		);
 	};
 
 	const deactivateInstance = () => {
@@ -68,7 +70,12 @@ export default function MtpSingleInstanceServiceModule() {
 				idleInstance = result[1];
 
 			// console.log(dT(), 'check instance', newInstance, curInstance, idleInstance);
-			if (!idle || !curInstance || curInstance.id == instanceID || curInstance.time < time - 60000) {
+			if (
+				!idle ||
+				!curInstance ||
+				curInstance.id == instanceID ||
+				curInstance.time < time - 60000
+			) {
 				if (idleInstance && idleInstance.id == instanceID) {
 					Storage.methods.remove('xt_idle_instance');
 				}
