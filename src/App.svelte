@@ -15,7 +15,7 @@
 		'register-page': RegisterPage,
 		'login-password': LoginPassword,
 		'chat-page': ChatPage,
-		'settings': Settings
+		'settings': Settings //TODO: убрать когда прикручу настройки на их место
 	};
 
 	telegramApi.getUserInfo().then(data => {

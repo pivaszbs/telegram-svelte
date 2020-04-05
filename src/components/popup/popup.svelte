@@ -1,6 +1,6 @@
 <script>
 	import { clsx } from './../../helpers/index.js';
-    import { fade, fly } from 'svelte/transition';
+    import { fly } from 'svelte/transition';
 
     let className;
     export { className as class }

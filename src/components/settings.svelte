@@ -1,4 +1,5 @@
 <script>
+	import { fly } from 'svelte/transition';
 	import SettingsItem from './settings-item.svelte';
 	import Edit from './../assets/images/edit.svg';
 	import Notifications from './../assets/images/notifications.svg';
@@ -17,7 +18,7 @@
     ]
 </script>
 
-<div class="sidebar sidebar_left settings">
+<div transition:fly={{ duration: 200, x: -200 }} class="sidebar sidebar_left settings">
     <SettingsHeader/>
     <SettingsInfo/>
     <ul class="settings-list">
@@ -33,16 +34,6 @@
     height: 100%;
     background: var(--white);
     z-index: 10;
-
-    &_left {
-        left: 0;
-    }
-    &_hidden {
-        left: -100%;
-    }
-    left: 0;
-    transition: 0.4s;
-
     }
 
     .settings {
@@ -69,33 +60,6 @@
     .settings-list {
         grid-row: 3;
         grid-column: 1/4;
-
-        &__item {
-        max-height: 10vh;
-        min-height: 50px;
-        display: flex;
-        align-items: center;
-        margin: 0 8px;
-        padding-left: 8px;
-        border-radius: 8px;
-        justify-content: flex-start;
-        width: 23.5vw;
-        min-width: 230px;
-
-            img {
-                width: 24px;
-                height: 24px;
-                padding-right: 25px;
-            }
-
-            &:hover {
-                background-color: var(--light-gray);
-                cursor: pointer;
-            }
-        }
-        &__text {
-        font-size: 14px;
-        }
     }
 
     .more-list {
