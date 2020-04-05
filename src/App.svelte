@@ -6,6 +6,7 @@
 	import RegisterPage from './pages/register-page.svelte';
 	import ChatPage from './pages/chat-page.svelte';
 	import ProfileImage from './components/profile-image.svelte';
+	import Settings from './components/settings.svelte'
 	import { router } from './stores/router';
 	import telegramApi from './services/TelegramApi';
 
@@ -15,6 +16,7 @@
 		'register-page': RegisterPage,
 		'login-password': LoginPassword,
 		'chat-page': ChatPage,
+		'settings': Settings //TODO: убрать когда прикручу настройки на их место
 	};
 
 	telegramApi.getUserInfo().then(data => {
