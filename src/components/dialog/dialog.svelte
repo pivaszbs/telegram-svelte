@@ -6,7 +6,6 @@
 	import Ripple from '@smui/ripple';
 	import './dialog.scss';
 	export let photo;
-	photo = photo && photo.src;
 	export let unreadCount,
 		title,
 		text,
@@ -20,7 +19,8 @@
 		online,
 		active,
 		muted,
-		last;
+		last,
+		scrollTopElement;
 
 	const onClick = () => {
 		loadDialog(id);

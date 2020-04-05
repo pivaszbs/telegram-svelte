@@ -1,13 +1,14 @@
 // import telegramApi from './TelegramApi';
-import { dialogs, load } from '../stores/dialogs';
+import { dialogs, load, topDialog } from '../stores/dialogs';
 import telegramApi from './TelegramApi/index';
 import { topBar } from '../stores/topBar';
 import { get } from 'svelte/store';
 
 let offset = 30;
-export const loadFirstDialogs = () => {
-	telegramApi.fetchDialogs(30).then(dialog_items => {
+export const loadFirstDialogs = async () => {
+	await telegramApi.fetchDialogs(40).then(dialog_items => {
 		dialogs.set(dialog_items);
+		topDialog.set(dialog_items[3]);
 	});
 };
 
@@ -23,7 +24,17 @@ export const loadDialog = async id => {
 
 export const loadBotom = async () => {
 	load.set(true);
-	const data = await telegramApi.fetchDialogs(30, 0, get(dialogs)[30].date);
+	const data = await telegramApi.fetchDialogs(20, 10, get(dialogs)[20].date);
+	dialogs.set(data);
+	load.set(false);
+}
+
+export const loadTop = async (topMessage = false) => {
+	load.set(true);
+
+	const data = topMessage ?
+		await telegramApi.fetchDialogs(30)
+		: await telegramApi.fetchDialogs(10, 20, get(dialogs)[10].date)
 	dialogs.set(data);
 	load.set(false);
 }
