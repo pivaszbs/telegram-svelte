@@ -117,9 +117,9 @@ class AppsChatsManagerModule {
 			!this.isChannel(dialog.id) &&
 			topMessage._ !== 'messageService'
 		) {
-			dialog.fromName = topMessage.from_id && AppPeersManager.getPeer(
-				topMessage.from_id
-			).first_name;
+			dialog.fromName =
+				topMessage.from_id &&
+				AppPeersManager.getPeer(topMessage.from_id).first_name;
 		}
 		dialog.out = topMessage.out;
 		dialog.saved = AppProfileManager.isSelf(dialog.id);
@@ -176,7 +176,8 @@ class AppsChatsManagerModule {
 		const notifySettings = dialog?.notifySettings;
 
 		return (
-			dialog && notifySettings &&
+			dialog &&
+			notifySettings &&
 			(tlFlags(notifySettings.flags, 1) ||
 				notifySettings.mute_until * 1000 > Date.now())
 		);
