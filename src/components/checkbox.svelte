@@ -16,7 +16,7 @@
 		-webkit-appearance: none;
 		display: inline-flex;
 		align-items: flex-start;
-		margin-top: -2px;
+		margin-top: var(--indent-x-small);
 		background: var(--white) url('~images/empty.svg');
 
 		&:active,
@@ -32,7 +32,7 @@
 
 	label {
 		display: inline-block;
-		margin-left: 32px;
+		margin-left: var(--indent-xxx-large);
 		user-select: none;
 		font-size: inherit;
 	}

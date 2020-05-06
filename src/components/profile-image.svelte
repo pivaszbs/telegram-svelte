@@ -226,8 +226,9 @@
 
 	h2 {
 		justify-self: start;
-		font-size: 20px;
+		font-size: var(--font-size-large);
 	}
+
 	.overlay::selection {
 		background: transparent;
 		border-radius: 50%;
@@ -293,8 +294,8 @@
 		height: 40px;
 		border-radius: 50%;
 		background-color: var(--primary);
-		margin-bottom: 16px;
-		margin-right: 16px;
+		margin-bottom: var(--indent-large);
+		margin-right: var(--indent-large);
 		display: flex;
 		align-items: center;
 		justify-content: center;

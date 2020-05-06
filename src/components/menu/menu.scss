@@ -18,8 +18,8 @@
     display: grid;
     grid-template-columns: 60px auto;
     grid-template-rows: 40px;
-    margin-bottom: 10px;
-    padding-top: 10px;
+    margin-bottom: var(--indent-medium);
+    padding-top: var(--indent-medium);
     align-items: center;
     transition: 0.4s ease-in;
 
@@ -47,8 +47,8 @@
         position: absolute;
         z-index: 3;
         background: rgba(#fff, 0);
-        font-size: 14px;
-        border-radius: 24px;
+        font-size: var(--font-size-medium);
+        border-radius: var(--border-radius-default);
         width: 100%;
         align-self: center;
         padding: 10px 10px 10px 35px;
@@ -70,7 +70,7 @@
 
     .menu__search_overlay {
         z-index: 2;
-        font-size: 14px;
+        font-size: var(--font-size-large);
         height: 120%;
         width: 110%;
         display: flex;
@@ -130,7 +130,7 @@
             justify-content: flex-start;
             width: 200px;
             img {
-                margin-right: 25px;
+                margin-right: var(--indent-xx-large);
             }
         }
 
@@ -161,7 +161,7 @@
 
     .burger {
         div {
-        margin-bottom: 3px;
+        margin-bottom: var(--indent-small);
         background: #707579;
         &:last-child {
             margin-bottom: 0;
@@ -171,21 +171,23 @@
 
     .arrow {
         transform: rotate(180deg);
-        margin-right: -8px;
         div {
-        width: 18px;
-        background: #707579;
-        transform: translate(4px, 0);
+            width: 16px;
+            background: #707579;
+            transform: translate(4px, 0);
+            height: 2px;
 
-        &:first-child {
-            width: 12px;
-            transform: rotate(45deg) translate(8px, -8px);
-        }
+            &:first-child {
+                width: 12px;
+                height: 3px;
+                transform: rotate(45deg) translate(6px, -8px);
+            }
 
-        &:last-child {
-            width: 12px;
-            transform: rotate(-45deg) translate(8px, 8px);
-        }
+            &:last-child {
+                width: 12px;
+                height: 3px;
+                transform: rotate(-45deg) translate(6px, 8px);
+            }
         }
     }
 
