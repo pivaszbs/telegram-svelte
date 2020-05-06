@@ -456,7 +456,7 @@ function MtpApiFileManagerModule() {
 		return promise;
 	};
 
-	const getPeerPhoto = async peer_id => {
+	const getPeerPhoto = peer_id => {
 		const peer = AppPeersManager.getPeer(peer_id);
 
 		if (!peer.photo) {
@@ -466,6 +466,7 @@ function MtpApiFileManagerModule() {
 		const cached = getLocalFile(peer.id);
 
 		if (cached) {
+			console.log('RETURNING CACHED');
 			return cached;
 		}
 
