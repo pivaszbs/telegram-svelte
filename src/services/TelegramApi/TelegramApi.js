@@ -322,7 +322,7 @@ class TelegramApi {
 		this.AppMessagesManager.saveMessages(dialogs.messages);
 		this.AppChatsManager.saveDialogs(dialogs.dialogs);
 
-		return this.AppChatsManager.getDialogsSorted(offset, up, down);
+		return this.AppChatsManager.getCurrentDialogs();
 	};
 
 	getFullChat = chat_id =>
@@ -395,15 +395,21 @@ class TelegramApi {
 		this.MtpApiManager.getUserID().then(id => {
 			const user = this.AppUsersManager.getUser(id);
 
+			console.log('USER', user);
+
 			if (user) {
 				return user;
 			} else {
 				return this.MtpApiManager.invokeApi('users.getFullUser', {
 					id: { _: 'inputUserSelf' },
-				}).then(userInfoFull => {
-					this.AppUsersManager.saveApiUser(userInfoFull.user);
-					return this.AppUsersManager.getUser(id);
-				});
+				})
+					.then(userInfoFull => {
+						this.AppUsersManager.saveApiUser(userInfoFull.user);
+						return this.AppUsersManager.getUser(id);
+					})
+					.catch(err => {
+						return {};
+					});
 			}
 		});
 

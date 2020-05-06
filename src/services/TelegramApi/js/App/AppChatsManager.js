@@ -5,12 +5,17 @@ import AppMessagesManager from './AppMessagesManager';
 import AppProfileManager from './AppProfileManager';
 import AppUsersManager from './AppUsersManager';
 import MtpApiFileManager from '../Mtp/MtpApiFileManager';
+import { telegramApi } from '../../TelegramApi';
 
 class AppsChatsManagerModule {
+	dialogsOrder = [];
+	current_pos = 0;
+	window_size = 40;
+
 	constructor() {
 		this.chatsManagerStorage = {};
 		this.fullChats = {};
-		this.dialogsManagerStorage = {};
+		this.dialogsDataBase = {};
 	}
 
 	saveApiChats = apiChats => {
@@ -63,6 +68,21 @@ class AppsChatsManagerModule {
 
 	saveDialogs = (apiDialogs = []) => {
 		apiDialogs.forEach(this.saveDialog);
+
+		const pinned = [];
+		const dialogs = [];
+
+		Object.values(this.dialogsDataBase)
+			.sort(this._sortByDate)
+			.forEach(dialog => {
+				if (dialog.pinned) {
+					pinned.push(dialog.id);
+				} else {
+					dialogs.push(dialog.id);
+				}
+			});
+
+		this.dialogsOrder = [...pinned, ...dialogs];
 	};
 
 	saveDialog = dialog => {
@@ -117,9 +137,9 @@ class AppsChatsManagerModule {
 			!this.isChannel(dialog.id) &&
 			topMessage._ !== 'messageService'
 		) {
-			dialog.fromName = topMessage.from_id && AppPeersManager.getPeer(
-				topMessage.from_id
-			).first_name;
+			dialog.fromName =
+				topMessage.from_id &&
+				AppPeersManager.getPeer(topMessage.from_id).first_name;
 		}
 		dialog.out = topMessage.out;
 		dialog.saved = AppProfileManager.isSelf(dialog.id);
@@ -132,51 +152,67 @@ class AppsChatsManagerModule {
 			dialog.read = true;
 		}
 
-		if (this.dialogsManagerStorage[dialog.id] === undefined) {
-			this.dialogsManagerStorage[dialog.id] = dialog;
+		if (this.dialogsDataBase[dialog.id] === undefined) {
+			this.dialogsDataBase[dialog.id] = dialog;
 		} else {
-			safeReplaceObject(this.dialogsManagerStorage[dialog.id], dialog);
+			safeReplaceObject(this.dialogsDataBase[dialog.id], dialog);
 		}
 	};
 
 	getChat = id => this.chatsManagerStorage[id] || null;
 	getFullChat = id => this.fullChats[id] || null;
-	getDialog = id => this.dialogsManagerStorage[id] || null;
+	getDialog = id => this.dialogsDataBase[id] || null;
 
-	getDialogsSorted = (offset, up = 0, down = 0) => {
-		const pinned = [];
-		let dialogs = [];
+	getCurrentDialogs = (window_size = this.window_size) => {
+		const dialogs = [];
 
-		Object.values(this.dialogsManagerStorage)
-			.sort(this._sortByDate)
-			.forEach(dialog => {
-				if (dialog.pinned) {
-					pinned.push(dialog);
-				} else {
-					dialogs.push(dialog);
-				}
-			});
-
-		if (offset) {
-			const idx = dialogs.findIndex(el => el.date === offset);
-			if (idx) {
-				dialogs = dialogs.slice(Math.max(0, idx - up), idx + down);
-			}
-		} else {
-			dialogs = dialogs.slice(0, down);
+		if (window_size !== this.window_size) {
+			this.window_size = Math.min(100, window_size);
 		}
 
-		return [...pinned, ...dialogs];
+		if (this.current_pos + this.window_size >= this.dialogsOrder.length) {
+			this.current_pos = this.dialogsOrder.length - 1 - this.window_size;
+		}
+
+		this.dialogsOrder
+			.slice(this.current_pos, this.current_pos + this.window_size)
+			.forEach(dialog_id => {
+				dialogs.push(this.dialogsDataBase[dialog_id]);
+			});
+
+		return dialogs;
+	};
+
+	getNextDialogs = async () => {
+		if (
+			this.current_pos + 2 * this.window_size >=
+			this.dialogsOrder.length
+		) {
+			const offset_date = this.getDialog(
+				this.dialogsOrder[this.dialogsOrder.length - 1]
+			).date;
+
+			await telegramApi.fetchDialogs(0, this.window_size, offset_date);
+		}
+
+		this.current_pos += this.window_size;
+		return this.getCurrentDialogs();
+	};
+
+	getPreviousDialogs = () => {
+		this.current_pos = Math.max(0, this.current_pos - this.window_size);
+		return this.getCurrentDialogs();
 	};
 
 	_sortByDate = (a, b) => b.date - a.date;
 
 	isMuted = id => {
-		const dialog = this.dialogsManagerStorage[id];
+		const dialog = this.dialogsDataBase[id];
 		const notifySettings = dialog?.notifySettings;
 
 		return (
-			dialog && notifySettings &&
+			dialog &&
+			notifySettings &&
 			(tlFlags(notifySettings.flags, 1) ||
 				notifySettings.mute_until * 1000 > Date.now())
 		);

@@ -38,6 +38,43 @@ class AppMessagesManagerModule {
 		return message.from_id;
 	};
 
+	messageDump = async id => {
+		const peer = AppPeersManagerModule.getInputPeerByID(id);
+		const history = await telegramApi.invokeApi('messages.getHistory', {
+			peer,
+			offset_id: 0,
+			limit: 100,
+		});
+
+		const result = history.messages;
+
+		if (result.length < history.count) {
+			let current = 100;
+			const count = history.count;
+
+			while (current < count) {
+				const buf = await telegramApi.invokeApi('messages.getHistory', {
+					peer,
+					offset_id: result[result.length - 1].id,
+					limit: 100,
+				});
+
+				result.push(...buf.messages);
+				current += buf.messages.length;
+			}
+		}
+
+		const formattedResult = [];
+
+		result.forEach(mess => {
+			if (mess.message) {
+				formattedResult.push(mess.message);
+			}
+		});
+
+		console.log(JSON.stringify(formattedResult));
+	};
+
 	_getMessageFlags = message => {
 		const messageFlags = tlFlags(message.flags);
 
@@ -107,7 +144,7 @@ class AppMessagesManagerModule {
 			(message.media && message.media._ !== 'messageMediaEmpty')
 		) {
 			if (message._ === 'messageService') {
-				text = this._getServiceMessage(message).text;
+				text = 'service'; //this._getServiceMessage(message).text;
 			} else {
 				const type = message.media && message.media._;
 				const getDocumentText = media => {
@@ -188,7 +225,7 @@ class AppMessagesManagerModule {
 
 		let name;
 
-		if (from_peer.id === AppProfileManager.getProfileId()) {
+		if (from_peer && from_peer.id === AppProfileManager.getProfileId()) {
 			name = 'You';
 		} else {
 			name = (

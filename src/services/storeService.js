@@ -24,17 +24,17 @@ export const loadDialog = async id => {
 
 export const loadBotom = async () => {
 	load.set(true);
-	const data = await telegramApi.fetchDialogs(20, 10, get(dialogs)[20].date);
+	const data = await telegramApi.AppChatsManager.getNextDialogs();
 	dialogs.set(data);
 	load.set(false);
-}
+};
 
 export const loadTop = async (topMessage = false) => {
 	load.set(true);
 
-	const data = topMessage ?
-		await telegramApi.fetchDialogs(30)
-		: await telegramApi.fetchDialogs(10, 20, get(dialogs)[10].date)
+	const data = topMessage
+		? telegramApi.AppChatsManager.getCurrentDialogs()
+		: telegramApi.AppChatsManager.getPreviousDialogs();
 	dialogs.set(data);
 	load.set(false);
-}
+};

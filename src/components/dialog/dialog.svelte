@@ -1,5 +1,6 @@
 <script>
 	import { loadDialog } from './../../services/storeService.js';
+	import AppMessagesManager from '../../services/TelegramApi/js/App/AppMessagesManager';
 	import RightTop from './right-top.svelte';
 	import RightBottom from './right-bottom.svelte';
 	import Avatar from '../avatar/avatar.svelte';
