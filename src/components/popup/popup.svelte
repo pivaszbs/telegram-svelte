@@ -1,7 +1,7 @@
 <script>
 	import ClickOutside from './../helpers/click-outside.svelte';
 	import { clsx } from './../../helpers/index.js';
-    import { fly } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
 
 	let className;
 	export let popupHandler;

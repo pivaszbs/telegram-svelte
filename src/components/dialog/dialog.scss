@@ -26,10 +26,10 @@
 	}
 
 	.unread {
-		border-radius: 24px;
+		border-radius: var(--border-radius-default);
 		min-width: 24px;
 		color: var(--white);
-		font-size: 14px;
+		font-size: var(--font-size-small);
 		text-align: center;
 		background-color: var(--green);
 		.count {

@@ -3,10 +3,9 @@
     display: inline-flex;
     align-items: center;
     height: 50px;
-    padding-left: 15px;
-    padding-right: 15px;
+    padding-left: var(--indent-large);
+    padding-right: var(--indent-large);
     vertical-align: middle;
-    align-items: center;
 
     &:hover {
         background: var(--light-gray);

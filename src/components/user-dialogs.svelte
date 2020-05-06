@@ -6,21 +6,24 @@
 	import Dialog from './dialog/dialog.svelte';
 	let userDialogs;
 	let lastScroll = 0;
-	let scrollCount = 0;
 	let update = false;
+	const updateTimeout = () =>
+		setTimeout(() => {
+			update = false;
+		}, 100);
 
 	const scrollBottom = () => {
+		update = true;
 		loadBotom();
-		scrollCount++;
-		update = true;
-		return;
-	}
+		updateTimeout();
+	};
+
 	const scrollTop = () => {
-		loadTop(scrollCount === 1);
-		scrollCount--;
 		update = true;
-		return;
-	}
+		loadTop();
+		updateTimeout();
+	};
+
 	onMount(async () => {
 		await loadFirstDialogs();
 		// const interval = setInterval(() => {
@@ -39,24 +42,29 @@
 
 	const scrollY = e => {
 		const isBottomScroll = lastScroll < userDialogs.scrollTop;
-		const isTopScroll = !isBottomScroll; 
+		const isTopScroll = !isBottomScroll;
 		if (isBottomScroll && !update) {
-			if (userDialogs.scrollTop >= userDialogs.offsetHeight && !$load) {
+			if (
+				userDialogs.scrollTop >= userDialogs.offsetHeight * 1.5 &&
+				!$load
+			) {
 				scrollBottom();
 				return;
 			}
-		} else if (isTopScroll && !update && userDialogs.scrollTop <= userDialogs.offsetHeight / 2 && !$load && scrollCount > 0) {
+		} else if (
+			isTopScroll &&
+			!update &&
+			userDialogs.scrollTop <= userDialogs.offsetHeight / 2 &&
+			!$load
+		) {
 			scrollTop();
 			return;
 		}
 		lastScroll = userDialogs.scrollTop;
-		update = false;
 	};
-
-	let specialScroll;
 </script>
 
-<div bind:this={userDialogs} on:scroll={scrollY} class="user-dialogs">
+<div bind:this="{userDialogs}" on:scroll="{scrollY}" class="user-dialogs">
 	{#each $dialogs as dialog, i (dialog.id)}
 		<Dialog {...dialog} />
 	{/each}
