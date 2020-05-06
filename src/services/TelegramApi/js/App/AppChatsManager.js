@@ -195,12 +195,12 @@ class AppsChatsManagerModule {
 			await telegramApi.fetchDialogs(0, this.window_size, offset_date);
 		}
 
-		this.current_pos += this.window_size;
+		this.current_pos += this.window_size / 2;
 		return this.getCurrentDialogs();
 	};
 
 	getPreviousDialogs = () => {
-		this.current_pos = Math.max(0, this.current_pos - this.window_size);
+		this.current_pos = Math.max(0, this.current_pos - this.window_size / 2);
 		return this.getCurrentDialogs();
 	};
 
