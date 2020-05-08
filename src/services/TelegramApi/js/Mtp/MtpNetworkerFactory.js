@@ -24,7 +24,7 @@ import MtpDcConfiguratorModule from './MtpDcConfigurator';
 import WebSocketManager from '../Etc/angular/$websocket';
 import logger from '../lib/logger';
 
-export default function MtpNetworkerFactoryModule() {
+function MtpNetworkerFactoryModule() {
 	let updatesProcessor;
 	let akStopped = false;
 	const chromeMatches = navigator.userAgent.match(/Chrome\/(\d+(\.\d+)?)/);
@@ -34,7 +34,7 @@ export default function MtpNetworkerFactoryModule() {
 		!('ArrayBufferView' in window) &&
 		(!chromeVersion || chromeVersion < 30);
 
-	window.subscriptions = {};
+	const subscriptions = {};
 
 	const subscribe = (id, handler) => {
 		if (typeof handler == 'function') {
@@ -1301,3 +1301,5 @@ export default function MtpNetworkerFactoryModule() {
 		unSubscribe: unSubscribe,
 	};
 }
+
+export default MtpNetworkerFactoryModule();

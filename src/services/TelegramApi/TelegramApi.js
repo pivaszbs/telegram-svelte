@@ -32,7 +32,7 @@ class TelegramApi {
 	// MtpApiFileManager = new MtpApiFileManagerModule();
 	MtpPasswordManager = new MtpPasswordManagerModule();
 	FileSaver = new FileSaverModule();
-	MtpNetworkerFactory = MtpNetworkerFactoryModule();
+	MtpNetworkerFactory = MtpNetworkerFactoryModule;
 
 	AppUpdatesManager = AppUpdatesManagerModule;
 	AppMessagesManager = AppMessagesManagerModule;

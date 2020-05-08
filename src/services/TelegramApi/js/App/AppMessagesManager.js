@@ -12,7 +12,7 @@ class AppMessagesManagerModule {
 	}
 
 	saveMessages = (messages = []) => {
-		messages.forEach(this.saveMessage);
+		messages.forEach(message => this.saveMessage(message));
 	};
 
 	_getMessagePeerId = message => {
@@ -90,9 +90,7 @@ class AppMessagesManagerModule {
 		};
 	};
 
-	saveMessage = message => {
-		const peerId = this._getMessagePeerId(message);
-
+	saveMessage = (message, peerId = this._getMessagePeerId(message)) => {
 		const peerMessages = (this.messages[peerId] =
 			this.messages[peerId] || {});
 
@@ -101,6 +99,8 @@ class AppMessagesManagerModule {
 			...this._getMessageFlags(message),
 			formattedText: this._getMessageText(message),
 		};
+
+		return peerMessages[message.id];
 	};
 
 	getMessages = peerId => {

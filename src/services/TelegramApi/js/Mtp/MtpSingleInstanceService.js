@@ -17,7 +17,7 @@ export default function MtpSingleInstanceServiceModule() {
 
 	let IdleManager = new IdleManagerModule();
 	let Storage = StorageModule();
-	let MtpNetworkerFactory = MtpNetworkerFactoryModule();
+	let MtpNetworkerFactory = MtpNetworkerFactoryModule;
 
 	const start = () => {
 		if (!started && !Config.Navigator.mobile) {
