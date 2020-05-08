@@ -32,7 +32,7 @@
 
 	.time {
 		color: var(--secondary);
-		font-size: 12px;
+		font-size: var(--font-size-small);
 		align-self: center;
 	}
 

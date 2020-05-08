@@ -41,7 +41,7 @@
 
 		&__title {
 			align-self: center;
-			font-style: 20px;
+			font-size: var(--font-size-large);
 			font-weight: 600;
 		}
 

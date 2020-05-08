@@ -16,8 +16,8 @@
 			min-height: 50px;
 			display: flex;
 			align-items: center;
-			margin: 0 8px;
-			padding-left: 8px;
+			margin: 0 var(--indent-medium);
+			padding-left: var(--indent-medium);
 			border-radius: 8px;
 			justify-content: flex-start;
 			width: 23.5vw;
@@ -34,8 +34,8 @@
 			}
 		}
 		&__text {
-			font-size: 14px;
-			padding-left: 20px;
+			font-size: var(--font-size-small);
+			padding-left: var(--indent-x-large);
 		}
 	}
 </style>

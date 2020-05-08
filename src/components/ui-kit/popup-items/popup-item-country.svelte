@@ -22,7 +22,6 @@
 
 <style lang="scss">
 	li {
-		display: flex;
 		justify-content: space-between;
 		cursor: pointer;
 		box-sizing: border-box;
@@ -33,8 +32,8 @@
 		height: 50px;
 		min-height: 50px;
 		width: 360px;
-		padding-left: 15px;
-		padding-right: 15px;
+		padding-left: var(--indent-large);
+		padding-right: var(--indent-large);
 		vertical-align: middle;
 		&:hover {
 			background: var(--light-gray);

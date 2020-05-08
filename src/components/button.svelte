@@ -32,7 +32,7 @@
 		border: 0;
 		border-radius: 10px;
 
-		font-size: 16px;
+		font-size: var(--font-size-medium);
 		font-weight: 500;
 		outline: none;
 

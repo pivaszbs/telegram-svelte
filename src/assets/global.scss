@@ -8,6 +8,22 @@
 	--gray-300: #e0e0e0;
 	--pinned: #c4c9cc;
 
+	--font-size-small: 14px;
+	--font-size-medium: 18px;
+	--font-size-large: 24px;
+
+	--border-radius-default: 24px;
+	--border-radius-x-small: 8px;
+	--border-radius-small: 12px;
+
+	--indent-x-small: 2px;
+	--indent-small: 4px;
+	--indent-medium: 8px;
+	--indent-large: 16px;
+	--indent-x-large: 20px;
+	--indent-xx-large: 24px;
+	--indent-xxx-large: 32px;
+
 	--green: #4dcd5e;
 	--shadow: rgba(0, 0, 0, 0.75);
 	--white: #fff;
@@ -29,19 +45,19 @@
   * {
 	margin: 0;
 	padding: 0;
-	font-family: "Open Sans";
+  	font-family: 'Roboto', sans-serif;
 
 	transition: all 0.1s ease-in;
 	&::-webkit-scrollbar-track {
 	  border: none;
-	  border-radius: 24px;
+	  border-radius: var(--border-radius-default);
 	  background-color: var(--light-gray);
 	  position: absolute;
 	  right: 25px;
 	}
 
 	&::-webkit-scrollbar {
-	  border-radius: 24px;
+	  border-radius: var(--border-radius-default);
 	  width: 6px;
 	  background-color: var(--light-gray);
 	  position: absolute;
@@ -49,7 +65,7 @@
 	}
 
 	&::-webkit-scrollbar-thumb {
-	  border-radius: 24px;
+	  border-radius: var(--border-radius-default);
 	  background-color: #e3e3e3;
 	  position: absolute;
 	  right: 25px;

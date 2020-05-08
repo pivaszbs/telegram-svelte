@@ -66,15 +66,15 @@
 	}
 
 	.dialog {
-		padding: 4px 8px;
+		padding: var(--indent-small) var(--indent-medium);
 		max-height: 10vh;
 		min-height: 60px;
 		display: grid;
 		grid-template-columns: 60px 1fr 60px;
-		column-gap: 8px;
+		column-gap: var(--indent-medium);
 		grid-template-rows: 1fr 1fr;
 		align-items: center;
-		margin: 4px 8px;
+		margin: var(--indent-small) var(--indent-medium);
 		border-radius: 8px;
 		user-select: none;
 
@@ -97,7 +97,7 @@
 			grid-column: 2;
 			grid-row: 1;
 			font-weight: 600;
-			font-size: 16px;
+			font-size: var(--font-size-medium);
 			align-self: flex-end;
 			white-space: nowrap;
 			text-overflow: ellipsis;
@@ -109,7 +109,7 @@
 			grid-row: 2;
 			align-self: flex-start;
 			color: var(--secondary);
-			font-size: 16px;
+			font-size: var(--font-size-medium);
 			white-space: nowrap;
 			text-overflow: ellipsis;
 			overflow: hidden;

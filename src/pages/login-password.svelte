@@ -40,7 +40,7 @@
 	.hint {
 		color: var(--dark-gray);
 		font-weight: 400;
-		font-size: 16px;
+		font-size: var(--font-size-medium);
 		width: 50%;
 		margin-bottom: 4vh;
 	}
@@ -55,6 +55,6 @@
 	}
 
 	.input-group {
-		margin-bottom: 24px;
+		margin-bottom: var(--indent-xx-large);
 	}
 </style>

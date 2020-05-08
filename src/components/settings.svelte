@@ -45,18 +45,18 @@
 		grid-template-rows: 60px 150px 2fr;
 
 		&__avatar {
-			margin-bottom: 20px;
+			margin-bottom: var(--indent-x-large);
 			overflow: hidden;
 		}
 
 		&__name {
-			font-size: 20px;
+			font-size: var(--font-size-large);
 			font-weight: 600;
-			margin-bottom: 4px;
+			margin-bottom: var(--indent-small);
 		}
 
 		&__phone {
-			font-size: 14px;
+			font-size: var(--font-size-small);
 			color: var(--gray);
 		}
 

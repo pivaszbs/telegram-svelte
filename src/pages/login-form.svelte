@@ -84,6 +84,7 @@
 <style>
 	.logo {
 		width: 160px;
+		height: 160px;
 		margin-bottom: 2vh;
 	}
 
@@ -99,13 +100,13 @@
 	.hint {
 		color: var(--dark-gray);
 		font-weight: 400;
-		font-size: 16px;
+		font-size: var(--font-size-medium);
 		width: 75%;
 		margin-bottom: 4vh;
 	}
 
 	.input-group {
-		margin-bottom: 24px;
+		margin-bottom: var(--indent-xx-large);
 	}
 
 	.country {
@@ -113,11 +114,11 @@
 	}
 
 	.keep {
-		font-size: 16px;
+		font-size: var(--font-size-medium);
 		display: flex;
-		margin-bottom: 24px;
+		margin-bottom: var(--indent-xx-large);
 		width: 360px;
-		padding-left: 32px;
+		padding-left: var(--indent-xx-large);
 		position: relative;
 
 		overflow: hidden;
