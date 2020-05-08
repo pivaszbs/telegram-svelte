@@ -10,7 +10,7 @@ import { telegramApi } from '../../TelegramApi';
 class AppsChatsManagerModule {
 	dialogsOrder = [];
 	current_pos = 0;
-	window_size = 30;
+	window_size = 80;
 
 	constructor() {
 		this.chatsManagerStorage = {};

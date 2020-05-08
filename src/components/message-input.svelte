@@ -1,21 +1,50 @@
 <script>
+	import Emoji from 'inline/emoji.svg';
+	import Attach from 'inline/attach.svg';
+	import Ripple from '@smui/ripple';
 
+	let text = '';
+
+	$: emptyText = text.length === 0;
+
+	const inputHandler = e => {
+		text = e.target.innerText;
+	};
 </script>
 
-<message-input class="message-input">
+<div class="message-input">
 	<div class="text-input">
-		<div class="svg emoji-set"></div>
 		<div
+			use:Ripple="{{ ripple: true, color: 'secondary' }}"
+			class="svg emoji-set"
+		>
+			{@html Emoji}
+		</div>
+		<div
+			on:input="{inputHandler}"
 			contenteditable="true"
 			class="text-input__input"
-			placeholder="Message"
+			placeholder="{emptyText ? 'Message' : ''}"
 		></div>
-		<div class="svg attach-media"></div>
+		<div
+			use:Ripple="{{ ripple: true, color: 'secondary' }}"
+			class="svg attach-media"
+		>
+			{@html Attach}
+		</div>
 	</div>
-</message-input>
+
+	<div use:Ripple="{{ ripple: true, color: 'secondary' }}" class="svg send">
+		<div
+			class:microphone="{emptyText}"
+			class:send-arrow="{!emptyText}"
+		></div>
+	</div>
+</div>
 
 <style lang="scss">
 	.message-input {
+		min-height: 60px;
 		height: auto;
 		position: fixed; //absolute? nope
 		bottom: 20px;
@@ -67,17 +96,6 @@
 			padding-right: 20px;
 		}
 
-		// &:after {
-		//   content: " ";
-		//   position: absolute;
-		//   right: -15px;
-		//   border: 20px solid transparent;
-		//   border-left-color: var(--white);
-		//   border-right: 0;
-		//   border-bottom: 0;
-		//   bottom: 0;
-		// }
-
 		&__input {
 			border: 0 solid transparent;
 			width: 100%;
@@ -117,16 +135,14 @@
 		}
 	}
 
-	.voice-message {
+	.send {
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		cursor: pointer;
 		background-color: white;
-		padding: 16px !important;
 		border-radius: 50%;
 		fill: var(--white);
-
-		& svg {
-			opacity: 1 !important;
-		}
 	}
 
 	$send-button-size: 26px;
@@ -138,19 +154,19 @@
 	}
 
 	.microphone {
-		background: url('./microphone.svg') no-repeat;
+		background: url('~images/microphone.svg') no-repeat;
 	}
 
 	.send-arrow {
-		background: url('./sendArrow.svg') no-repeat;
+		background: url('~images/sendArrow.svg') no-repeat;
 	}
 
 	.svg {
-		align-self: end;
 		svg {
 			cursor: pointer;
 			width: 24px;
 			height: 24px;
+			border-radius: 50%;
 			opacity: 0.5;
 			position: fixed;
 			bottom: 35px;
@@ -218,9 +234,6 @@
 		.emoji_element {
 			border-radius: 8px;
 			padding: 4px;
-			&:hover {
-				background: var(--light-gray);
-			}
 			cursor: pointer;
 		}
 
