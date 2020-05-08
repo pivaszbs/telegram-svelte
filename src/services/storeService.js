@@ -2,6 +2,7 @@
 import { dialogs, load } from '../stores/dialogs';
 import telegramApi from './TelegramApi/index';
 import { topBar } from '../stores/topBar';
+import { messages } from '../stores/messages';
 
 export const loadFirstDialogs = async () => {
 	await telegramApi.fetchDialogs(80).then(dialog_items => {
@@ -40,7 +41,9 @@ export const loadDialog = async id => {
 		title,
 		photo,
 	} = await telegramApi.AppChatsManager.getDialog(id);
+	const msgs = await telegramApi.messageManager.getMessages(id);
 	topBar.set({ online, status: formattedStatus, title, photo });
+	messages.set(Object.values(msgs));
 };
 
 export const loadBotom = async () => {
