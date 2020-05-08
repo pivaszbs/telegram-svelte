@@ -14,13 +14,13 @@
 		scrollCount++;
 		update = true;
 		return;
-	}
+	};
 	const scrollTop = () => {
 		loadTop(scrollCount === 1);
 		scrollCount--;
 		update = true;
 		return;
-	}
+	};
 	onMount(async () => {
 		await loadFirstDialogs();
 		// const interval = setInterval(() => {
@@ -39,13 +39,19 @@
 
 	const scrollY = e => {
 		const isBottomScroll = lastScroll < userDialogs.scrollTop;
-		const isTopScroll = !isBottomScroll; 
+		const isTopScroll = !isBottomScroll;
 		if (isBottomScroll && !update) {
 			if (userDialogs.scrollTop >= userDialogs.offsetHeight && !$load) {
 				scrollBottom();
 				return;
 			}
-		} else if (isTopScroll && !update && userDialogs.scrollTop <= userDialogs.offsetHeight / 2 && !$load && scrollCount > 0) {
+		} else if (
+			isTopScroll &&
+			!update &&
+			userDialogs.scrollTop <= userDialogs.offsetHeight / 2 &&
+			!$load &&
+			scrollCount > 0
+		) {
 			scrollTop();
 			return;
 		}
@@ -56,7 +62,7 @@
 	let specialScroll;
 </script>
 
-<div bind:this={userDialogs} on:scroll={scrollY} class="user-dialogs">
+<div bind:this="{userDialogs}" on:scroll="{scrollY}" class="user-dialogs">
 	{#each $dialogs as dialog, i (dialog.id)}
 		<Dialog {...dialog} />
 	{/each}
