@@ -2,71 +2,41 @@
 	import { loadBotom, loadTop } from './../services/storeService.js';
 	import { onMount } from 'svelte';
 	import { loadFirstDialogs } from '../services/storeService';
-	import { dialogs, load, topDialog } from '../stores/dialogs';
+	import { dialogs, load } from '../stores/dialogs';
 	import Dialog from './dialog/dialog.svelte';
-	let userDialogs;
-	let lastScroll = 0;
-	let update = false;
-	const updateTimeout = () =>
-		setTimeout(() => {
-			update = false;
-		}, 100);
 
-	const scrollBottom = () => {
-		update = true;
-		loadBotom();
-		updateTimeout();
-	};
+	let firstLoad = true;
 
-	const scrollTop = () => {
-		update = true;
-		loadTop();
-		updateTimeout();
-	};
+	const observer = new IntersectionObserver((entries, observer) => {
+		if (firstLoad) {
+			firstLoad = false;
+			return;
+		}
+		entries.forEach(entry => {
+			const { target } = entry;
+			const top = JSON.parse(target.getAttribute('top'));
+			const bottom = JSON.parse(target.getAttribute('bottom'));
+			if (entry.isIntersecting) {
+				if (top) {
+					loadTop();
+					observer.unobserve(target);
+				}
+				if (bottom) {
+					loadBotom();
+					observer.unobserve(target);
+				}
+			}
+		});
+	});
 
 	onMount(async () => {
 		await loadFirstDialogs();
-		// const interval = setInterval(() => {
-		// 	if (userDialogs.scrollTop > userDialogs.offsetHeight - 200 && !$load && !update) {
-		// 		scrollBottom();
-		// 		return;
-		// 	}
-		// 	if (userDialogs.scrollTop < 200 && !$load && scrollCount > 0 && !update) {
-		// 		scrollTop();
-		// 		return;
-		// 	}
-		// 	update = false;
-		// }, 500);
-		// return interval;
 	});
-
-	const scrollY = e => {
-		const isBottomScroll = lastScroll < userDialogs.scrollTop;
-		const isTopScroll = !isBottomScroll;
-		if (isBottomScroll && !update) {
-			if (
-				userDialogs.scrollTop >= userDialogs.offsetHeight * 1.5 &&
-				!$load
-			) {
-				scrollBottom();
-				return;
-			}
-		} else if (
-			isTopScroll &&
-			!update &&
-			userDialogs.scrollTop <= userDialogs.offsetHeight / 2 &&
-			!$load
-		) {
-			scrollTop();
-			return;
-		}
-		lastScroll = userDialogs.scrollTop;
-	};
 </script>
 
-<div bind:this="{userDialogs}" on:scroll="{scrollY}" class="user-dialogs">
+<div class="user-dialogs">
 	{#each $dialogs as dialog, i (dialog.id)}
-		<Dialog {...dialog} />
+		<Dialog {observer} top="{i === 10}" bottom="{i === 70}" {...dialog} />
 	{/each}
 </div>
 

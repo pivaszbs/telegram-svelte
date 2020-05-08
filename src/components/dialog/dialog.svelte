@@ -6,6 +6,8 @@
 	import Avatar from '../avatar/avatar.svelte';
 	import Ripple from '@smui/ripple';
 	import './dialog.scss';
+	import { afterUpdate, onMount } from 'svelte';
+	import { dialogs } from '../../stores/dialogs';
 	export let photo;
 	export let unreadCount,
 		title,
@@ -21,7 +23,18 @@
 		active,
 		muted,
 		last,
-		scrollTopElement;
+		top,
+		bottom,
+		observer,
+		middle;
+
+	$: {
+		if ((top || bottom) && dialog) {
+			observer.observe(dialog);
+		}
+	}
+
+	let dialog;
 
 	const onClick = () => {
 		loadDialog(id);
@@ -29,10 +42,13 @@
 </script>
 
 <div
+	bind:this="{dialog}"
 	on:click="{onClick}"
 	tabindex="0"
 	use:Ripple="{{ ripple: true, color: 'secondary' }}"
 	class="dialog"
+	{top}
+	{bottom}
 >
 	<div class:online class="avatar-wrapper">
 		<Avatar medium {photo} {title} />

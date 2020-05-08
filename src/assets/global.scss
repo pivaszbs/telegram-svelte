@@ -42,6 +42,20 @@
 	height: 24px;
   }
 
+	.icon {
+		width: 40px;
+		height: 40px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.icon:hover {
+		background: var(--light-gray);
+		border-radius: 50%;
+		cursor: pointer;
+	}
+
   * {
 	margin: 0;
 	padding: 0;
