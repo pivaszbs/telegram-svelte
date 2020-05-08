@@ -10,6 +10,30 @@ export const loadFirstDialogs = async () => {
 		dialogs.set(dialog_items);
 		topDialog.set(dialog_items[3]);
 	});
+
+	const handler = update => {
+		//console.log('Handler called, update: ', update);
+		if (update.id === -1) {
+			dialogs.set(update.delta);
+		} else {
+			dialogs.update((prev = []) => {
+				const idx = prev.findIndex(el => el.id === update.id);
+
+				if (!prev[idx]) {
+					return prev;
+				}
+
+				//console.log('Dialog was', prev[idx]);
+
+				prev[idx] = { ...prev[idx], ...update.delta };
+
+				//console.log('Dialog now', prev[idx]);
+				return prev;
+			});
+		}
+	};
+
+	telegramApi.AppUpdatesManager.subscribe('dialogs', handler);
 };
 
 export const loadDialog = async id => {

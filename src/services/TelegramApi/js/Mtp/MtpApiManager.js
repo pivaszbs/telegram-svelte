@@ -19,7 +19,7 @@ function MtpApiManagerModule() {
 	let telegramMeNotified;
 
 	let MtpSingleInstanceService = MtpSingleInstanceServiceModule();
-	let MtpNetworkerFactory = MtpNetworkerFactoryModule();
+	let MtpNetworkerFactory = MtpNetworkerFactoryModule;
 	let MtpAuthorizer = new MtpAuthorizerModule();
 	let Storage = StorageModule();
 	let TelegramMeWebService = new TelegramMeWebServiceModule();

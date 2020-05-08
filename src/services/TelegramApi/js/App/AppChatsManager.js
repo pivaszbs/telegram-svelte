@@ -183,6 +183,12 @@ class AppsChatsManagerModule {
 		return dialogs;
 	};
 
+	isDialogInWindow = id => {
+		return this.dialogsOrder
+			.slice(this.current_pos, this.current_pos + this.window_size)
+			.includes(id);
+	};
+
 	getNextDialogs = async () => {
 		if (
 			this.current_pos + 2 * this.window_size >=

@@ -3,6 +3,9 @@ import MtpNetworkerFactoryModule from '../Mtp/MtpNetworkerFactory';
 import AppUsersManagerModule from './AppUsersManager';
 import AppMessagesManagerModule from './AppMessagesManager';
 import { telegramApi } from '../../TelegramApi';
+import AppChatsManager from './AppChatsManager';
+import AppMessagesManager from './AppMessagesManager';
+import AppProfileManager from './AppProfileManager';
 
 class AppUpdatesManagerModule {
 	subscribed = {
@@ -10,21 +13,21 @@ class AppUpdatesManagerModule {
 		messages: [],
 		misc: [],
 		dialogs: [],
+		peers: [],
 	};
 
-	MtpNetworkerFactory = MtpNetworkerFactoryModule();
+	MtpNetworkerFactory = MtpNetworkerFactoryModule;
 
 	constructor() {
 		this.AppUsersManager = AppUsersManagerModule;
 		const updatesHandler = data => {
-			// console.log('Got event', data);
 			if (data._ === 'updateShort' || data._ === 'updates') {
 				this._parseUpdate(data);
 			} else if (
 				data._ === 'updateShortMessage' ||
 				data._ === 'updateShortChatMessage'
 			) {
-				this._parseUpdate({ update: data });
+				this._parseUpdate(this._transformToShort(data));
 			}
 		};
 
@@ -46,18 +49,6 @@ class AppUpdatesManagerModule {
 		hide_edit: this._checkFlag(msg_flags, 21),
 	});
 
-	passUpdate = data => {
-		console.log('Got event', data);
-		if (data._ === 'updateShort' || data._ === 'updates') {
-			this._parseUpdate(data);
-		} else if (
-			data._ === 'updateShortMessage' ||
-			data._ === 'updateShortChatMessage'
-		) {
-			this._parseUpdate({ update: data });
-		}
-	};
-
 	subscribe = (type, handler) => {
 		if (!type || !this.subscribed[type] || typeof handler !== 'function') {
 			return;
@@ -67,7 +58,7 @@ class AppUpdatesManagerModule {
 	};
 
 	_parseUpdate = data => {
-		console.log('Got update!', data);
+		//console.log('Got update!', data);
 		const switchUpdate = update => {
 			switch (update._) {
 				case 'updateNewMessage':
@@ -76,19 +67,13 @@ class AppUpdatesManagerModule {
 				case 'updateNewScheduledMessage':
 					this._handleNewMessage(update, data);
 					break;
-				case 'updateShortChatMessage':
-					this._handleNewChatMessage(update);
-					break;
-				case 'updateShortMessage':
-					this._handleNewUserMessage(update);
-					break;
 				case 'updateUserStatus':
 					this._handleUserStatus(update);
 					break;
 				case 'updateChatUserTyping':
 				case 'updateUserTyping':
 					console.log(update);
-					this._handleUserTyping(update);
+					//this._handleUserTyping(update);
 					break;
 				case 'updateChatParticipantAdd':
 					break;
@@ -106,13 +91,37 @@ class AppUpdatesManagerModule {
 	};
 
 	_handleUserStatus = async update => {
-		const payload = {
-			_: 'userStatus',
-			user_id: update.user_id,
-			online: update.status._ === 'userStatusOnline',
-		};
+		const user = this.AppUsersManager.getUser(update.user_id);
 
-		this._dispatchForDialogs(payload);
+		if (!user) {
+			return;
+		}
+
+		user.status = update.status;
+
+		const dialog = AppChatsManager.getDialog(user.id);
+
+		if (!dialog) {
+			return;
+		}
+
+		dialog.online = this.AppUsersManager.isOnline(user.id);
+
+		AppChatsManager.isDialogInWindow(dialog.id) &&
+			this._dispatchForDialogs({
+				id: dialog.id,
+				delta: {
+					online: dialog.online,
+				},
+			});
+
+		this._dispatchForPeers({
+			id: user.id,
+			delta: {
+				status: user.status,
+				formattedStatus: user.formattedStatus,
+			},
+		});
 	};
 
 	_handleUserTyping = async update => {
@@ -197,73 +206,65 @@ class AppUpdatesManagerModule {
 		this._dispatchForMessages(payload);
 	};
 
-	_handleNewUserMessage = async message => {
-		const { user_id, date, id, flags } = message;
-
-		const dialog = telegramApi.AppChatsManager.getDialog(user_id);
-		if (!dialog.deleted) {
-			telegramApi.AppChatsManager.saveDialog({
-				...dialog,
-				top_message: id,
-			});
+	_transformToShort = update => {
+		if (update._ === 'updateShortMessage') {
+			return this._handleNewUserMessage(update);
 		}
-
-		const payload = {
-			_: 'newMessage',
-			from_id: user_id,
-			date,
-			message: telegramApi._getMessageText(message),
-			id,
-			message_info: this._checkMessageFlags(flags),
-		};
-
-		this._dispatchForDialogs(payload);
-		this._dispatchForMessages(payload);
 	};
 
-	_handleNewMessage = update => {
-		// console.log('Got new message! ', update, data);
-
-		const message = update.message;
-
-		const from_id = message.from_id;
-
-		const to_id =
-			message.to_id.user_id ||
-			message.to_id.chat_id ||
-			message.to_id.channel_id;
-
-		this.AppUsersManager.saveApiUsers(update.users);
-
-		const payload = {
-			_: 'newMessage',
-			from_id,
-			to_id,
-			message:
-				message._ === 'messageService'
-					? telegramApi._getServiceMessage(message).text
-					: telegramApi._getMessageText(message),
-			message_info: this._checkMessageFlags(message.flags),
-			date: message.date,
+	_handleNewUserMessage = message => {
+		const new_message = {
+			_: 'message',
+			flags: message.flags,
 			id: message.id,
+			from_id: message.pFlags.out
+				? AppProfileManager.getProfileId()
+				: message.user_id,
+			to_id: message.pFlags.out
+				? { _: 'peerUser', user_id: message.user_id }
+				: AppProfileManager.getProfileId(),
+			fwd_from: message.fwd_from,
+			via_bot_id: message.via_bot_id,
+			reply_to_msg_id: message.reply_to_msg_id,
+			date: message.date,
+			message: message.message,
+			entities: message.entities,
 		};
 
-		// console.log(payload);
+		return {
+			_: 'updateShort',
+			update: {
+				_: 'updateNewMessage',
+				message: new_message,
+			},
+		};
+	};
 
-		const dialog = telegramApi.AppChatsManager.getDialog(to_id);
+	_handleNewMessage = async update => {
+		AppMessagesManager.saveMessage(update.message);
 
-		if (!dialog.deleted) {
-			telegramApi.AppChatsManager.saveDialog({
-				...dialog,
-				top_message: message.id,
-			});
+		const peerId = AppMessagesManager._getMessagePeerId(update.message);
+		const dialog = AppChatsManager.getDialog(peerId);
+
+		if (dialog) {
+			AppChatsManager.saveDialogs([
+				{ ...dialog, top_message: update.message.id },
+			]);
+
+			AppChatsManager.isDialogInWindow(dialog.id) &&
+				this._dispatchForDialogs({
+					id: -1,
+					delta: AppChatsManager.getCurrentDialogs(),
+				});
+		} else {
+			const dialogs = await telegramApi.fetchDialogs(1);
+
+			AppChatsManager.isDialogInWindow(peerId) &&
+				this._dispatchForDialogs({
+					id: -1,
+					delta: dialogs,
+				});
 		}
-
-		const messageManager = AppMessagesManagerModule;
-		messageManager.saveMessage(message);
-
-		this._dispatchForDialogs(payload);
-		this._dispatchForMessages(payload);
 	};
 
 	_dispatchEvent = (handler, payload) => {
@@ -272,6 +273,10 @@ class AppUpdatesManagerModule {
 
 	_dispatchForDialogs = payload => {
 		this.subscribed.dialogs.forEach(el => this._dispatchEvent(el, payload));
+	};
+
+	_dispatchForPeers = payload => {
+		this.subscribed.peers.forEach(el => this._dispatchEvent(el, payload));
 	};
 
 	_dispatchForMessages = payload => {
