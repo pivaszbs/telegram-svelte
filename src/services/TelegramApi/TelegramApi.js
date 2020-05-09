@@ -129,6 +129,10 @@ class TelegramApi {
 		getDialog: this.AppChatsManager.getDialog,
 	};
 
+	messageManager = {
+		getMessages: this.AppMessagesManager.getMessages,
+	};
+
 	checkPhone = phone_number =>
 		this.MtpApiManager.invokeApi('auth.checkPhone', {
 			phone_number: phone_number,
