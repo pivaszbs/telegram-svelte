@@ -42,8 +42,12 @@ export const loadDialog = async id => {
 		photo,
 	} = await telegramApi.AppChatsManager.getDialog(id);
 	const msgs = await telegramApi.messageManager.getMessages(id);
-	topBar.set({ online, status: formattedStatus, title, photo });
 	messages.set(Object.values(msgs));
+	const status =
+		typeof formattedStatus === 'function'
+			? formattedStatus
+			: () => formattedStatus;
+	topBar.set({ online, status, title, photo });
 };
 
 export const loadBotom = async () => {
