@@ -41,7 +41,10 @@ export const loadDialog = async id => {
 		title,
 		photo,
 	} = await telegramApi.AppChatsManager.getDialog(id);
-	const msgs = await telegramApi.messageManager.getMessages(id);
+	const msgs = await telegramApi.AppMessagesManager.getCurrentMessages(
+		id,
+		60
+	);
 	messages.set(Object.values(msgs));
 	const status =
 		typeof formattedStatus === 'function'

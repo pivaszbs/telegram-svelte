@@ -1,14 +1,17 @@
 import AppUsersManagerModule from './AppUsersManager';
 import { tlFlags } from '../lib/utils';
-import AppPeersManagerModule from './AppPeersManager';
+import AppPeersManager from './AppPeersManager';
 import { telegramApi } from '../../TelegramApi';
 import AppProfileManager from './AppProfileManager';
+import AppChatsManager from './AppChatsManager';
 
 class AppMessagesManagerModule {
+	current_peer = 0;
+	window_size = 60;
+
 	constructor() {
-		this.messages = {};
+		this.messagesDatabase = {};
 		this.AppUsersManager = AppUsersManagerModule;
-		this.AppPeersManager = AppPeersManagerModule;
 	}
 
 	saveMessages = (messages = []) => {
@@ -39,7 +42,7 @@ class AppMessagesManagerModule {
 	};
 
 	messageDump = async id => {
-		const peer = AppPeersManagerModule.getInputPeerByID(id);
+		const peer = AppPeersManager.getInputPeerByID(id);
 		const history = await telegramApi.invokeApi('messages.getHistory', {
 			peer,
 			offset_id: 0,
@@ -91,10 +94,14 @@ class AppMessagesManagerModule {
 	};
 
 	saveMessage = (message, peerId = this._getMessagePeerId(message)) => {
-		const peerMessages = (this.messages[peerId] =
-			this.messages[peerId] || {});
+		const peerMessages = (this.messagesDatabase[peerId] = this
+			.messagesDatabase[peerId] || {
+			messages: {},
+			current_pos: 0,
+			no_fetch: false,
+		});
 
-		peerMessages[message.id] = {
+		peerMessages.messages[message.id] = {
 			...message,
 			...this._getMessageFlags(message),
 			formattedText: this._getMessageText(message),
@@ -103,16 +110,156 @@ class AppMessagesManagerModule {
 		return peerMessages[message.id];
 	};
 
+	_fetchMessages = async (peerId, up, down, offset_id) => {
+		const peer = AppPeersManager.getInputPeerByID(peerId);
+
+		if (!peer) {
+			return;
+		}
+
+		const payload = {
+			peer,
+			limit: down + up,
+		};
+
+		if (offset_id) {
+			payload.offset_id = offset_id;
+			payload.add_offset = -down;
+		}
+
+		const result = await telegramApi.invokeApi(
+			'messages.getHistory',
+			payload
+		);
+
+		this.AppUsersManager.saveApiUsers(result.users);
+		AppChatsManager.saveApiChats(result.chats);
+		this.saveMessages(result.messages);
+	};
+
+	getCurrentMessages = async (peerId, window_size = this.window_size) => {
+		if (this.window_size !== window_size) {
+			this.window_size = window_size;
+		}
+
+		this.current_peer = peerId;
+
+		let messages_meta = this.getMessagesMeta(peerId);
+
+		if (!messages_meta) {
+			console.log('No meta');
+			return [];
+		}
+
+		let current_messages = Object.values(this.getMessages(peerId) || {});
+
+		if (current_messages.length < window_size && !messages_meta.no_fetch) {
+			await this._fetchMessages(peerId, window_size, 0);
+
+			messages_meta = this.getMessagesMeta(peerId);
+			current_messages = Object.values(this.getMessages(peerId) || {});
+
+			if (!messages_meta || current_messages.length === 0) {
+				console.log(
+					'No meta or messages',
+					messages_meta,
+					current_messages
+				);
+				return [];
+			}
+
+			if (current_messages.length < window_size) {
+				messages_meta.no_fetch = true;
+				return current_messages;
+			}
+		}
+
+		let [first_idx, last_idx] = this._calculateIndecies(peerId);
+
+		if (first_idx < 0 && !messages_meta.no_fetch) {
+			await this._fetchMessages(
+				peerId,
+				window_size,
+				0,
+				current_messages[0].id
+			);
+
+			[first_idx, last_idx] = this._calculateIndecies(peerId);
+
+			if (first_idx < 0) {
+				messages_meta.no_fetch = true;
+				messages_meta.current_pos =
+					current_messages.length - 1 - window_size;
+				return current_messages.slice(0, window_size);
+			}
+		} else if (messages_meta.no_fetch) {
+			return current_messages.slice(0, window_size);
+		}
+
+		return current_messages.slice(first_idx, last_idx);
+	};
+
+	getNextMessages = async () => {
+		const messages_meta = this.getMessagesMeta(peerId);
+
+		if (!messages_meta) {
+			return [];
+		}
+
+		const current_messages = Object.values(this.getMessages(peerId));
+
+		if (messages_meta.current_pos >= current_messages.length - 1) {
+			return this.getCurrentMessages(peerId);
+		}
+
+		messages_meta.current_pos += this.window_size;
+
+		return this.getCurrentMessages(peerId);
+	};
+
+	getPreviousMessages = async () => {
+		const messages_meta = this.getMessagesMeta(peerId);
+
+		if (!messages_meta) {
+			return [];
+		}
+
+		messages_meta.current_pos = Max(
+			0,
+			messages_meta.current_pos - this.window_size
+		);
+
+		return this.getCurrentMessages(peerId);
+	};
+
+	_calculateIndecies = peerId => {
+		const len = Object.values(this.getMessages(peerId) || {}).length;
+		const meta = this.getMessagesMeta(peerId);
+
+		return [
+			len - meta.current_pos - this.window_size,
+			len - meta.current_pos,
+		];
+	};
+
 	getMessages = peerId => {
-		return this.messages[peerId] || null;
+		return (
+			(this.messagesDatabase[peerId] &&
+				this.messagesDatabase[peerId].messages) ||
+			null
+		);
+	};
+
+	getMessagesMeta = peerId => {
+		return this.messagesDatabase[peerId] || null;
 	};
 
 	getMessage = (peerId, id) => {
-		if (!this.messages[peerId]) {
+		if (!this.messagesDatabase[peerId]) {
 			return null;
 		}
 
-		return this.messages[peerId][id] || null;
+		return this.messagesDatabase[peerId].messages[id] || null;
 	};
 
 	sendMessage = async (peerId, message, reply_to, schedule_date) => {
