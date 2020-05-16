@@ -2,7 +2,9 @@
 	import { sanitize } from '../../helpers';
 	import read from 'inline/read.svg';
 	import notRead from 'inline/notRead.svg';
+	import { onMount } from 'svelte';
 	export let formattedText,
+		scroll,
 		entities,
 		time,
 		out,
@@ -10,7 +12,25 @@
 		post,
 		media,
 		withAvatar,
-		date;
+		date,
+		bottom,
+		top,
+		observer;
+
+	let message;
+
+	$: {
+		if ((top || bottom) && message) {
+			console.log(message);
+			observer.observe(message);
+		}
+	}
+
+	onMount(() => {
+		if (scroll) {
+			message.scrollIntoView();
+		}
+	});
 
 	$: outIcon = out ? (outRead ? read : notRead) : '';
 
@@ -22,7 +42,7 @@
 	}
 </script>
 
-<div class="chat-message">
+<div class="chat-message" bind:this="{message}" {top} {bottom}>
 	<div
 		class="message"
 		class:chat-message_out="{out}"

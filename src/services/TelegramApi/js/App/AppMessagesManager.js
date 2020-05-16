@@ -200,6 +200,7 @@ class AppMessagesManagerModule {
 	};
 
 	getNextMessages = async () => {
+		const peerId = this.current_peer;
 		const messages_meta = this.getMessagesMeta(peerId);
 
 		if (!messages_meta) {
@@ -218,13 +219,14 @@ class AppMessagesManagerModule {
 	};
 
 	getPreviousMessages = async () => {
+		const peerId = this.current_peer;
 		const messages_meta = this.getMessagesMeta(peerId);
 
 		if (!messages_meta) {
 			return [];
 		}
 
-		messages_meta.current_pos = Max(
+		messages_meta.current_pos = Math.max(
 			0,
 			messages_meta.current_pos - this.window_size
 		);
