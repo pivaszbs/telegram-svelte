@@ -43,9 +43,10 @@ export const loadDialog = async id => {
 	} = await telegramApi.AppChatsManager.getDialog(id);
 	const msgs = await telegramApi.AppMessagesManager.getCurrentMessages(
 		id,
-		60
+		100
 	);
-	messages.set(Object.values(msgs));
+	console.log('msgs', msgs);
+	messages.set(msgs);
 	const status =
 		typeof formattedStatus === 'function'
 			? formattedStatus
@@ -53,14 +54,14 @@ export const loadDialog = async id => {
 	topBar.set({ online, status, title, photo });
 };
 
-export const loadBotom = async () => {
+export const loadBottomDialogs = async () => {
 	load.set(true);
 	const data = await telegramApi.AppChatsManager.getNextDialogs();
 	dialogs.set(data);
 	load.set(false);
 };
 
-export const loadTop = async (topMessage = false) => {
+export const loadTopDialogs = async (topMessage = false) => {
 	load.set(true);
 
 	const data = topMessage
@@ -68,4 +69,15 @@ export const loadTop = async (topMessage = false) => {
 		: telegramApi.AppChatsManager.getPreviousDialogs();
 	dialogs.set(data);
 	load.set(false);
+};
+
+export const loadTopMessages = async () => {
+	const msgs = await telegramApi.AppMessagesManager.getNextMessages();
+	console.log('msgs', msgs);
+	messages.set(Object.values(msgs));
+};
+
+export const loadBottomMessages = async () => {
+	const msgs = await telegramApi.AppMessagesManager.getPreviousMessages();
+	messages.set(Object.values(msgs));
 };

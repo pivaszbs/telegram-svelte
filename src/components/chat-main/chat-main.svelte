@@ -1,13 +1,46 @@
 <script>
 	import { messages } from './../../stores/messages.js';
 	import Message from '../message/message.svelte';
-	$: console.log('qewr', $messages);
+	import {
+		loadBottomMessages,
+		loadTopMessages,
+	} from '../../services/storeService';
+
+	let firstLoad = true;
+
+	const observer = new IntersectionObserver((entries, observer) => {
+		if (firstLoad) {
+			firstLoad = false;
+			return;
+		}
+		entries.forEach(entry => {
+			const { target } = entry;
+			const top = JSON.parse(target.getAttribute('top'));
+			const bottom = JSON.parse(target.getAttribute('bottom'));
+			if (entry.isIntersecting) {
+				if (top) {
+					loadTopMessages();
+					observer.unobserve(target);
+				}
+				if (bottom) {
+					loadBottomMessages();
+					observer.unobserve(target);
+				}
+			}
+		});
+	});
 </script>
 
 <div class="chat-main">
 	<div class="all-messages">
-		{#each $messages as message}
-			<Message {...message} />
+		{#each $messages as message, i (message.id)}
+			<Message
+				{observer}
+				top="{i === 10}"
+				bottom="{i === 90}"
+				scroll="{firstLoad && i === $messages.length - 1}"
+				{...message}
+			/>
 		{/each}
 	</div>
 </div>
@@ -41,7 +74,7 @@
 			width: 60%;
 			height: 100%;
 			display: flex;
-			flex-direction: column-reverse;
+			flex-direction: column;
 		}
 	}
 

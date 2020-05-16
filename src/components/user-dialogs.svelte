@@ -1,5 +1,8 @@
 <script>
-	import { loadBotom, loadTop } from './../services/storeService.js';
+	import {
+		loadBottomDialogs,
+		loadTopDialogs,
+	} from './../services/storeService.js';
 	import { onMount } from 'svelte';
 	import { loadFirstDialogs } from '../services/storeService';
 	import { dialogs, load } from '../stores/dialogs';
@@ -18,11 +21,11 @@
 			const bottom = JSON.parse(target.getAttribute('bottom'));
 			if (entry.isIntersecting) {
 				if (top) {
-					loadTop();
+					loadTopDialogs();
 					observer.unobserve(target);
 				}
 				if (bottom) {
-					loadBotom();
+					loadBottomDialogs();
 					observer.unobserve(target);
 				}
 			}
