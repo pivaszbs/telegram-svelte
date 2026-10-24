@@ -1,9 +1,11 @@
 const path = require('path');
+const webpack = require('webpack');
+require('dotenv').config({ path: '.env.local', quiet: true });
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const { preprocess } = require('./svelte.config');
 
-module.exports = (_, argv) => ({
+module.exports = (env = {}, argv) => ({
 	entry: './src/main.js',
 	output: {
 		path: path.resolve(__dirname, 'build'),
@@ -70,6 +72,11 @@ module.exports = (_, argv) => ({
 		],
 	},
 	plugins: [
+        new webpack.DefinePlugin({
+            __UI_PREVIEW__: JSON.stringify(Boolean(env.preview)),
+            __TELEGRAM_API_ID__: JSON.stringify(env.preview ? '123456' : process.env.TELEGRAM_API_ID || ''),
+            __TELEGRAM_API_HASH__: JSON.stringify(env.preview ? '0123456789abcdef0123456789abcdef' : process.env.TELEGRAM_API_HASH || ''),
+        }),
 		new HtmlWebpackPlugin({
 			template: './public/index.html',
 			favicon: './public/favicon.png',

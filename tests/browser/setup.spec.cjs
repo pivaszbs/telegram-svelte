@@ -1,0 +1,23 @@
+const { test, expect } = require('@playwright/test');
+test.use({ baseURL: 'http://127.0.0.1:5175' });
+test('real app requires credentials and waits for explicit login before connecting', async ({ page }, info) => {
+  const sockets = [];
+  const errors = [];
+  page.on('websocket', socket => { if (!socket.url().includes('127.0.0.1')) sockets.push(socket.url()); });
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Connect your Telegram app' })).toBeVisible();
+  await page.screenshot({ path: info.outputPath('app-setup.png'), fullPage: true, animations: 'disabled' });
+  await page.getByLabel('API ID', { exact: true }).fill('0');
+  await page.getByLabel('API hash', { exact: true }).fill('wrong');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByRole('alert')).toContainText('API ID');
+  await page.getByLabel('API ID', { exact: true }).fill('123456');
+  await page.getByLabel('API hash', { exact: true }).fill('0123456789abcdef0123456789abcdef');
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await expect(page.getByRole('heading', { name: 'Sign in to Telegram' })).toBeVisible();
+  await page.getByRole('button', { name: 'Change API credentials' }).click();
+  await expect(page.getByRole('heading', { name: 'Connect your Telegram app' })).toBeVisible();
+  expect(sockets).toEqual([]);
+  expect(errors).toEqual([]);
+});

@@ -1,8 +1,8 @@
 # Telegram Svelte
 
-An open-source Telegram web client written in Svelte.
+An independent Telegram browser client built with Svelte 5.
 
-## Development
+## Run real login locally
 
 Requires Node.js 22.15 or newer.
 
@@ -11,37 +11,68 @@ npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:5173. Build the production files with `npm run build`; output is written to `build/`.
+Open http://127.0.0.1:5173. Register your own Telegram application at [my.telegram.org/apps](https://my.telegram.org/apps), then enter its API ID and API hash in the setup screen. Keep authentication codes and passwords in the app, never in GitHub issues or chat.
 
-## Try the UI without a Telegram account
+You can also load app credentials from an ignored local file:
+
+```sh
+cp .env.example .env.local
+```
+
+Fill in `TELEGRAM_API_ID` and `TELEGRAM_API_HASH`, then restart the development server. A browser client necessarily exposes app credentials in its delivered code; this file keeps them out of version control, rather than hiding them from the browser.
+
+The client uses [@mtcute/web](https://mtcute.dev/guide/intro/sign-in) to connect directly to Telegram over WebSocket. The active login flow does not use the old bundled protocol implementation or its shared app credentials.
+
+Supported flows:
+
+- Existing-account phone login with the delivery method selected by Telegram, including Telegram app, SMS, call and existing email codes.
+- Two-step verification passwords, with optional password hints.
+- Invalid and expired codes, resend delays, duplicate-submission protection and Telegram rate limits.
+- Session restore and server-side logout.
+
+New-account registration, email-address setup, Firebase verification, payment and CAPTCHA challenges are not implemented. Such challenges show an explanation instead of an unusable code screen.
+
+After authorization, the app displays the account confirmed by Telegram and a sign-out button. The legacy chat screens are retained in source but are not connected to the new session yet. This PR is the authentication milestone.
+
+## Session storage
+
+The protocol client uses in-memory storage. After successful authorization, the app explicitly exports its session into this browser's localStorage when "Keep me signed in" is checked, or sessionStorage when unchecked. Codes and passwords are never persisted. Treat a saved session as an account credential: scripts on the same origin can read browser storage.
+
+App credentials entered in the setup screen follow the same storage preference. Offline restore preserves saved sessions; revoked or invalid sessions are cleared. Sign out revokes the current session on Telegram and clears both browser session locations. If server logout fails, the UI retains the session and lets you retry. When offline during restore, "Remove saved session" only removes the local copy; revoke it separately under Telegram Settings → Devices.
+
+## Try the recorded sample flow
 
 ```sh
 npm run dev:ui
 ```
 
-Open http://127.0.0.1:5174. This runs the existing login screens against the same fake API used by the browser tests. Enter a sample phone number to move to the code screen. No SMS is sent and this mode cannot sign into a real account.
+Open http://127.0.0.1:5174. The page is marked as a preview and uses a test-only transport. No SMS is sent and no account is accessed.
 
-Use `npm run dev` on port 5173 for the original Telegram integration. Live authentication has not been validated against the current API.
+1. Enter `+447700900123` and request a code.
+2. Enter `12345` to reach the password screen.
+3. Enter `preview-password` to view the sample account confirmation.
+4. Sign out, or reload to test session restore.
 
-## Svelte 5 migration
-
-The app uses Svelte 5.57.2 and the `mount` API. Existing components retain their legacy syntax, including stores, reactive statements, slots and component events. Svelte 5 supports these APIs, so converting components to runes can happen separately. See the [official migration guide](https://svelte.dev/docs/svelte/v5-migration-guide).
-
-The build now uses Webpack 5, the current Svelte loader and preprocessor, and Dart Sass instead of the unsupported native `node-sass` dependency. SMUI Ripple is updated to its Svelte 5 generation. The committed npm lockfile records the resolved dependency versions.
+Other sample codes are `11111` for an invalid code, `33333` for an expired code, and `22222` for sign-in without a password.
 
 ## Validation
 
 ```sh
+npm test
 npm run check
 npx playwright install chromium
 npm run test:e2e
 npm run build
 ```
 
-The component check reports existing accessibility and unused CSS warnings. It does not type-check the legacy JavaScript Telegram implementation.
+Unit tests exercise the real authentication state machine with an injected transport. Browser tests exercise the actual screens and session storage with the sample transport, and initialize the real @mtcute/web client, WebCrypto and bundled WASM without contacting Telegram. These tests do not claim a verified production-account sign-in.
 
-Browser tests run the actual login components, styles, stores and routing against a test-only API replacement on port 5174. They cover initial mounting, checkbox changes, phone input, the code-screen transition, and opening and closing the country popup. They do not sign into Telegram or validate current MTProto compatibility.
+Browser tests save screenshots and short recordings. `npx playwright show-report` opens the report. GitHub Actions uploads that report, recordings, screenshots and the production build as downloadable artifacts for 14 days.
 
-Browser tests also save desktop screenshots and short videos. `npx playwright show-report` opens the local report. Pull requests run the same checks in GitHub Actions and publish the report, recordings and production build as downloadable artifacts.
+The component check still reports warnings in legacy screens that are not part of the active login UI. It does not type-check the legacy JavaScript Telegram implementation.
 
-The existing Telegram service and its configuration are unchanged by this migration. Live authentication, API modernization and chat improvements are separate work.
+## Build and migration
+
+`npm run build` writes production assets to `build/`. Serve them over HTTPS outside localhost because authentication uses WebCrypto. With environment credentials supplied, the build includes those app credentials and should be distributed only as intended for that application.
+
+The Svelte migration uses Svelte 5.57.2 and `mount`. New authentication components use runes. Older screens retain the syntax supported by Svelte 5. See the [Svelte migration guide](https://svelte.dev/docs/svelte/v5-migration-guide).
