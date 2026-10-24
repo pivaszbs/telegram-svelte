@@ -21,7 +21,7 @@
 
 </button>
 
-<style type="text/scss">
+<style lang="scss">
 	button {
 		width: 360px;
 		height: 54px;

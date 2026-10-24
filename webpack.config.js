@@ -1,154 +1,87 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const { preprocess } = require('./svelte.config');
-const merge = require('webpack-merge');
 
-const common = {
-	entry: {
-		index: path.join(__dirname, 'src') + '/main.js',
+module.exports = (_, argv) => ({
+	entry: './src/main.js',
+	output: {
+		path: path.resolve(__dirname, 'build'),
+		filename: '[name].[contenthash].js',
+		clean: true,
 	},
+	devtool: argv.mode === 'development' ? 'eval-source-map' : 'source-map',
 	resolve: {
 		alias: {
 			Source: path.resolve(__dirname, 'src'),
-			svelte: path.resolve('node_modules', 'svelte'),
 			images: path.resolve(__dirname, 'src/assets/images'),
 			inline: path.resolve(__dirname, 'src/assets/inline'),
 		},
-		extensions: ['.mjs', '.js', '.json', '.svelte', '.html'],
-	},
-	output: {
-		filename: '[name].bundle.js',
-		path: path.join(__dirname, 'build'),
-	},
-	optimization: {
-		runtimeChunk: 'single',
-		splitChunks: {
-			chunks: 'all',
-		},
+		extensions: ['.mjs', '.js', '.json', '.svelte'],
+		conditionNames: ['svelte', 'browser', '...'],
 	},
 	module: {
 		rules: [
-			// {
-			// 	test: /\.scss$/,
-			// 	use: ['style-loader', 'css-loader', 'sass-loader'],
-			// },
+			// SMUI publishes extensionless ESM imports. Limit the workaround to SMUI.
 			{
-				test: /\.(sa|sc|c)ss$/,
+				test: /\.m?js$/,
+				include: /node_modules[\\/]@smui[\\/]/,
+				resolve: { fullySpecified: false },
+			},
+			{
+				test: /\.svelte$/,
+				use: {
+					loader: 'svelte-loader',
+					options: {
+						preprocess,
+						emitCss: true,
+						compilerOptions: { dev: argv.mode === 'development' },
+					},
+				},
+			},
+			{
+				test: /\.(scss|css)$/,
 				use: [
-					'style-loader',
 					MiniCssExtractPlugin.loader,
 					'css-loader',
 					{
 						loader: 'sass-loader',
 						options: {
 							sassOptions: {
-								includePaths: ['./src/theme', './node_modules'],
+								loadPaths: [
+									path.resolve(__dirname, 'src/theme'),
+									path.resolve(__dirname, 'node_modules'),
+								],
 							},
 						},
 					},
 				],
 			},
 			{
-				test: /\.(png|jpe?g|gif|svg)(\?v=\d+\.\d+\.\d+)?$/,
-				include: path.resolve(__dirname, 'src/assets/images'),
-				use: [
-					{
-						loader: 'file-loader',
-						options: {
-							name: '[name].[ext]',
-							outputPath: 'images/',
-						},
-					},
-				],
-			},
-			{
-				test: /\.(svg)(\?v=\d+\.\d+\.\d+)?$/,
+				test: /\.svg$/,
 				include: path.resolve(__dirname, 'src/assets/inline'),
-				use: [
-					{
-						loader: 'svg-inline-loader',
-						options: {
-							name: '[name].[ext]',
-							outputPath: 'icons/',
-						},
-					},
-				],
+				type: 'asset/source',
 			},
 			{
-				test: /\.(woff(2)?|ttf|eot|otf)(\?v=\d+\.\d+\.\d+)?$/,
-				use: [
-					{
-						loader: 'file-loader',
-						options: {
-							name: '[name].[ext]',
-							outputPath: 'fonts/',
-						},
-					},
-				],
-			},
-			{
-				test: /\.m?js$/,
-				exclude: /(node_modules|bower_components)/,
-				use: {
-					loader: 'babel-loader',
-				},
-			},
-			{
-				test: /\.(svelte)$/,
-				exclude: /(node_modules|public)/,
-				use: {
-					loader: 'svelte-loader',
-					options: {
-						emitCss: true,
-						css: false,
-						preprocess,
-						hotReload: true,
-					},
-				},
-			},
-			{
-				test: /\.(tsx?)$/,
-				exclude: /(node_modules|public)/,
-				use: {
-					loader: 'ts-loader',
-				},
+				test: /\.(png|jpe?g|gif|svg|woff2?|ttf|eot|otf)$/,
+				exclude: path.resolve(__dirname, 'src/assets/inline'),
+				type: 'asset/resource',
 			},
 		],
 	},
 	plugins: [
 		new HtmlWebpackPlugin({
-			filename: 'index.html',
-			template: path.join(__dirname, '/public/index.html'),
-			inject: true,
+			template: './public/index.html',
+			favicon: './public/favicon.png',
 		}),
-		new MiniCssExtractPlugin({
-			filename: '[name].css',
-			chunkFilename: '[name].[id].css',
-		}),
-		new OptimizeCssAssetsPlugin({
-			assetNameRegExp: /\.css$/g,
-			cssProcessor: require('cssnano'),
-			cssProcessorPluginOptions: {
-				preset: ['default', { discardComments: { removeAll: true } }],
-			},
-			canPrint: true,
-		}),
+		new MiniCssExtractPlugin({ filename: '[name].[contenthash].css' }),
 	],
-};
-
-const devServer = {
 	devServer: {
-		stats: 'errors-only',
+		host: '127.0.0.1',
+		port: 5173,
+		historyApiFallback: true,
+		static: './public',
+		// Keep existing warnings in the console without covering the app.
+		client: { overlay: { errors: true, warnings: false } },
 	},
-};
-
-module.exports = env => {
-	if (env === 'production') {
-		return common;
-	}
-	if (env === 'development') {
-		return merge([common, devServer]);
-	}
-};
+});

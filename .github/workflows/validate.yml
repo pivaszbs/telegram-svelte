@@ -1,0 +1,40 @@
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Upload browser report, screenshots and videos
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: browser-review
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+      - name: Upload production build
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: production-build
+          path: build/
+          retention-days: 14
