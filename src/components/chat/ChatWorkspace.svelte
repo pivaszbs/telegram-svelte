@@ -4,6 +4,7 @@
   import TgIcon from '../icons/TgIcon.svelte';
   import FolderRail from './FolderRail.svelte';
   import FolderEditor from './FolderEditor.svelte';
+  import SettingsDrawer from './SettingsDrawer.svelte';
   import MediaPanel from './MediaPanel.svelte';
 
   let {
@@ -40,6 +41,8 @@
   let notificationsEnabled = $state(true);
   let notifBannerDismissed = $state(false);
   let archivedSummary = $state(null);
+  let meProfile = $state(null);
+  let settingsOpen = $state(false);
   let chatTheme = $state('light');
   let sending = $state(false);
   let messageInputEl = $state();
@@ -75,6 +78,7 @@
       folders = data.folders || [];
       chats = data.chats || [];
       archivedSummary = data.archivedSummary || null;
+      meProfile = data.meProfile || null;
       messagesByChat = data.messages || {};
       stickerPacks = data.stickerPacks || [];
       gifs = data.gifs || [];
@@ -232,12 +236,16 @@
     {iconStyle}
     {chats}
     {user}
+    {meProfile}
+    archivedCount={archivedSummary?.count || 0}
     theme={chatTheme}
     onSelectFolder={id => {
       activeFolderId = id;
       editingFolderId = '';
+      settingsOpen = false;
     }}
     onEditFolder={id => {
+      settingsOpen = false;
       editingFolderId = id;
     }}
     onChangeIconStyle={style => {
@@ -246,6 +254,16 @@
     onToggleTheme={nextTheme => {
       chatTheme = typeof nextTheme === 'string' ? nextTheme : chatTheme === 'dark' ? 'light' : 'dark';
       onToggleTheme();
+    }}
+    onOpenSettings={() => {
+      editingFolderId = '';
+      settingsOpen = true;
+    }}
+    onOpenSavedMessages={() => {
+      settingsOpen = false;
+      editingFolderId = '';
+      const saved = chats.find(c => c.saved);
+      if (saved) openChat(saved.id);
     }}
     {onLogout}
   />
@@ -259,6 +277,22 @@
         onSave={saveFolder}
         onCreateInviteLink={createInviteLink}
       />
+    {:else if settingsOpen}
+      <SettingsDrawer
+        {user}
+        {meProfile}
+        onClose={() => (settingsOpen = false)}
+        onOpenChat={id => {
+          settingsOpen = false;
+          openChat(id);
+        }}
+        onOpenFolders={() => {
+          settingsOpen = false;
+          const target = folders.find(item => !item.system) || folders.at(-1);
+          if (target) editingFolderId = target.id;
+        }}
+        {onLogout}
+      />
     {:else}
       <div class="search-header">
         <div class="search-pill">
@@ -271,7 +305,13 @@
           />
           <div class="stories-Overlap" aria-hidden="true">
             <span class="story-ring tg-story"><TgIcon name="logo" size={16} /></span>
-            <span class="story-ring user-story">{user?.displayName?.[0] || 'A'}</span>
+            <span class="story-ring user-story">
+              {#if meProfile?.photoUrl}
+                <img class="avatar-img" src={meProfile.photoUrl} alt="" />
+              {:else}
+                {(meProfile?.displayName || user?.displayName || 'A')[0]}
+              {/if}
+            </span>
           </div>
         </div>
       </div>

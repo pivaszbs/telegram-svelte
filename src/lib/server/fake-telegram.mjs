@@ -400,10 +400,33 @@ export async function handleFakeTelegramRpc(action, payload = {}, instanceId = '
         folders: chatState.folders,
         chats: chatState.chats,
         archivedSummary: { count: 120, preview: 'Digital Trends, Design Systems, Tech News' },
+        meProfile: {
+          id: state.user.id,
+          displayName: state.user.displayName,
+          username: state.user.username,
+          phone: '+44 7700 900123',
+          bio: 'Telegram Web K & Contest R1/R2 Designer',
+          birthday: 'March 23, 1999 (27 years old)',
+          photoUrl: '',
+          personalChannel: {
+            id: 'digital-nomads',
+            title: 'Digital Nomads',
+            subscribers: '14,820 subscribers',
+            photoUrl: '',
+            initials: 'DN',
+            bg: 'linear-gradient(135deg, #26a69a, #00897b)',
+            text: 'Cool, give this a try.',
+            thumbUrl: '',
+            time: 'Sat',
+          },
+        },
         messages: chatState.messages,
         stickerPacks: chatState.stickerPacks,
         gifs: chatState.gifs,
       };
+    }
+    case 'downloadAvatar': {
+      return { photoUrl: '' };
     }
     case 'openChat': {
       const chatId = String(payload.chatId);

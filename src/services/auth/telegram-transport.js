@@ -443,11 +443,92 @@ export async function createTransport(config) {
         );
       }
 
+      let meProfile = null;
+      try {
+        const fullMe = await api.getFullUser('self');
+        let mePhotoUrl = '';
+        if (fullMe?.photo) {
+          mePhotoUrl = bytesToBlobUrl(fullMe.photo.thumb);
+          try {
+            const bytes = await Promise.race([
+              api.downloadAsBuffer(fullMe.photo.big || fullMe.photo.small),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500)),
+            ]);
+            const hiUrl = bytesToBlobUrl(bytes);
+            if (hiUrl) mePhotoUrl = hiUrl;
+          } catch {}
+        }
+        const rawPhone = String(fullMe?.phoneNumber || '').replace(/\D/g, '');
+        const formattedPhone = rawPhone.startsWith('44') && rawPhone.length === 12
+          ? `+44 ${rawPhone.slice(2, 6)} ${rawPhone.slice(6)}`
+          : rawPhone
+            ? `+${rawPhone}`
+            : '';
+        let formattedBirthday = '';
+        const bday = fullMe?.birthday;
+        if (bday && bday.day && bday.month) {
+          const months = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December',
+          ];
+          const mName = months[(bday.month - 1) % 12] || '';
+          if (bday.year) {
+            const now = new Date();
+            let age = now.getFullYear() - bday.year;
+            const mDiff = (now.getMonth() + 1) - bday.month;
+            if (mDiff < 0 || (mDiff === 0 && now.getDate() < bday.day)) age -= 1;
+            formattedBirthday = `${mName} ${bday.day}, ${bday.year} (${age} years old)`;
+          } else {
+            formattedBirthday = `${mName} ${bday.day}`;
+          }
+        }
+        let personalChannel = null;
+        if (fullMe?.personalChannel) {
+          const ch = fullMe.personalChannel;
+          const chId = String(ch.id);
+          const existingChat = chatMap.get(chId);
+          let chPhotoUrl = existingChat?.avatar?.photoUrl || '';
+          if (!chPhotoUrl && ch.photo) {
+            chPhotoUrl = bytesToBlobUrl(ch.photo.thumb);
+            try {
+              const chBytes = await Promise.race([
+                api.downloadAsBuffer(ch.photo.small),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000)),
+              ]);
+              const hiChUrl = bytesToBlobUrl(chBytes);
+              if (hiChUrl) chPhotoUrl = hiChUrl;
+            } catch {}
+          }
+          personalChannel = {
+            id: chId,
+            title: ch.title || existingChat?.title || 'Channel',
+            subscribers: ch.membersCount ? `${ch.membersCount.toLocaleString()} subscribers` : (existingChat?.status || 'channel'),
+            photoUrl: chPhotoUrl,
+            initials: getInitials(ch.title || 'C'),
+            bg: existingChat?.avatar?.bg || '#3390ec',
+            text: existingChat?.text || 'Channel updates',
+            thumbUrl: existingChat?.mediaPreview?.thumbUrl || '',
+            time: existingChat?.time || '',
+          };
+        }
+        meProfile = {
+          id: String(fullMe.id),
+          displayName: fullMe.displayName || 'Telegram User',
+          username: fullMe.username || '',
+          phone: formattedPhone,
+          bio: fullMe.bio || '',
+          birthday: formattedBirthday,
+          photoUrl: mePhotoUrl,
+          personalChannel,
+        };
+      } catch {}
+
       cachedFolders = folders;
       return {
         folders,
         chats,
         archivedSummary,
+        meProfile,
         messages: {},
         stickerPacks,
         gifs: DEFAULT_GIFS,

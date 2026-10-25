@@ -7,11 +7,15 @@
     iconStyle = 'standard',
     chats = [],
     user = null,
+    meProfile = null,
+    archivedCount = 0,
     theme = 'light',
     onSelectFolder = () => {},
     onEditFolder = () => {},
     onChangeIconStyle = () => {},
     onToggleTheme = () => {},
+    onOpenSettings = () => {},
+    onOpenSavedMessages = () => {},
     onLogout = () => {},
   } = $props();
 
@@ -73,13 +77,116 @@
 
     {#if menuOpen}
       <div class="main-menu" role="menu" aria-label="Account and appearance">
-        <div class="menu-account">
-          <div class="menu-avatar">{user?.displayName?.[0] || 'A'}</div>
-          <div class="menu-user-info">
-            <div class="menu-user-name">{user?.displayName || 'Alex Morgan'}</div>
-            {#if user?.username}<div class="menu-user-handle">@{user.username}</div>{/if}
-          </div>
+        <button
+          type="button"
+          role="menuitem"
+          class="menu-row account-row"
+          onclick={() => {
+            menuOpen = false;
+            onOpenSettings();
+          }}
+        >
+          <span class="menu-avatar-ring">
+            <span class="menu-avatar">
+              {#if meProfile?.photoUrl}
+                <img class="menu-avatar-img" src={meProfile.photoUrl} alt="" />
+              {:else}
+                {(meProfile?.displayName || user?.displayName || 'A')[0]}
+              {/if}
+            </span>
+          </span>
+          <span class="menu-user-name">{meProfile?.displayName || user?.displayName || 'Alex Morgan'}</span>
+        </button>
+
+        <button
+          type="button"
+          role="menuitem"
+          class="menu-row"
+          onclick={() => (menuOpen = false)}
+        >
+          <span class="menu-icon"><TgIcon name="plus" size={20} /></span>
+          <span class="menu-label">Add Account</span>
+        </button>
+
+        <hr />
+
+        <button
+          type="button"
+          role="menuitem"
+          class="menu-row"
+          onclick={() => {
+            menuOpen = false;
+            onOpenSavedMessages();
+          }}
+        >
+          <span class="menu-icon"><TgIcon name="savedmessages" size={20} /></span>
+          <span class="menu-label">Saved Messages</span>
+        </button>
+
+        <button
+          type="button"
+          role="menuitem"
+          class="menu-row"
+          onclick={() => (menuOpen = false)}
+        >
+          <span class="menu-icon"><TgIcon name="archive" size={20} /></span>
+          <span class="menu-label">Archived Chats</span>
+          {#if archivedCount > 0}
+            <span class="menu-right-count">{archivedCount}</span>
+          {/if}
+        </button>
+
+        <button
+          type="button"
+          role="menuitem"
+          class="menu-row"
+          onclick={() => (menuOpen = false)}
+        >
+          <span class="menu-icon"><TgIcon name="stories" size={20} /></span>
+          <span class="menu-label">My Stories</span>
+        </button>
+
+        <button
+          type="button"
+          role="menuitem"
+          class="menu-row"
+          onclick={() => (menuOpen = false)}
+        >
+          <span class="menu-icon"><TgIcon name="user" size={20} /></span>
+          <span class="menu-label">Contacts</span>
+        </button>
+
+        <button
+          type="button"
+          role="menuitem"
+          class="menu-row"
+          onclick={() => (menuOpen = false)}
+        >
+          <span class="menu-icon"><TgIcon name="phone" size={20} /></span>
+          <span class="menu-label">Calls</span>
+        </button>
+
+        <hr />
+
+        <button
+          type="button"
+          role="menuitem"
+          class="menu-row"
+          onclick={() => {
+            menuOpen = false;
+            onOpenSettings();
+          }}
+        >
+          <span class="menu-icon"><TgIcon name="settings" size={20} /></span>
+          <span class="menu-label">Settings</span>
+        </button>
+
+        <div class="menu-row more-header" aria-hidden="true">
+          <span class="menu-icon"><TgIcon name="more" size={20} /></span>
+          <span class="menu-label">More</span>
+          <span class="menu-chevron"><TgIcon name="next" size={14} /></span>
         </div>
+
         <hr />
         <div class="menu-section-label">Folder Icons (Contest R1)</div>
         <button
@@ -268,70 +375,131 @@
   }
   .main-menu {
     position: absolute;
-    top: 48px;
-    left: 10px;
-    width: 240px;
-    background: #2c2c2e;
-    color: #fff;
-    border-radius: 14px;
-    padding: 8px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    top: 52px;
+    left: 6px;
+    width: 248px;
+    max-height: calc(100dvh - 96px);
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(18px);
+    color: #11161d;
+    border-radius: 18px;
+    padding: 6px;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.18);
     z-index: 40;
     text-align: left;
   }
-  .menu-account {
+  :global(.workspace-shell.dark) .main-menu {
+    background: rgba(33, 45, 59, 0.96);
+    color: #f5f5f5;
+  }
+  .menu-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px;
+    gap: 16px;
+    padding: 9px 12px !important;
+    border-radius: 10px !important;
+    font-size: 15px !important;
+    font-weight: 500;
+  }
+  .account-row {
+    gap: 13px;
+    padding: 8px 10px !important;
+  }
+  .menu-avatar-ring {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 2px solid #3390ec;
+    padding: 1.5px;
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
   }
   .menu-avatar {
-    width: 36px;
-    height: 36px;
+    width: 100%;
+    height: 100%;
     border-radius: 50%;
     background: #3390ec;
     color: #fff;
     display: grid;
     place-items: center;
+    font-size: 13px;
     font-weight: 600;
+    overflow: hidden;
+  }
+  .menu-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
   }
   .menu-user-name {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
-  .menu-user-handle {
-    font-size: 12px;
-    color: #aaa;
+  .menu-icon {
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    color: inherit;
+    flex-shrink: 0;
+  }
+  .menu-label {
+    flex: 1;
+  }
+  .menu-right-count {
+    font-size: 14px;
+    font-weight: 500;
+    color: #707579;
+  }
+  .menu-chevron {
+    color: #9aa3ab;
+    display: inline-flex;
   }
   .main-menu hr {
     border: 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    margin: 6px 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    margin: 5px 6px;
+  }
+  :global(.workspace-shell.dark) .main-menu hr {
+    border-top-color: rgba(255, 255, 255, 0.1);
   }
   .menu-section-label {
     font-size: 11px;
     text-transform: uppercase;
-    color: #9e9ea3;
-    padding: 4px 10px;
+    color: #707579;
+    padding: 4px 12px;
     letter-spacing: 0.4px;
+    font-weight: 600;
   }
   .main-menu button {
     width: 100%;
     text-align: left;
     border: 0;
     background: transparent;
-    color: #fff;
-    padding: 9px 10px;
-    border-radius: 8px;
-    font-size: 13px;
+    color: inherit;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 14px;
     cursor: pointer;
   }
   .main-menu button:hover,
   .main-menu button.selected {
-    background: rgba(51, 144, 236, 0.22);
+    background: rgba(0, 0, 0, 0.05);
+  }
+  :global(.workspace-shell.dark) .main-menu button:hover,
+  :global(.workspace-shell.dark) .main-menu button.selected {
+    background: rgba(255, 255, 255, 0.08);
   }
   .main-menu button.danger {
-    color: #ff6b6b;
+    color: #e53935;
   }
   .folder-items {
     display: flex;
