@@ -217,6 +217,11 @@ export function createAuth({ createTransport, vault, now = Date.now }) {
       await transport?.close(); transport = null; transportPromise = null;
       set({ step: 'qr', qrStatus: 'idle', user: null, notice: 'Removed the saved session from this browser. You can revoke it in Telegram Settings → Devices.' });
     }),
+    async callChat(action, payload = {}) {
+      const c = await client();
+      if (typeof c[action] === 'function') return c[action](payload);
+      throw new Error(`Unsupported chat action: ${action}`);
+    },
     async destroy() { disposed = true; cancelQr(); listeners.clear(); await transport?.close(); },
   };
   return api;

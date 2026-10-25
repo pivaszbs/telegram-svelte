@@ -1,20 +1,34 @@
-// Deterministic sample data. This module is only substituted in the preview/test build.
-const rpc = text => Object.assign(new Error(text), { text });
+// Fake-server backed transport for preview and Playwright E2E tests via SvelteKit /api/fake-telegram.
+import { callFakeTelegram } from '../../src/services/fake-rpc.mjs';
+
 export async function createTransport() {
-  let signedIn = false;
-  const me = { id: '123456789', displayName: 'Alex Morgan', username: 'alex_demo' };
-  const sent = { type: 'app', phoneCodeHash: 'sample-code-hash', nextType: 'sms', timeout: 1, length: 5 };
   return {
-    prepare: async () => {},
+    prepare: () => callFakeTelegram('prepare'),
     signInQr: ({ signal, onUrlUpdated, onScanned }) => new Promise((resolve, reject) => {
-      const scenario = new URLSearchParams(location.search).get('qr');
-      const publish = token => onUrlUpdated(`tg://login?token=sample-preview-${token}`, new Date(Date.now() + 60000));
-      publish('not-a-real-login');
-      const timer = scenario === 'refresh' ? setTimeout(() => publish('refreshed-not-a-real-login'), 1200) : null;
-      const finish = () => {
+      const scenario = new URLSearchParams(location.search).get('qr') || '';
+      let timer = null;
+      callFakeTelegram('qrStart', { scenario })
+        .then(data => {
+          if (signal.aborted) return;
+          onUrlUpdated(data.tokenUrl, new Date(data.expiresAt));
+          if (data.refreshedUrl) {
+            timer = setTimeout(() => {
+              if (!signal.aborted) {
+                onUrlUpdated(data.refreshedUrl, new Date(Date.now() + 60000));
+              }
+            }, 1200);
+          }
+        })
+        .catch(reject);
+
+      const finish = async () => {
         onScanned();
-        if (scenario === 'password') reject(rpc('SESSION_PASSWORD_NEEDED'));
-        else { signedIn = true; resolve(me); }
+        try {
+          const user = await callFakeTelegram('qrScan', { scenario });
+          resolve(user);
+        } catch (error) {
+          reject(error);
+        }
       };
       // Only the preview exposes a simulated scan, never the production bundle.
       window.previewScanQr = finish;
@@ -24,24 +38,25 @@ export async function createTransport() {
         reject(new DOMException('Canceled', 'AbortError'));
       }, { once: true });
     }),
-    async sendCode(phone) {
-      if (phone === '+447700900000') throw rpc('PHONE_NUMBER_INVALID');
-      if (phone === '+447700900001') throw Object.assign(rpc('FLOOD_WAIT_%d'), { seconds: 30 });
-      return sent;
-    },
-    resendCode: async () => ({ ...sent, type: 'sms', phoneCodeHash: 'sample-resend-hash' }),
-    async signIn(phone, hash, code) {
-      if (code === '11111') throw rpc('PHONE_CODE_INVALID');
-      if (code === '33333') throw rpc('PHONE_CODE_EXPIRED');
-      if (code === '22222') { signedIn = true; return me; }
-      throw rpc('SESSION_PASSWORD_NEEDED');
-    },
-    checkPassword: async password => { if (password !== 'preview-password') throw rpc('PASSWORD_HASH_INVALID'); signedIn = true; return me; },
-    getPasswordHint: async () => 'Use preview-password in this sample flow',
-    getMe: async () => { if (!signedIn) throw rpc('AUTH_KEY_UNREGISTERED'); return me; },
-    importSession: async value => { if (value === 'sample-expired-session') throw rpc('SESSION_REVOKED'); signedIn = value === 'sample-session'; },
-    exportSession: async () => 'sample-session',
-    logOut: async () => { signedIn = false; },
+    sendCode: phone => callFakeTelegram('sendCode', { phone }),
+    resendCode: (phone, phoneCodeHash) => callFakeTelegram('resendCode', { phone, phoneCodeHash }),
+    signIn: (phone, phoneCodeHash, code) => callFakeTelegram('signIn', { phone, phoneCodeHash, code }),
+    checkPassword: password => callFakeTelegram('checkPassword', { password }),
+    getPasswordHint: () => callFakeTelegram('getPasswordHint'),
+    getMe: () => callFakeTelegram('getMe'),
+    importSession: value => callFakeTelegram('importSession', { session: value }),
+    exportSession: () => callFakeTelegram('exportSession'),
+    logOut: () => callFakeTelegram('logOut'),
     close: async () => {},
+    getCachedBootstrap: () => callFakeTelegram('getCachedBootstrap'),
+    getBootstrap: () => callFakeTelegram('getBootstrap'),
+    loadMoreDialogs: payload => callFakeTelegram('loadMoreDialogs', payload),
+    downloadAvatar: payload => callFakeTelegram('downloadAvatar', payload),
+    openChat: payload => callFakeTelegram('openChat', payload),
+    loadMoreHistory: payload => callFakeTelegram('loadMoreHistory', payload),
+    sendMessage: payload => callFakeTelegram('sendMessage', payload),
+    saveFolder: payload => callFakeTelegram('saveFolder', payload),
+    createInviteLink: payload => callFakeTelegram('createInviteLink', payload),
+    toggleStickerPack: payload => callFakeTelegram('toggleStickerPack', payload),
   };
 }

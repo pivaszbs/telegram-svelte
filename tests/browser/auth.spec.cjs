@@ -23,12 +23,27 @@ test('phone, code, password, account confirmation and logout', async ({ page }, 
   await page.screenshot({ path: info.outputPath('phone.png'), fullPage: true, animations: 'disabled' });
   await sendCode(page);
   await expect(page.getByText(/code to your Telegram app/)).toBeVisible();
+  const monkey = page.getByRole('img', { name: 'Animated monkey watching code input' });
+  await expect(monkey).toBeVisible();
   await page.screenshot({ path: info.outputPath('code.png'), fullPage: true, animations: 'disabled' });
+  const codeInput = page.getByLabel('5-character login code');
+  for (const partial of ['1', '12', '123', '1234', '12345', '123456', '123456789']) {
+    await codeInput.fill(partial);
+  }
+  await page.waitForTimeout(250);
+  expect(await monkey.locator('svg path').count()).toBeGreaterThan(5);
   await verify(page, '12345');
   await expect(page.getByRole('heading', { name: 'Two-step verification' })).toBeVisible();
   await expect(page.getByLabel('Password', { exact: true })).toBeEnabled();
+  await expect(page.getByRole('img', { name: 'Animated monkey covering eyes' })).toBeVisible();
+  await page.waitForTimeout(600);
   await page.screenshot({ path: info.outputPath('password.png'), fullPage: true, animations: 'disabled' });
   await page.getByLabel('Password', { exact: true }).fill('preview-password');
+  await page.getByRole('button', { name: 'Show password' }).click();
+  await expect(page.getByRole('img', { name: 'Animated monkey peeking at password' })).toBeVisible();
+  await page.waitForTimeout(350);
+  await page.screenshot({ path: info.outputPath('password-peek.png'), fullPage: true, animations: 'disabled' });
+  await page.getByRole('button', { name: 'Hide password' }).click();
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'You’re signed in' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Alex Morgan' })).toBeVisible();
