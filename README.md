@@ -39,7 +39,7 @@ After authorization, the app displays the account confirmed by Telegram and a si
 
 ## Session storage
 
-The protocol client uses in-memory storage. After successful authorization, the app explicitly exports its session into this browser's localStorage when "Keep me signed in" is checked, or sessionStorage when unchecked. QR login remembers the session by default. Expand “Login options” to change that before scanning. Codes and passwords are never persisted. Treat a saved session as an account credential: scripts on the same origin can read browser storage.
+The protocol client uses in-memory storage. After successful authorization, the app explicitly exports its session into this browser's localStorage when "Keep me signed in" is checked, or sessionStorage when unchecked. QR login remembers the session by default. Open the settings icon below the login button to change that before scanning. Codes and passwords are never persisted. Treat a saved session as an account credential: scripts on the same origin can read browser storage.
 
 App credentials entered in the setup screen follow the same storage preference. Offline restore preserves saved sessions; revoked or invalid sessions are cleared. Sign out revokes the current session on Telegram and clears both browser session locations. If server logout fails, the UI retains the session and lets you retry. When offline during restore, "Remove saved session" only removes the local copy; revoke it separately under Telegram Settings → Devices.
 

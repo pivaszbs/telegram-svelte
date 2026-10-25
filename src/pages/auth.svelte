@@ -102,7 +102,7 @@
 
       {#if $auth.qrStatus === 'error'}<button class="primary" disabled={$auth.busy || rateLimited} onclick={() => auth.startQr(remember)}>Try QR login again</button>{/if}
       <button class="qr-fallback" disabled={$auth.busy} onclick={() => auth.usePhone()}>Log in by phone number</button>
-      <details class="login-options"><summary>Login options</summary><label class="remember"><input type="checkbox" bind:checked={remember} disabled={$auth.busy} onchange={() => auth.setRemember(remember)} /> Keep me signed in on this device</label>{#if !isPreview}<button class="link" disabled={$auth.busy} onclick={() => auth.changeApp()}>Change API credentials</button>{/if}</details>
+      <details class="login-options"><summary aria-label="Login options"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="var(--bg)"/><circle cx="15" cy="17" r="3" fill="var(--bg)"/></svg></summary><label class="remember"><input type="checkbox" bind:checked={remember} disabled={$auth.busy} onchange={() => auth.setRemember(remember)} /> Keep me signed in on this device</label>{#if !isPreview}<button class="link" disabled={$auth.busy} onclick={() => auth.changeApp()}>Change API credentials</button>{/if}</details>
     {:else if $auth.step === 'account'}
       <div class="account-avatar" aria-hidden="true">{$auth.user.displayName?.[0] || 'T'}</div>
       <h2>{$auth.user.displayName}</h2>
@@ -145,7 +145,7 @@
       </form>
       {#if $auth.step === 'phone'}<button class="link" disabled={$auth.busy} onclick={() => auth.useQr(remember)}>Log in by QR code</button>{/if}
       {#if $auth.step === 'phone' && !isPreview}
-        <details class="login-options"><summary>Login options</summary><button class="link" disabled={$auth.busy} onclick={() => auth.changeApp()}>Change API credentials</button></details>
+        <details class="login-options"><summary aria-label="Login options"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="var(--bg)"/><circle cx="15" cy="17" r="3" fill="var(--bg)"/></svg></summary><button class="link" disabled={$auth.busy} onclick={() => auth.changeApp()}>Change API credentials</button></details>
       {/if}
       {#if ['code', 'password'].includes($auth.step)}
         <button class="link" disabled={$auth.busy} onclick={() => auth.back()}>Use another phone number</button>
@@ -155,7 +155,6 @@
       {/if}
     {/if}
     {#if $auth.error}<p class="error" role="alert">{$auth.error}</p>{/if}
-    <footer>Telegram Svelte · independent client</footer>
   </section>
 </main>
 
@@ -216,10 +215,12 @@
   .connected span { width: 8px; height: 8px; border-radius: 50%; background: #4fbd95; }
   .account-note { font-size: 14px; }
   .login-options { margin-top: 20px; color: var(--muted); font-size: 12px; }
-  summary { display: inline-block; cursor: pointer; padding: 8px; border-radius: 6px; }
+  summary { display: inline-grid; place-items: center; cursor: pointer; padding: 10px; border-radius: 50%; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary:hover { background: var(--hover); }
+  summary svg { width: 22px; height: 22px; }
   .login-options .remember { font-size: 14px; gap: 12px; }
   .login-options .link { font-size: 12px; }
-  footer { margin-top: 28px; color: var(--muted); opacity: .7; font-size: 11px; }
   .theme-toggle { position: fixed; z-index: 3; right: 16px; top: 12px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; color: var(--muted); background: transparent; }
   .theme-toggle svg { width: 24px; height: 24px; }
   @media (max-width: 480px) { .auth-shell { padding-top: 72px; } .auth-logo { width: 120px; height: 120px; margin-bottom: 28px; } .qr-steps { margin-bottom: 32px; } }
