@@ -123,13 +123,31 @@ function getInitials(title) {
 
 function inferFolderIcon(title, emoticon) {
   const lower = String(title || '').toLowerCase();
-  if (emoticon === '👤' || /personal|contact|private/.test(lower)) return { icon: 'personal', emoji: emoticon || '👤', customIcon: 'personal' };
-  if (emoticon === '📢' || /channel|news|media/.test(lower)) return { icon: 'channels', emoji: emoticon || '📢', customIcon: 'channels' };
-  if (emoticon === '👥' || /group|chat|community/.test(lower)) return { icon: 'groups', emoji: emoticon || '👥', customIcon: 'groups' };
-  if (emoticon === '🤖' || /bot/.test(lower)) return { icon: 'bots', emoji: emoticon || '🤖', customIcon: 'bots' };
-  if (/work|job/.test(lower)) return { icon: 'work', emoji: emoticon || '💼', customIcon: 'work' };
-  if (/game|gaming/.test(lower)) return { icon: 'games', emoji: emoticon || '🎮', customIcon: 'games' };
-  return { icon: 'folder', emoji: emoticon || '📁', customIcon: 'folder' };
+  if (emoticon === '🐱' || emoticon === '🐻' || emoticon === '🐶' || /друз|friend|animal|cat|pet/.test(lower)) {
+    return { icon: 'animals', customEmoji: emoticon || '🐱' };
+  }
+  if (emoticon === '❤️' || emoticon === '❤' || /health|здоров|heart|love/.test(lower)) {
+    return { icon: 'heart', customEmoji: emoticon || '❤️' };
+  }
+  if (emoticon === '💡' || /развит|study|learn|idea|book|курс/.test(lower)) {
+    return { icon: 'lamp', customEmoji: emoticon || '💡' };
+  }
+  if (emoticon === '👤' || /personal|contact|private|личн/.test(lower)) {
+    return { icon: 'user', customEmoji: emoticon || '👤' };
+  }
+  if (emoticon === '📢' || /channel|news|media|канал/.test(lower)) {
+    return { icon: 'channel', customEmoji: emoticon || '📢' };
+  }
+  if (emoticon === '👥' || /group|chat|community|групп/.test(lower)) {
+    return { icon: 'group', customEmoji: emoticon || '👥' };
+  }
+  if (emoticon === '🤖' || /bot|бот/.test(lower)) {
+    return { icon: 'bot', customEmoji: emoticon || '🤖' };
+  }
+  if (emoticon === '⭐' || /star|fav|избран/.test(lower)) {
+    return { icon: 'star', customEmoji: emoticon || '⭐' };
+  }
+  return { icon: 'folder', customEmoji: emoticon && emoticon !== '📁' ? emoticon : '' };
 }
 
 export async function createTransport(config) {
@@ -248,6 +266,11 @@ export async function createTransport(config) {
       title,
       online,
       saved: isSelf,
+      pinned: Boolean(dialog.isPinned),
+      verified: Boolean(peer.isVerified),
+      username: peer.username || '',
+      phone: peer.phone || '',
+      bio: '',
       time: formatTime(last?.date),
       unreadCount: Number(dialog.unreadCount || 0),
       muted: Boolean(dialog.isMuted),
@@ -289,15 +312,35 @@ export async function createTransport(config) {
       }
       const chats = rawDialogs.map(mapDialog);
 
+      let archivedSummary = null;
+      try {
+        const archivedDialogs = [];
+        for await (const d of api.iterDialogs({ limit: 15, archived: 'only' })) {
+          archivedDialogs.push(d);
+        }
+        if (archivedDialogs.length > 0) {
+          const names = archivedDialogs
+            .slice(0, 6)
+            .map(d => d.peer.displayName || d.peer.title || 'Chat')
+            .join(', ');
+          const unreadTotal = archivedDialogs.reduce((acc, d) => acc + Number(d.unreadCount || 0), 0);
+          archivedSummary = {
+            count: unreadTotal || archivedDialogs.length,
+            preview: names,
+          };
+        }
+      } catch {
+        // Ignore archived dialog errors.
+      }
+
       const folders = [
         {
           id: 'all',
           title: 'All Chats',
-          altTitle: 'All Chats',
           icon: 'chats',
-          emoji: '💬',
-          customIcon: 'chats',
-          includedIds: ['*'],
+          customEmoji: '',
+          system: true,
+          includedIds: [],
           excludedIds: [],
           inviteLinks: [],
         },
@@ -314,21 +357,22 @@ export async function createTransport(config) {
           try {
             predicate = Dialog.filterFolder(filter, false);
           } catch {}
-          const includedIds = rawDialogs
-            .filter(d => {
-              try {
-                return predicate(d);
-              } catch {
-                return false;
-              }
-            })
-            .map(d => String(d.peer.id));
+          const matchingDialogs = rawDialogs.filter(d => {
+            try {
+              return predicate(d);
+            } catch {
+              return false;
+            }
+          });
+          const includedIds = matchingDialogs.map(d => String(d.peer.id));
+          const badgeCount = matchingDialogs.filter(d => Number(d.unreadCount || 0) > 0).length;
           const iconMeta = inferFolderIcon(fTitle, filter.emoticon);
           folders.push({
             id: `tg-folder-${filter.id}`,
             title: fTitle,
-            altTitle: fTitle,
             ...iconMeta,
+            system: false,
+            badgeCount,
             includedIds,
             excludedIds: [],
             inviteLinks: [],
@@ -338,28 +382,25 @@ export async function createTransport(config) {
         // Ignore folder fetch errors and fall back to standard category folders.
       }
 
-      const personalIds = rawDialogs.filter(d => d.peer.type === 'user' && !d.peer.isBot).map(d => String(d.peer.id));
-      const channelIds = rawDialogs.filter(d => d.peer.type === 'chat' && d.peer.chatType === 'channel').map(d => String(d.peer.id));
-      const groupIds = rawDialogs.filter(d => d.peer.type === 'chat' && d.peer.isGroup).map(d => String(d.peer.id));
-      const botIds = rawDialogs.filter(d => d.peer.type === 'user' && d.peer.isBot).map(d => String(d.peer.id));
+      if (folders.length === 1) {
+        const personalIds = rawDialogs.filter(d => d.peer.type === 'user' && !d.peer.isBot).map(d => String(d.peer.id));
+        const channelIds = rawDialogs.filter(d => d.peer.type === 'chat' && d.peer.chatType === 'channel').map(d => String(d.peer.id));
+        const groupIds = rawDialogs.filter(d => d.peer.type === 'chat' && d.peer.isGroup).map(d => String(d.peer.id));
+        const botIds = rawDialogs.filter(d => d.peer.type === 'user' && d.peer.isBot).map(d => String(d.peer.id));
 
-      if (!folders.some(f => f.icon === 'personal')) {
-        folders.push({ id: 'personal', title: 'Personal', altTitle: 'Work', icon: 'personal', emoji: '💼', customIcon: 'work', includedIds: personalIds, excludedIds: [], inviteLinks: [] });
-      }
-      if (!folders.some(f => f.icon === 'channels')) {
-        folders.push({ id: 'channels', title: 'Channels', altTitle: 'NFT', minimalTitle: 'Games', icon: 'channels', emoji: '🖼️', customIcon: 'games', includedIds: channelIds, excludedIds: [], inviteLinks: [] });
-      }
-      if (!folders.some(f => f.icon === 'groups')) {
-        folders.push({ id: 'groups', title: 'Groups', altTitle: 'Crypto', icon: 'groups', emoji: '🪙', customIcon: 'groups', includedIds: groupIds, excludedIds: [], inviteLinks: [] });
-      }
-      if (!folders.some(f => f.icon === 'bots')) {
-        folders.push({ id: 'bots', title: 'Bots', altTitle: 'Bots', icon: 'bots', emoji: '🤖', customIcon: 'bots', includedIds: botIds, excludedIds: [], inviteLinks: [] });
+        folders.push(
+          { id: 'personal', title: 'Personal', icon: 'user', customEmoji: '⛏️', system: false, includedIds: personalIds, excludedIds: [], inviteLinks: [] },
+          { id: 'channels', title: 'Channels', icon: 'channel', customEmoji: '💎', system: false, includedIds: channelIds, excludedIds: [], inviteLinks: [] },
+          { id: 'groups', title: 'Groups', icon: 'group', customEmoji: '₿', system: false, includedIds: groupIds, excludedIds: [], inviteLinks: [] },
+          { id: 'bots', title: 'Bots', icon: 'bot', customEmoji: '🤖', system: false, includedIds: botIds, excludedIds: [], inviteLinks: [] },
+        );
       }
 
       cachedFolders = folders;
       return {
         folders,
         chats,
+        archivedSummary,
         messages: {},
         stickerPacks,
         gifs: DEFAULT_GIFS,

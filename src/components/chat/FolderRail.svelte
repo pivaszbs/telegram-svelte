@@ -175,21 +175,27 @@
           {:else if folder.customEmoji && !['⛏️', '💎', '₿', '🤖', '👾'].includes(folder.customEmoji)}
             <span class="emoji-glyph">{folder.customEmoji}</span>
           {:else if folder.icon === 'chats'}
-            <TgIcon name="round_chats_filled" size={26} />
+            <TgIcon name="round_chats_filled" size={28} />
           {:else if folder.icon === 'chat'}
-            <TgIcon name="message" size={26} />
+            <TgIcon name="message_filled" size={26} />
           {:else if folder.icon === 'user'}
-            <TgIcon name="user" size={26} />
+            <TgIcon name="person_filled" size={26} />
           {:else if folder.icon === 'channel'}
-            <TgIcon name="channel" size={26} />
+            <TgIcon name="channel_filled" size={26} />
           {:else if folder.icon === 'group'}
-            <TgIcon name="group" size={26} />
+            <TgIcon name="group_filled" size={26} />
           {:else if folder.icon === 'bot'}
-            <TgIcon name="bots" size={26} />
+            <TgIcon name="bot_filled" size={26} />
           {:else if folder.icon === 'star'}
-            <TgIcon name="favourites" size={26} />
+            <TgIcon name="star_filled" size={26} />
+          {:else if folder.icon === 'heart'}
+            <TgIcon name="stories_like" size={26} />
+          {:else if folder.icon === 'lamp'}
+            <TgIcon name="lamp_filled" size={26} />
+          {:else if folder.icon === 'animals'}
+            <TgIcon name="animals" size={26} />
           {:else}
-            <TgIcon name="folder" size={26} />
+            <TgIcon name="folder_filled" size={27} />
           {/if}
           {#if badge > 0}
             <span class="folder-badge">{badge}</span>
@@ -210,7 +216,7 @@
       if (target) onEditFolder(target.id);
     }}
   >
-    <TgIcon name="edit" size={22} />
+    <TgIcon name="equalizer" size={24} />
   </button>
 </nav>
 
@@ -218,8 +224,9 @@
   .folder-rail {
     width: 72px;
     flex: 0 0 72px;
-    background: #1c1c1e;
-    color: #8e8e93;
+    background: #141d26;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    color: #8a98a6;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -341,11 +348,11 @@
     background: rgba(255, 255, 255, 0.04);
   }
   .folder-tab.active {
-    color: #3da5ff;
+    color: #2ea6ff;
   }
   .folder-icon-wrap {
     position: relative;
-    width: 32px;
+    width: 34px;
     height: 30px;
     display: grid;
     place-items: center;
@@ -359,7 +366,7 @@
     height: 26px;
     border-radius: 50%;
     background: #f7931a;
-    color: #1c1c1e;
+    color: #141d26;
     font-weight: 800;
     font-size: 17px;
     display: grid;
@@ -378,17 +385,17 @@
     position: absolute;
     top: -4px;
     right: -7px;
-    min-width: 18px;
-    height: 18px;
+    min-width: 19px;
+    height: 19px;
     padding: 0 5px;
     border-radius: 999px;
-    background: #3390ec;
+    background: #2ea6ff;
     color: #fff;
     font-size: 11px;
     font-weight: 700;
     display: grid;
     place-items: center;
-    border: 2px solid #1c1c1e;
+    border: 2px solid #141d26;
     box-sizing: border-box;
   }
   .folder-label {
