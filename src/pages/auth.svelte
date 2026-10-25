@@ -102,7 +102,6 @@
 
       {#if $auth.qrStatus === 'error'}<button class="primary" disabled={$auth.busy || rateLimited} onclick={() => auth.startQr(remember)}>Try QR login again</button>{/if}
       <button class="qr-fallback" disabled={$auth.busy} onclick={() => auth.usePhone()}>Log in by phone number</button>
-      <details class="login-options"><summary aria-label="Login options"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="var(--bg)"/><circle cx="15" cy="17" r="3" fill="var(--bg)"/></svg></summary><label class="remember"><input type="checkbox" bind:checked={remember} disabled={$auth.busy} onchange={() => auth.setRemember(remember)} /> Keep me signed in on this device</label>{#if !isPreview}<button class="link" disabled={$auth.busy} onclick={() => auth.changeApp()}>Change API credentials</button>{/if}</details>
     {:else if $auth.step === 'account'}
       <div class="account-avatar" aria-hidden="true">{$auth.user.displayName?.[0] || 'T'}</div>
       <h2>{$auth.user.displayName}</h2>
@@ -144,9 +143,6 @@
         {#if $auth.step !== 'phone' || phone.replace(/\D/g, '').length >= 7}<button class="primary" type="submit" disabled={$auth.busy || rateLimited}>{$auth.busy ? 'Connecting…' : $auth.step === 'setup' ? 'Continue' : $auth.step === 'phone' ? 'Send login code' : 'Sign in'}</button>{/if}
       </form>
       {#if $auth.step === 'phone'}<button class="link" disabled={$auth.busy} onclick={() => auth.useQr(remember)}>Log in by QR code</button>{/if}
-      {#if $auth.step === 'phone' && !isPreview}
-        <details class="login-options"><summary aria-label="Login options"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="var(--bg)"/><circle cx="15" cy="17" r="3" fill="var(--bg)"/></svg></summary><button class="link" disabled={$auth.busy} onclick={() => auth.changeApp()}>Change API credentials</button></details>
-      {/if}
       {#if ['code', 'password'].includes($auth.step)}
         <button class="link" disabled={$auth.busy} onclick={() => auth.back()}>Use another phone number</button>
       {/if}
@@ -185,7 +181,7 @@
   label:not(.remember) { display: block; text-align: left; color: var(--muted); font-size: 13px; margin: 18px 0 7px; }
   input:not([type='checkbox']), select { width: 100%; height: 54px; box-sizing: border-box; border: 1px solid var(--border); padding: 14px 16px; border-radius: 12px; font: inherit; font-size: 16px; background: var(--bg); color: var(--text); transition: border-color .15s; }
   input:not([type='checkbox']):focus { border: 2px solid var(--accent); padding: 13px 15px; outline: none; }
-  input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
   .country-field, .phone-field { position: relative; margin-top: 24px; }
   .country-field { margin-top: 48px; }
   .country-field label, .phone-field label { position: absolute; z-index: 1; top: -9px; left: 16px; background: var(--bg); padding: 0 5px; margin: 0; font-weight: 400; }
@@ -214,13 +210,6 @@
   .connected { color: #4fbd95; font-size: 14px; margin: 24px 0; display: flex; align-items: center; justify-content: center; gap: 8px; }
   .connected span { width: 8px; height: 8px; border-radius: 50%; background: #4fbd95; }
   .account-note { font-size: 14px; }
-  .login-options { margin-top: 20px; color: var(--muted); font-size: 12px; }
-  summary { display: inline-grid; place-items: center; cursor: pointer; padding: 10px; border-radius: 50%; list-style: none; }
-  summary::-webkit-details-marker { display: none; }
-  summary:hover { background: var(--hover); }
-  summary svg { width: 22px; height: 22px; }
-  .login-options .remember { font-size: 14px; gap: 12px; }
-  .login-options .link { font-size: 12px; }
   .theme-toggle { position: fixed; z-index: 3; right: 16px; top: 12px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; color: var(--muted); background: transparent; }
   .theme-toggle svg { width: 24px; height: 24px; }
   @media (max-width: 480px) { .auth-shell { padding-top: 72px; } .auth-logo { width: 120px; height: 120px; margin-bottom: 28px; } .qr-steps { margin-bottom: 32px; } }

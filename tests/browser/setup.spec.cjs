@@ -17,8 +17,5 @@ test('setup rejects invalid credentials before starting QR login', async ({ page
   await page.getByLabel('API hash', { exact: true }).fill('0123456789abcdef0123456789abcdef');
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByRole('heading', { name: 'Log in to Telegram by QR Code' })).toBeVisible();
-  await page.getByLabel('Login options', { exact: true }).click();
-  await page.getByRole('button', { name: 'Change API credentials' }).click();
-  await expect(page.getByRole('heading', { name: 'Connect your Telegram app' })).toBeVisible();
   expect(errors).toEqual([]);
 });
