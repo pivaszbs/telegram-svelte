@@ -5,3 +5,9 @@
 yarn.lock
 yarn-error.log
 .idea
+/playwright-report/
+/test-results/
+
+.env
+.env.local
+.env.*.local

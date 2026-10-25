@@ -52,8 +52,8 @@ class TelegramApi {
 
 		this.setConfig({
 			app: {
-				id: 1166576 /* App ID */,
-				hash: '99db6db0082e27973ee4357e4637aadc' /* App hash */,
+				id: 0,
+				hash: '',
 				version: '0.0.1' /* App version */,
 			},
 			server: {
