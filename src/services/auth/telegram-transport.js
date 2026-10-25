@@ -12,6 +12,7 @@ export async function createTransport(config) {
   const sent = value => value.phoneCodeHash ? { type: value.type, phoneCodeHash: value.phoneCodeHash, nextType: value.nextType, timeout: value.timeout, length: value.length } : { user: user(value) };
   return {
     prepare: () => client.prepare(),
+    signInQr: async ({ signal, onUrlUpdated, onScanned }) => user(await api.signInQr({ abortSignal: signal, onUrlUpdated, onQrScanned: onScanned })),
     sendCode: async phone => sent(await api.sendCode({ phone })),
     resendCode: async (phone, phoneCodeHash) => sent(await api.resendCode({ phone, phoneCodeHash })),
     signIn: async (phone, phoneCodeHash, phoneCode) => user(await api.signIn({ phone, phoneCodeHash, phoneCode })),

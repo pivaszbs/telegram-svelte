@@ -31,26 +31,49 @@ export function errorMessage(error) {
 }
 
 export function createAuth({ createTransport, vault, now = Date.now }) {
-  let state = { step: 'setup', busy: false, error: '', notice: '', phone: '', delivery: '', codeLength: 0, nextType: 'none', resendAt: 0, hint: '', user: null, remember: true, retryAt: 0 };
+  let state = { step: 'setup', busy: false, error: '', notice: '', phone: '', delivery: '', codeLength: 0, nextType: 'none', resendAt: 0, hint: '', user: null, remember: true, retryAt: 0, qrStatus: 'idle', qrUrl: '', qrExpires: 0 };
   let config;
   let transport;
   let transportPromise;
+  let transportRevision = 0;
   let challenge;
   let disposed = false;
+  let qrAbort;
+  let qrRevision = 0;
   const listeners = new Set();
   const set = delta => { state = { ...state, ...delta }; if (!disposed) listeners.forEach(fn => fn(state)); };
+  function cancelQr(discardClient = false) {
+    const wasActive = Boolean(qrAbort);
+    qrRevision++;
+    qrAbort?.abort();
+    qrAbort = null;
+    if (discardClient && wasActive) {
+      const oldClient = transportPromise;
+      transportRevision++; transport = null; transportPromise = null;
+      oldClient?.then(value => value.close()).catch(() => {});
+    }
+    set({ qrUrl: '', qrExpires: 0, qrStatus: 'idle' });
+  }
+  function fail(error) {
+    const seconds = Number(error?.seconds || rpcName(error).match(/FLOOD_WAIT_(\d+)/)?.[1]);
+    set({ error: errorMessage(error), retryAt: /FLOOD/.test(rpcName(error)) && seconds ? now() + seconds * 1000 : 0 });
+  }
   async function client() {
-    if (!transportPromise) transportPromise = createTransport(config).then(async value => { if (disposed) { await value.close(); throw new Error('Disposed'); } return (transport = value); }).catch(error => { transportPromise = null; throw error; });
+    if (!transportPromise) {
+      const generation = transportRevision;
+      transportPromise = createTransport(config).then(async value => {
+        if (disposed || generation !== transportRevision) { await value.close(); throw new Error('Disposed'); }
+        transport = value;
+        return value;
+      }).catch(error => { if (generation === transportRevision) transportPromise = null; throw error; });
+    }
     return transportPromise;
   }
   async function run(action) {
     if (state.busy || disposed || now() < state.retryAt) return;
     set({ busy: true, error: '', notice: '' });
     try { await action(); }
-    catch (error) {
-      const seconds = Number(error?.seconds || rpcName(error).match(/FLOOD_WAIT_(\d+)/)?.[1]);
-      set({ error: errorMessage(error), retryAt: /FLOOD/.test(rpcName(error)) && seconds ? now() + seconds * 1000 : 0 });
-    }
+    catch (error) { fail(error); }
     finally { set({ busy: false }); }
   }
   async function finish(user) {
@@ -61,7 +84,7 @@ export function createAuth({ createTransport, vault, now = Date.now }) {
     try { vault.save(config.apiId, await c.exportSession(), state.remember); }
     catch { notice = 'Signed in, but your browser could not save the session. You may need to sign in again after closing this page.'; }
     challenge = null;
-    set({ step: 'account', user: me, phone: '', hint: '', delivery: '', notice });
+    set({ step: 'account', user: me, phone: '', hint: '', delivery: '', qrUrl: '', qrExpires: 0, qrStatus: 'idle', notice });
   }
   function received(result) {
     if (result.user) return finish(result.user);
@@ -72,7 +95,7 @@ export function createAuth({ createTransport, vault, now = Date.now }) {
   async function passwordStep() {
     set({ step: 'password' });
     // A missing hint must not discard a valid password challenge.
-    try { set({ hint: await (await client()).getPasswordHint() || '' }); } catch { /* optional */ }
+    try { const hint = await (await client()).getPasswordHint() || ''; if (state.step === 'password') set({ hint }); } catch { /* optional */ }
   }
   const api = {
     subscribe(fn) { listeners.add(fn); fn(state); return () => listeners.delete(fn); },
@@ -80,8 +103,8 @@ export function createAuth({ createTransport, vault, now = Date.now }) {
       if (!validCredentials(initialConfig)) { set({ step: 'setup' }); return; }
       config = { apiId: Number(initialConfig.apiId), apiHash: initialConfig.apiHash };
       let saved;
-      try { saved = vault.read(config.apiId); } catch { set({ step: 'phone', notice: 'Browser storage is unavailable. Sessions will not survive a reload.' }); return; }
-      if (!saved) { set({ step: 'phone' }); return; }
+      try { saved = vault.read(config.apiId); } catch { set({ step: 'qr', notice: 'Browser storage is unavailable. Sessions will not survive a reload.' }); return; }
+      if (!saved) { set({ step: 'qr', qrStatus: 'idle' }); return; }
       await api.restore();
     },
     configure(value, remember) {
@@ -89,7 +112,7 @@ export function createAuth({ createTransport, vault, now = Date.now }) {
       config = { apiId: Number(value.apiId), apiHash: value.apiHash.trim() };
       let notice = '';
       try { vault.configure(config, remember); } catch { notice = 'Your browser could not save the app settings.'; }
-      set({ step: 'phone', remember, error: '', notice });
+      set({ step: 'qr', qrStatus: 'idle', remember, error: '', notice });
     },
     restore: () => run(async () => {
       set({ step: 'restore' });
@@ -103,11 +126,12 @@ export function createAuth({ createTransport, vault, now = Date.now }) {
         if (['SESSION_REVOKED', 'AUTH_KEY_UNREGISTERED', 'SESSION_EXPIRED', 'AUTH_KEY_DUPLICATED', 'INVALID_SESSION'].includes(rpcName(error))) {
           try { vault.clear(config.apiId); } catch { /* already unusable */ }
           await transport?.close(); transport = null; transportPromise = null;
-          set({ step: 'phone', error: errorMessage(error) });
+          set({ step: 'qr', qrStatus: 'idle', error: errorMessage(error) });
         } else throw error; // Preserve a valid stored session when the connection is offline.
       }
     }),
     sendCode: (phone, remember) => run(async () => {
+      cancelQr();
       const normalized = phone.replace(/[\s()-]/g, '');
       if (!/^\+[1-9]\d{6,14}$/.test(normalized)) throw new Error('PHONE_NUMBER_INVALID');
       set({ phone: normalized, remember });
@@ -130,25 +154,70 @@ export function createAuth({ createTransport, vault, now = Date.now }) {
       await received(await (await client()).resendCode(state.phone, challenge.phoneCodeHash));
     }),
     changeApp: () => run(async () => {
+      cancelQr(true);
       await transport?.close(); transport = null; transportPromise = null; config = null;
       challenge = null;
       set({ step: 'setup', phone: '', user: null, hint: '', error: '' });
     }),
-    back() { if (!state.busy) { challenge = null; set({ step: 'phone', error: '', hint: '', delivery: '' }); } },
+    setRemember(value) { if (!state.busy) set({ remember: value }); },
+    usePhone() {
+      if (state.busy) return;
+      cancelQr(true); challenge = null;
+      set({ step: 'phone', error: '', hint: '', delivery: '' });
+    },
+    useQr(remember = state.remember) {
+      if (state.busy) return;
+      cancelQr(); challenge = null;
+      set({ step: 'qr', qrStatus: now() < state.retryAt ? 'error' : 'idle', remember, error: now() < state.retryAt ? state.error : '', hint: '', delivery: '' });
+    },
+    back() { api.usePhone(); },
+    async startQr(remember = state.remember) {
+      if (state.busy || disposed || now() < state.retryAt || state.step !== 'qr' || qrAbort) return;
+      const retry = state.qrStatus === 'error';
+      cancelQr();
+      const request = qrRevision;
+      const abort = new AbortController();
+      qrAbort = abort;
+      set({ step: 'qr', qrStatus: 'connecting', remember, error: retry ? '' : state.error });
+      const current = () => !disposed && request === qrRevision && !abort.signal.aborted;
+      try {
+        const c = await client();
+        if (!current()) return;
+        const me = await c.signInQr({
+          signal: abort.signal,
+          onUrlUpdated(url, expires) {
+            if (current()) set({ qrUrl: url, qrExpires: Number(expires), qrStatus: 'ready', busy: false });
+          },
+          onScanned() { if (current()) set({ qrUrl: '', qrStatus: 'scanned', busy: true }); },
+        });
+        if (!current()) return;
+        set({ busy: true, qrUrl: '', qrStatus: 'scanned' });
+        await finish(me);
+      } catch (error) {
+        if (!current()) return;
+        set({ qrUrl: '', qrStatus: 'error' });
+        if (rpcName(error) === 'SESSION_PASSWORD_NEEDED') {
+          set({ busy: true });
+          await passwordStep();
+        } else fail(error);
+      } finally {
+        if (request === qrRevision) { qrAbort = null; set({ busy: false }); }
+      }
+    },
     logout: () => run(async () => {
       // Keep the session if server revocation fails so the user can retry.
       await (await client()).logOut();
       let notice = '';
       try { vault.clear(config.apiId); } catch { notice = 'Signed out on Telegram. Your browser could not clear its saved session.'; }
       await transport?.close(); transport = null; transportPromise = null;
-      set({ step: 'phone', user: null, phone: '', notice });
+      set({ step: 'qr', qrStatus: 'idle', user: null, phone: '', notice });
     }),
     forget: () => run(async () => {
       vault.clear(config.apiId);
       await transport?.close(); transport = null; transportPromise = null;
-      set({ step: 'phone', user: null, notice: 'Removed the saved session from this browser. You can revoke it in Telegram Settings → Devices.' });
+      set({ step: 'qr', qrStatus: 'idle', user: null, notice: 'Removed the saved session from this browser. You can revoke it in Telegram Settings → Devices.' });
     }),
-    async destroy() { disposed = true; listeners.clear(); await transport?.close(); },
+    async destroy() { disposed = true; cancelQr(); listeners.clear(); await transport?.close(); },
   };
   return api;
 }

@@ -19,6 +19,7 @@ async function fixture(overrides = {}, options = {}) {
   let state;
   auth.subscribe(value => { state = value; });
   await auth.initialize(config);
+  auth.usePhone();
   return { auth, vault, local, tab, calls, get state() { return state; } };
 }
 test('app credentials are validated without network activity', () => {
@@ -111,7 +112,7 @@ test('offline restore preserves a stored session; revoked restore clears it', as
   assert.equal(f.vault.read(config.apiId), 'saved');
   fail = rpc('SESSION_REVOKED');
   await f.auth.restore();
-  assert.equal(f.state.step, 'phone');
+  assert.equal(f.state.step, 'qr');
   assert.equal(f.vault.read(config.apiId), '');
 });
 test('failed server logout does not silently discard the session', async () => {
@@ -128,4 +129,58 @@ test('unsupported verification has a clear message rather than a broken code scr
   assert.equal(f.state.step, 'phone');
   assert.match(f.state.error, /additional verification/);
   assert.equal(errorMessage(new Error('unexpected SECRET')), 'Could not connect to Telegram. Check your connection and try again.');
+});
+
+test('QR is the default for a configured client', async () => {
+  const f = await fixture();
+  await f.auth.initialize(config);
+  assert.equal(f.state.step, 'qr');
+});
+test('rotated QR tokens replace the old token and success persists the verified session', async () => {
+  let callbacks, done;
+  const f = await fixture({ signInQr: params => { callbacks = params; return new Promise(resolve => { done = resolve; }); } });
+  f.auth.useQr();
+  const pending = f.auth.startQr();
+  await new Promise(resolve => setImmediate(resolve));
+  callbacks.onUrlUpdated('tg://login?token=first', new Date(1000));
+  callbacks.onUrlUpdated('tg://login?token=second', new Date(2000));
+  assert.equal(f.state.qrUrl, 'tg://login?token=second');
+  assert.equal(f.state.qrExpires, 2000);
+  callbacks.onScanned();
+  assert.equal(f.state.qrUrl, '');
+  done(me);
+  await pending;
+  assert.equal(f.state.step, 'account');
+  assert.equal(f.vault.read(config.apiId), 'sample-session');
+});
+test('switching to phone aborts QR and ignores late tokens and late success', async () => {
+  let callbacks, done;
+  const f = await fixture({ signInQr: params => { callbacks = params; return new Promise(resolve => { done = resolve; }); } });
+  f.auth.useQr();
+  const pending = f.auth.startQr();
+  await new Promise(resolve => setImmediate(resolve));
+  f.auth.usePhone();
+  assert.equal(callbacks.signal.aborted, true);
+  callbacks.onUrlUpdated('tg://login?token=late', new Date());
+  done(me);
+  await pending;
+  assert.equal(f.state.step, 'phone');
+  assert.equal(f.state.qrUrl, '');
+  assert.equal(f.vault.read(config.apiId), '');
+});
+test('QR password challenges use the existing password step', async () => {
+  const f = await fixture({ signInQr: async () => { throw rpc('SESSION_PASSWORD_NEEDED'); } });
+  f.auth.useQr();
+  await f.auth.startQr();
+  assert.equal(f.state.step, 'password');
+  await f.auth.verifyPassword('sample-password');
+  assert.equal(f.state.step, 'account');
+});
+test('failed QR generation is retryable and does not persist a session', async () => {
+  const f = await fixture({ signInQr: async () => { throw rpc('NETWORK_ERROR'); } });
+  f.auth.useQr();
+  await f.auth.startQr();
+  assert.equal(f.state.qrStatus, 'error');
+  assert.equal(f.state.busy, false);
+  assert.equal(f.vault.read(config.apiId), '');
 });

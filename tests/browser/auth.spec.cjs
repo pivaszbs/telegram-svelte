@@ -4,7 +4,9 @@ test.beforeEach(async ({ page }) => {
   runtimeErrors = [];
   page.on('pageerror', error => runtimeErrors.push(error.message));
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Sign in to Telegram' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Log in to Telegram by QR Code' })).toBeVisible();
+  await page.getByRole('button', { name: 'Log in by phone number', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Telegram', exact: true })).toBeVisible();
 });
 test.afterEach(() => expect(runtimeErrors).toEqual([]));
 const phone = '+447700900123';
@@ -33,7 +35,7 @@ test('phone, code, password, account confirmation and logout', async ({ page }, 
   await expect(page.getByRole('button', { name: 'Sign out', exact: true })).toBeEnabled();
   await page.screenshot({ path: info.outputPath('account.png'), fullPage: true, animations: 'disabled' });
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Sign in to Telegram' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Log in to Telegram by QR Code' })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('telegram-svelte:session:123456'))).toBeNull();
 });
 test('bad code and bad password show recoverable errors', async ({ page }) => {
@@ -72,7 +74,7 @@ test('remember unchecked keeps the session out of localStorage', async ({ page }
 test('expired session is cleared without trapping login', async ({ page }) => {
   await page.evaluate(() => localStorage.setItem('telegram-svelte:session:123456', 'sample-expired-session'));
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Sign in to Telegram' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Log in to Telegram by QR Code' })).toBeVisible();
   await expect(page.getByRole('alert')).toContainText('revoked');
 });
 test('phone login is usable on a narrow screen', async ({ page }, info) => {

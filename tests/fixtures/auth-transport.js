@@ -6,6 +6,24 @@ export async function createTransport() {
   const sent = { type: 'app', phoneCodeHash: 'sample-code-hash', nextType: 'sms', timeout: 1, length: 5 };
   return {
     prepare: async () => {},
+    signInQr: ({ signal, onUrlUpdated, onScanned }) => new Promise((resolve, reject) => {
+      const scenario = new URLSearchParams(location.search).get('qr');
+      const publish = token => onUrlUpdated(`tg://login?token=sample-preview-${token}`, new Date(Date.now() + 60000));
+      publish('not-a-real-login');
+      const timer = scenario === 'refresh' ? setTimeout(() => publish('refreshed-not-a-real-login'), 1200) : null;
+      const finish = () => {
+        onScanned();
+        if (scenario === 'password') reject(rpc('SESSION_PASSWORD_NEEDED'));
+        else { signedIn = true; resolve(me); }
+      };
+      // Only the preview exposes a simulated scan, never the production bundle.
+      window.previewScanQr = finish;
+      signal.addEventListener('abort', () => {
+        clearTimeout(timer);
+        if (window.previewScanQr === finish) delete window.previewScanQr;
+        reject(new DOMException('Canceled', 'AbortError'));
+      }, { once: true });
+    }),
     async sendCode(phone) {
       if (phone === '+447700900000') throw rpc('PHONE_NUMBER_INVALID');
       if (phone === '+447700900001') throw Object.assign(rpc('FLOOD_WAIT_%d'), { seconds: 30 });
