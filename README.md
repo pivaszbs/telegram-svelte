@@ -1,6 +1,6 @@
 # Telegram Svelte
 
-An independent Telegram browser client built with Svelte 5.
+An independent Telegram browser client built with Svelte 5 and SvelteKit.
 
 ## Run real login locally
 
@@ -35,7 +35,7 @@ Passkey login is unavailable to unofficial clients under [Telegram’s current p
 
 New-account registration, email-address setup, Firebase verification, payment and CAPTCHA challenges are not implemented. Such challenges show an explanation instead of an unusable code screen.
 
-After authorization, the app displays the account confirmed by Telegram and a sign-out button. The legacy chat screens are retained in source but are not connected to the new session yet. This PR is the authentication milestone.
+After authorization, the app enters the chat workspace with Contest R1 vertical chat folders (standard, rich emoji, and custom monochrome icon styles, plus the `Edit Folder` drawer with folder emoji picker and shareable invite links), active conversations with per-chat draft preservation, and the Contest R2 Emoji, Stickers (including sticker pack catalog with `ADD` / `ADDED`) and GIFs panels.
 
 ## Session storage
 
@@ -43,20 +43,21 @@ The protocol client uses in-memory storage. After successful authorization, the 
 
 App credentials entered in the setup screen follow the same storage preference. Offline restore preserves saved sessions; revoked or invalid sessions are cleared. Sign out revokes the current session on Telegram and clears both browser session locations. If server logout fails, the UI retains the session and lets you retry. When offline during restore, "Remove saved session" only removes the local copy; revoke it separately under Telegram Settings → Devices.
 
-## Try the recorded sample flow
+## SvelteKit fake server & sample flow (`/api/fake-telegram`)
 
 ```sh
 npm run dev:ui
 ```
 
-Open http://127.0.0.1:5174. The page is marked as a preview and uses a test-only transport. No SMS is sent and no account is accessed.
+Open http://127.0.0.1:5174. The page is marked as a preview and uses a stateful SvelteKit server endpoint (`/api/fake-telegram` backed by `src/lib/server/fake-telegram.mjs`) isolated per browser tab (`x-fake-instance`). No SMS is sent and no real Telegram account is accessed.
 
-1. Choose “Log in by phone number”, then enter `+447700900123` and request a code.
-2. Enter `12345` to reach the password screen.
-3. Enter `preview-password` to view the sample account confirmation.
-4. Sign out, or reload to test session restore.
+1. Scan the sample QR (`window.previewScanQr()`) or choose “Log in by phone number”, then enter `+447700900123` and request a code.
+2. Enter `12345` to reach the password screen (`preview-password`), or `22222` to sign in directly without a password.
+3. Explore the Contest R1 chat folders (`All Chats`, `Personal`/`Work`, `Channels`/`NFT`/`Games`, `Groups`/`Crypto`, `Bots`, `Other`), switch folder icon styles from the main menu, or open the `Edit Folder` drawer to customize icons and create invite links.
+4. Open any conversation (`Jessica Flowers`, `Patrick Rose`, `Digital Nomads`, etc.), send messages, or open the Contest R2 Emoji, Stickers, and GIFs popup from the composer.
+5. Sign out, or reload to test session and message persistence across reloads.
 
-Other sample codes are `11111` for an invalid code, `33333` for an expired code, and `22222` for sign-in without a password.
+Other sample codes are `11111` for an invalid code and `33333` for an expired code.
 
 ## Validation
 

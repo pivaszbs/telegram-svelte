@@ -3,6 +3,7 @@
   import { auth, initializeAuth, isPreview } from '../services/auth';
   import logo from 'images/telegram-logo.svg';
   import CountryPicker from '../components/auth/CountryPicker.svelte';
+  import ChatWorkspace from '../components/chat/ChatWorkspace.svelte';
   import countries from '../stores/countries.json';
   import { renderQr } from '../services/auth/qr-code.mjs';
   let theme = $state('dark');
@@ -75,6 +76,16 @@
   }
 </script>
 
+{#if $auth.step === 'account'}
+  <ChatWorkspace
+    user={$auth.user}
+    {isPreview}
+    busy={$auth.busy}
+    {theme}
+    onToggleTheme={toggleTheme}
+    onLogout={() => auth.logout()}
+  />
+{:else}
 <main class="auth-shell" class:light={theme === 'light'}>
   <button class="theme-toggle" aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'} onclick={toggleTheme}>
     {#if theme === 'dark'}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>{:else}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M20 15.5A9 9 0 0 1 8.5 4 9 9 0 1 0 20 15.5Z"/></svg>{/if}
@@ -153,9 +164,10 @@
     {#if $auth.error}<p class="error" role="alert">{$auth.error}</p>{/if}
   </section>
 </main>
+{/if}
 
 <style>
-  .auth-shell { --bg: #212121; --text: #fff; --muted: #aaa; --accent: #8774e1; --border: #545454; --hover: #2c2c2c; --error: #ff8d8d; height: 100dvh; min-height: 100dvh; background: var(--bg); color: var(--text); padding: 108px 24px 32px; box-sizing: border-box; overflow: auto; color-scheme: dark; }
+  .auth-shell { --bg: #212121; --text: #fff; --muted: #aaa; --accent: #8774e1; --border: #545454; --hover: #2c2c2c; --error: #ff8d8d; height: 100dvh; min-height: 100dvh; background: var(--bg); color: var(--text); padding: 108px 24px 32px; box-sizing: border-box; overflow-x: hidden; overflow-y: auto; color-scheme: dark; }
   .auth-shell :global(*) { font-family: Roboto, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
   .auth-shell.light { --bg: #fff; --text: #000; --muted: #707579; --accent: #3390ec; --border: #dadce0; --hover: #f4f4f5; --error: #c53939; color-scheme: light; }
   .auth-shell:has(.qr-card) { padding-top: 64px; }

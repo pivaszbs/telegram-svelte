@@ -2,17 +2,19 @@
   "name": "svelte-app",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "license": "MIT",
   "engines": {
     "node": ">=22.15.0"
   },
   "scripts": {
-    "start": "webpack serve --mode development",
-    "dev": "webpack serve --mode development",
-    "build": "webpack --mode production",
+    "start": "vite dev --host 127.0.0.1 --port 5173",
+    "dev": "vite dev --host 127.0.0.1 --port 5173",
+    "build": "vite build",
     "test:e2e": "playwright test",
-    "check": "svelte-check --no-tsconfig",
-    "dev:ui": "webpack serve --config tests/webpack.config.cjs --mode development",
+    "check": "svelte-kit sync && svelte-check --no-tsconfig",
+    "dev:ui": "UI_PREVIEW=1 vite dev --host 127.0.0.1 --port 5174",
+    "dev:setup": "UI_SETUP_TEST=1 vite dev --host 127.0.0.1 --port 5175",
     "test": "node --test tests/unit/*.test.mjs"
   },
   "dependencies": {
@@ -32,6 +34,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
+    "@sveltejs/kit": "^3.1.0",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "css-loader": "^7.1.2",
     "dotenv": "^17.4.2",
     "html-webpack-plugin": "^5.6.4",
@@ -43,6 +47,7 @@
     "svelte-loader": "^3.2.4",
     "svelte-preprocess": "^6.0.5",
     "typescript": "^6.0.3",
+    "vite": "^8.3.5",
     "webpack": "^5.112.2",
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^6.1.0"
