@@ -121,9 +121,18 @@
         <button
           type="button"
           role="menuitem"
-          onclick={() => { onToggleTheme(); menuOpen = false; }}
+          class:selected={theme === 'light'}
+          onclick={() => { onToggleTheme('light'); menuOpen = false; }}
         >
-          {theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
+          Switch to Light Theme
+        </button>
+        <button
+          type="button"
+          role="menuitem"
+          class:selected={theme === 'dark'}
+          onclick={() => { onToggleTheme('dark'); menuOpen = false; }}
+        >
+          Switch to Dark Theme
         </button>
         <button
           type="button"
@@ -222,11 +231,13 @@
 
 <style>
   .folder-rail {
-    width: 72px;
-    flex: 0 0 72px;
-    background: #141d26;
-    border-right: 1px solid rgba(255, 255, 255, 0.06);
-    color: #8a98a6;
+    width: 68px;
+    flex: 0 0 68px;
+    margin: 12px 0 12px 12px;
+    border-radius: 26px;
+    background: var(--rail-bg, rgba(116, 136, 98, 0.76));
+    backdrop-filter: blur(18px);
+    color: rgba(255, 255, 255, 0.72);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -246,13 +257,13 @@
     border-radius: 50%;
     border: 0;
     background: transparent;
-    color: #9e9ea3;
+    color: rgba(255, 255, 255, 0.85);
     display: grid;
     place-items: center;
     cursor: pointer;
   }
   .rail-menu-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.12);
     color: #fff;
   }
   .main-menu {
@@ -334,7 +345,7 @@
     width: 100%;
     border: 0;
     background: transparent;
-    color: #8e8e93;
+    color: rgba(255, 255, 255, 0.7);
     padding: 8px 4px;
     display: flex;
     flex-direction: column;
@@ -344,11 +355,11 @@
     transition: color 0.15s ease, background-color 0.15s ease;
   }
   .folder-tab:hover {
-    color: #d1d1d6;
-    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.92);
+    background: rgba(255, 255, 255, 0.06);
   }
   .folder-tab.active {
-    color: #2ea6ff;
+    color: #ffffff;
   }
   .folder-icon-wrap {
     position: relative;
@@ -389,13 +400,13 @@
     height: 19px;
     padding: 0 5px;
     border-radius: 999px;
-    background: #2ea6ff;
-    color: #fff;
+    background: #e2ecd8;
+    color: #5b6e52;
     font-size: 11px;
     font-weight: 700;
     display: grid;
     place-items: center;
-    border: 2px solid #141d26;
+    border: 2px solid #889a78;
     box-sizing: border-box;
   }
   .folder-label {
@@ -412,8 +423,8 @@
     height: 40px;
     border-radius: 50%;
     border: 0;
-    background: rgba(255, 255, 255, 0.06);
-    color: #9e9ea3;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.8);
     display: grid;
     place-items: center;
     cursor: pointer;
@@ -421,6 +432,6 @@
   }
   .edit-folders-btn:hover {
     color: #fff;
-    background: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.12);
   }
 </style>

@@ -123,30 +123,14 @@ function getInitials(title) {
 
 function inferFolderIcon(title, emoticon) {
   const lower = String(title || '').toLowerCase();
-  if (emoticon === '🐱' || emoticon === '🐻' || emoticon === '🐶' || /друз|friend|animal|cat|pet/.test(lower)) {
-    return { icon: 'animals', customEmoji: emoticon || '🐱' };
-  }
-  if (emoticon === '❤️' || emoticon === '❤' || /health|здоров|heart|love/.test(lower)) {
-    return { icon: 'heart', customEmoji: emoticon || '❤️' };
-  }
-  if (emoticon === '💡' || /развит|study|learn|idea|book|курс/.test(lower)) {
-    return { icon: 'lamp', customEmoji: emoticon || '💡' };
-  }
-  if (emoticon === '👤' || /personal|contact|private|личн/.test(lower)) {
-    return { icon: 'user', customEmoji: emoticon || '👤' };
-  }
-  if (emoticon === '📢' || /channel|news|media|канал/.test(lower)) {
-    return { icon: 'channel', customEmoji: emoticon || '📢' };
-  }
-  if (emoticon === '👥' || /group|chat|community|групп/.test(lower)) {
-    return { icon: 'group', customEmoji: emoticon || '👥' };
-  }
-  if (emoticon === '🤖' || /bot|бот/.test(lower)) {
-    return { icon: 'bot', customEmoji: emoticon || '🤖' };
-  }
-  if (emoticon === '⭐' || /star|fav|избран/.test(lower)) {
-    return { icon: 'star', customEmoji: emoticon || '⭐' };
-  }
+  if (emoticon === '👤') return { icon: 'user', customEmoji: '👤' };
+  if (emoticon === '📢') return { icon: 'channel', customEmoji: '📢' };
+  if (emoticon === '👥') return { icon: 'group', customEmoji: '👥' };
+  if (emoticon === '🤖') return { icon: 'bot', customEmoji: '🤖' };
+  if (emoticon === '⭐') return { icon: 'star', customEmoji: '⭐' };
+  if (/друз|friend/.test(lower)) return { icon: 'folder', customEmoji: emoticon || '🐻' };
+  if (/health|здоров/.test(lower)) return { icon: 'folder', customEmoji: emoticon || '❤️' };
+  if (/развит|study|learn/.test(lower)) return { icon: 'folder', customEmoji: emoticon || '💡' };
   return { icon: 'folder', customEmoji: emoticon && emoticon !== '📁' ? emoticon : '' };
 }
 
@@ -193,6 +177,7 @@ export async function createTransport(config) {
         ? ''
         : (msg?.text || (mediaType && mediaType !== 'photo' ? `[${mediaType}]` : '')),
       time: formatTime(msg?.date || new Date()),
+      views: msg?.views || 0,
       out: Boolean(msg?.isOutgoing ?? true),
       read: true,
       media,
@@ -209,9 +194,10 @@ export async function createTransport(config) {
     const title = isSelf
       ? 'Saved Messages'
       : (peer.displayName || peer.title || peer.username || 'Telegram Chat');
+    const isTelegram = id === '777000' || title === 'Telegram';
     const colorIndex = Math.abs(Number(peer.id) || 0) % AVATAR_GRADIENTS.length;
-    const avatarBg = isSelf
-      ? 'linear-gradient(135deg, #42a5f5, #1e88e5)'
+    const avatarBg = isSelf || isTelegram
+      ? '#3390ec'
       : AVATAR_GRADIENTS[colorIndex];
 
     let online = false;
@@ -240,9 +226,11 @@ export async function createTransport(config) {
     const read = out
       ? (last?.id ? last.id <= dialog.lastReadOutgoing : true)
       : dialog.unreadCount === 0;
-    const fromName = !out && peer.type === 'chat' && peer.isGroup && last?.sender?.displayName
-      ? last.sender.displayName.split(' ')[0]
-      : '';
+    const fromName = out && peer.type === 'chat' && peer.isGroup
+      ? 'You'
+      : (!out && peer.type === 'chat' && peer.isGroup && last?.sender?.displayName
+          ? last.sender.displayName.split(' ')[0]
+          : '');
     const mediaType = last?.media?.type || '';
     const mediaPreview = mediaType === 'photo'
       ? { type: 'photo', gradient: 'linear-gradient(135deg, #90caf9, #f48fb1)' }
@@ -256,7 +244,7 @@ export async function createTransport(config) {
       else if (mediaType === 'photo') previewText = 'Photo';
       else if (mediaType === 'video') previewText = 'Video';
       else if (mediaType === 'voice') previewText = 'Voice message';
-      else if (mediaType === 'document') previewText = 'Document';
+      else if (mediaType === 'document') previewText = last?.media?.fileName || 'Document';
       else if (mediaType) previewText = mediaType;
       else previewText = 'No messages yet';
     }
@@ -266,8 +254,11 @@ export async function createTransport(config) {
       title,
       online,
       saved: isSelf,
+      isTelegram,
       pinned: Boolean(dialog.isPinned),
-      verified: Boolean(peer.isVerified),
+      verified: Boolean(peer.isVerified) || isTelegram,
+      forwarded: Boolean(last?.forward),
+      docPreview: mediaType === 'document',
       username: peer.username || '',
       phone: peer.phone || '',
       bio: '',
@@ -285,6 +276,7 @@ export async function createTransport(config) {
         bg: avatarBg,
         initials: getInitials(title),
         badge: isBot ? 'bot' : null,
+        photoUrl: '',
       },
     };
     chatMap.set(id, mapped);
@@ -311,6 +303,24 @@ export async function createTransport(config) {
         rawDialogs.push(d);
       }
       const chats = rawDialogs.map(mapDialog);
+
+      // Download profile photos for the top 15 dialogs that have photos (with a fast timeout)
+      await Promise.all(
+        rawDialogs.slice(0, 15).map(async (d, idx) => {
+          if (!d.peer?.photo || chats[idx]?.saved || chats[idx]?.isTelegram) return;
+          try {
+            const bytes = await Promise.race([
+              api.downloadPeerPhoto(d.peer.inputPeer || d.peer.id),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1500)),
+            ]);
+            if (bytes && bytes.length > 0 && typeof URL !== 'undefined') {
+              const photoUrl = URL.createObjectURL(new Blob([bytes], { type: 'image/jpeg' }));
+              chats[idx].avatar.photoUrl = photoUrl;
+              chatMap.set(chats[idx].id, chats[idx]);
+            }
+          } catch {}
+        })
+      );
 
       let archivedSummary = null;
       try {
@@ -412,7 +422,29 @@ export async function createTransport(config) {
       const peer = peerMap.get(id) ?? Number(id);
       const history = await api.getHistory(peer, { limit: 40 });
       api.readHistory(peer).catch(() => {});
-      const messages = [...history].reverse().map(msg => mapMessage(msg));
+      const rawReversed = [...history].reverse();
+      const messages = rawReversed.map(msg => mapMessage(msg));
+
+      // Download photo media for messages in parallel
+      await Promise.all(
+        rawReversed.map(async (rawMsg, idx) => {
+          if (rawMsg?.media?.type !== 'photo') return;
+          try {
+            const bytes = await Promise.race([
+              api.downloadAsBuffer(rawMsg.media),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500)),
+            ]);
+            if (bytes && bytes.length > 0 && typeof URL !== 'undefined') {
+              const photoUrl = URL.createObjectURL(new Blob([bytes], { type: 'image/jpeg' }));
+              messages[idx].media = {
+                ...messages[idx].media,
+                photoUrl,
+              };
+            }
+          } catch {}
+        })
+      );
+
       const current = chatMap.get(id);
       const updatedChat = current ? { ...current, unreadCount: 0, read: true } : { id, title: 'Chat', unreadCount: 0 };
       chatMap.set(id, updatedChat);

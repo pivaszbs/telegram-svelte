@@ -399,6 +399,7 @@ export async function handleFakeTelegramRpc(action, payload = {}, instanceId = '
         user: state.user,
         folders: chatState.folders,
         chats: chatState.chats,
+        archivedSummary: { count: 120, preview: 'Digital Trends, Design Systems, Tech News' },
         messages: chatState.messages,
         stickerPacks: chatState.stickerPacks,
         gifs: chatState.gifs,

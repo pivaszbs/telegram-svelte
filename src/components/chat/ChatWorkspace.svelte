@@ -38,7 +38,9 @@
   let rightSidebarOpen = $state(false);
   let sharedMediaTab = $state('media');
   let notificationsEnabled = $state(true);
+  let notifBannerDismissed = $state(false);
   let archivedSummary = $state(null);
+  let chatTheme = $state('light');
   let sending = $state(false);
   let messageInputEl = $state();
   let messagesContainerEl = $state();
@@ -200,14 +202,14 @@
   }
 </script>
 
-<div class="workspace-shell" class:dark={theme === 'dark'} class:chat-open={Boolean(activeChatId)}>
+<div class="workspace-shell" class:dark={chatTheme === 'dark'} class:chat-open={Boolean(activeChatId)}>
   <FolderRail
     {folders}
     {activeFolderId}
     {iconStyle}
     {chats}
     {user}
-    {theme}
+    theme={chatTheme}
     onSelectFolder={id => {
       activeFolderId = id;
       editingFolderId = '';
@@ -218,7 +220,10 @@
     onChangeIconStyle={style => {
       iconStyle = style;
     }}
-    {onToggleTheme}
+    onToggleTheme={nextTheme => {
+      chatTheme = typeof nextTheme === 'string' ? nextTheme : chatTheme === 'dark' ? 'light' : 'dark';
+      onToggleTheme();
+    }}
     {onLogout}
   />
 
@@ -241,8 +246,29 @@
             placeholder="Search"
             bind:value={searchQuery}
           />
+          <div class="stories-Overlap" aria-hidden="true">
+            <span class="story-ring tg-story"><TgIcon name="logo" size={16} /></span>
+            <span class="story-ring user-story">{user?.displayName?.[0] || 'A'}</span>
+          </div>
         </div>
       </div>
+
+      {#if !notifBannerDismissed}
+        <div class="notif-banner" role="region" aria-label="Notification prompt">
+          <div class="notif-banner-body">
+            <div class="notif-banner-title">Never miss a message! 🔔</div>
+            <div class="notif-banner-sub">Enable notifications to stay updated.</div>
+          </div>
+          <button
+            type="button"
+            class="notif-banner-close"
+            aria-label="Dismiss notification prompt"
+            onclick={() => (notifBannerDismissed = true)}
+          >
+            <TgIcon name="close" size={18} />
+          </button>
+        </div>
+      {/if}
 
       <div class="dialog-list" role="list" aria-label="Chat list">
         {#if loading}
@@ -255,8 +281,10 @@
           {#if activeFolderId === 'all' && !searchQuery.trim() && archivedSummary}
             <div class="dialog-row archived-row" aria-label="Archived chats">
               <div class="avatar-cell">
-                <div class="chat-avatar archived-avatar">
-                  <TgIcon name="archive_filled" size={26} />
+                <div class="archived-ring">
+                  <div class="chat-avatar archived-avatar">
+                    <TgIcon name="archive_filled" size={24} />
+                  </div>
                 </div>
               </div>
               <div class="dialog-body">
@@ -284,8 +312,12 @@
             >
               <div class="avatar-cell">
                 <div class="chat-avatar" style={`background: ${chat.avatar?.bg || '#3390ec'}`}>
-                  {#if chat.saved}
+                  {#if chat.avatar?.photoUrl}
+                    <img class="avatar-img" src={chat.avatar.photoUrl} alt="" />
+                  {:else if chat.saved}
                     <TgIcon name="savedmessages" size={28} />
+                  {:else if chat.isTelegram}
+                    <TgIcon name="logo" size={28} />
                   {:else if chat.avatar?.badge === 'gamepad'}
                     <span class="avatar-emoji">🎮</span>
                   {:else if chat.avatar?.badge === 'doge'}
@@ -307,19 +339,19 @@
                     <span class="dialog-title">{chat.title}</span>
                     {#if chat.verified}
                       <span class="verified-icon" title="Verified">
-                        <TgIcon name="checkround_filled" size={15} />
+                        <TgIcon name="menu_verification" size={16} />
                       </span>
                     {/if}
                     {#if chat.muted}
                       <span class="muted-icon" title="Muted">
-                        <TgIcon name="speakeroff_filled" size={14} />
+                        <TgIcon name="mute" size={15} />
                       </span>
                     {/if}
                   </span>
                   <span class="dialog-meta">
                     {#if chat.out}
                       <span class="read-ticks" aria-label="Read">
-                        <TgIcon name="checks" size={18} />
+                        <TgIcon name="checks" size={17} />
                       </span>
                     {/if}
                     <span class="dialog-time">{chat.time}</span>
@@ -328,6 +360,11 @@
 
                 <div class="dialog-bottom">
                   <span class="dialog-preview">
+                    {#if chat.forwarded}
+                      <span class="preview-icon"><TgIcon name="forward_filled" size={15} /></span>
+                    {:else if chat.docPreview}
+                      <span class="preview-icon"><TgIcon name="document" size={15} /></span>
+                    {/if}
                     {#if chat.fromName}
                       <strong class="sender-prefix">{chat.fromName}:</strong>
                     {/if}
@@ -343,7 +380,7 @@
                     </span>
                   {:else if chat.pinned}
                     <span class="pinned-icon" title="Pinned">
-                      <TgIcon name="pin" size={16} />
+                      <TgIcon name="pinnedchat" size={17} />
                     </span>
                   {/if}
                 </div>
@@ -385,8 +422,12 @@
           onkeydown={e => { if (e.key === 'Enter' || e.key === ' ') rightSidebarOpen = !rightSidebarOpen; }}
         >
           <div class="header-avatar" style={`background: ${activeChat.avatar?.bg || '#3390ec'}`}>
-            {#if activeChat.saved}
+            {#if activeChat.avatar?.photoUrl}
+              <img class="avatar-img" src={activeChat.avatar.photoUrl} alt="" />
+            {:else if activeChat.saved}
               <TgIcon name="savedmessages" size={22} />
+            {:else if activeChat.isTelegram}
+              <TgIcon name="logo" size={22} />
             {:else}
               {activeChat.avatar?.initials || activeChat.title[0]}
             {/if}
@@ -395,24 +436,30 @@
             <h2 class="header-title">
               <span>{activeChat.title}</span>
               {#if activeChat.verified}
-                <span class="verified-icon"><TgIcon name="checkround_filled" size={15} /></span>
+                <span class="verified-icon"><TgIcon name="menu_verification" size={15} /></span>
               {/if}
             </h2>
             <div class="header-status" class:online={activeChat.online}>{activeChat.status}</div>
           </div>
         </div>
 
-        {#if activeChat.pinnedMessage}
-          <div class="header-pinned-banner">
-            <div class="pinned-bar-accent"></div>
-            <div class="pinned-bar-content">
-              <div class="pinned-bar-label">Pinned message</div>
-              <div class="pinned-bar-text">{activeChat.pinnedMessage.text}</div>
-            </div>
-          </div>
-        {/if}
-
         <div class="header-actions">
+          <button
+            type="button"
+            class="header-icon-btn"
+            aria-label="Discussions"
+            title="Discussions"
+          >
+            <TgIcon name="comments" size={21} />
+          </button>
+          <button
+            type="button"
+            class="header-icon-btn"
+            aria-label="Search in chat"
+            title="Search in chat"
+          >
+            <TgIcon name="search" size={21} />
+          </button>
           <button
             type="button"
             class="header-icon-btn"
@@ -420,7 +467,7 @@
             title="Chat Info"
             onclick={() => (rightSidebarOpen = !rightSidebarOpen)}
           >
-            <TgIcon name="rightpanel" size={22} />
+            <TgIcon name="more" size={21} />
           </button>
           <button
             type="button"
@@ -435,8 +482,9 @@
 
       <div class="messages-viewport" bind:this={messagesContainerEl} aria-label="Message history">
         <div class="messages-inner">
+          <div class="date-divider"><span>October 24</span></div>
           {#each activeMessages as msg (msg.id)}
-            <article class="message-bubble" class:outgoing={msg.out}>
+            <article class="message-bubble" class:outgoing={msg.out} class:has-photo={Boolean(msg.media?.photoUrl)}>
               {#if !msg.out && activeChat.status.includes('members')}
                 <div class="message-sender">{msg.sender}</div>
               {/if}
@@ -451,21 +499,32 @@
                   <span class="gif-label">{msg.media.title}</span>
                 </div>
               {:else if msg.media?.type === 'photo'}
-                <div class="message-photo">
-                  <span class="photo-big">{msg.media.emoji || '🖼️'}</span>
-                  <span class="photo-title">{msg.media.title}</span>
-                </div>
-              {/if}
-              {#if msg.text}
-                <div class="message-text">{msg.text}</div>
-              {/if}
-              <div class="message-meta">
-                <span class="message-time">{msg.time}</span>
-                {#if msg.out}
-                  <span class="message-check" aria-label="Read">
-                    <TgIcon name="checks" size={16} />
-                  </span>
+                {#if msg.media.photoUrl}
+                  <div class="message-photo-bleed">
+                    <img class="message-photo-img" src={msg.media.photoUrl} alt={msg.text || msg.media.title || 'Photo'} />
+                  </div>
+                {:else}
+                  <div class="message-photo">
+                    <span class="photo-big">{msg.media.emoji || '🖼️'}</span>
+                    <span class="photo-title">{msg.media.title}</span>
+                  </div>
                 {/if}
+              {/if}
+              <div class="message-caption-row">
+                {#if msg.text}
+                  <div class="message-text">{msg.text}</div>
+                {/if}
+                <div class="message-meta">
+                  {#if msg.views}
+                    <span class="message-views">{msg.views} <TgIcon name="channelviews" size={14} /></span>
+                  {/if}
+                  <span class="message-time">{msg.time}</span>
+                  {#if msg.out}
+                    <span class="message-check" aria-label="Read">
+                      <TgIcon name="checks" size={16} />
+                    </span>
+                  {/if}
+                </div>
               </div>
             </article>
           {/each}
@@ -535,16 +594,16 @@
         <div class="composer-pill">
           <button
             type="button"
-            class="composer-emoji-btn"
-            class:active={mediaPanelOpen}
-            aria-label="Open emoji, stickers and GIFs"
-            aria-expanded={mediaPanelOpen}
+            class="composer-attach-btn"
+            class:active={attachMenuOpen}
+            aria-label="Attach media"
+            aria-expanded={attachMenuOpen}
             onclick={() => {
-              mediaPanelOpen = !mediaPanelOpen;
-              attachMenuOpen = false;
+              attachMenuOpen = !attachMenuOpen;
+              mediaPanelOpen = false;
             }}
           >
-            <TgIcon name="smile" size={24} />
+            <TgIcon name="attach" size={23} />
           </button>
 
           <textarea
@@ -559,27 +618,31 @@
 
           <button
             type="button"
-            class="composer-attach-btn"
-            class:active={attachMenuOpen}
-            aria-label="Attach media"
-            aria-expanded={attachMenuOpen}
+            class="composer-emoji-btn"
+            class:active={mediaPanelOpen}
+            aria-label="Open emoji, stickers and GIFs"
+            aria-expanded={mediaPanelOpen}
             onclick={() => {
-              attachMenuOpen = !attachMenuOpen;
-              mediaPanelOpen = false;
+              mediaPanelOpen = !mediaPanelOpen;
+              attachMenuOpen = false;
             }}
           >
-            <TgIcon name="attach" size={23} />
+            <TgIcon name="smile" size={24} />
+          </button>
+
+          <button
+            type="submit"
+            class="composer-send-btn"
+            aria-label="Send message"
+            disabled={!currentDraft.trim() || sending}
+          >
+            {#if currentDraft.trim()}
+              <TgIcon name="send2" size={20} />
+            {:else}
+              <TgIcon name="microphone_filled" size={20} />
+            {/if}
           </button>
         </div>
-
-        <button
-          type="submit"
-          class="composer-send-btn"
-          aria-label="Send message"
-          disabled={!currentDraft.trim() || sending}
-        >
-          <TgIcon name="send2" size={22} />
-        </button>
       </form>
     {:else}
       <div class="empty-conversation-card">
@@ -715,14 +778,33 @@
     --panel-hover: #f4f4f5;
     --panel-border: #e6ebee;
     --active-row-bg: #3390ec;
+    --rail-bg: rgba(116, 136, 98, 0.78);
     display: flex;
+    position: relative;
+    gap: 10px;
     width: 100%;
     height: 100dvh;
     min-height: 100dvh;
     overflow: hidden;
-    background: var(--panel-bg);
+    background-color: #a8c595;
+    background-image:
+      radial-gradient(circle at 18% 18%, #d7df9f 0%, transparent 55%),
+      radial-gradient(circle at 82% 20%, #8ebc8b 0%, transparent 55%),
+      radial-gradient(circle at 75% 82%, #d2dc9b 0%, transparent 55%),
+      linear-gradient(135deg, #c7da9e 0%, #83b286 50%, #a9ca93 100%);
     color: var(--panel-text);
     font-family: Roboto, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  .workspace-shell::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('/images/pattern.svg');
+    background-size: 420px auto;
+    background-repeat: repeat;
+    opacity: 0.11;
+    pointer-events: none;
+    z-index: 0;
   }
   .workspace-shell.dark {
     --panel-bg: #17212b;
@@ -731,27 +813,37 @@
     --panel-hover: #202b36;
     --panel-border: #101921;
     --active-row-bg: #2b5278;
+    --rail-bg: rgba(20, 29, 38, 0.85);
+    background-color: #0e1621;
+    background-image: linear-gradient(135deg, #0e1621 0%, #172331 50%, #0f1824 100%);
+  }
+  .workspace-shell.dark::before {
+    filter: invert(1);
+    opacity: 0.06;
   }
   .sidebar-column {
     position: relative;
-    width: clamp(300px, 32vw, 380px);
-    flex: 0 0 clamp(300px, 32vw, 380px);
-    height: 100%;
+    width: clamp(310px, 32vw, 390px);
+    flex: 0 0 clamp(310px, 32vw, 390px);
+    height: calc(100dvh - 24px);
+    margin: 12px 0;
+    border-radius: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     display: flex;
     flex-direction: column;
     background: var(--panel-bg);
-    border-right: 1px solid var(--panel-border);
+    overflow: hidden;
     z-index: 10;
   }
   .search-header {
-    padding: 10px 14px 8px;
+    padding: 12px 12px 8px;
   }
   .search-pill {
     display: flex;
     align-items: center;
     gap: 10px;
-    height: 40px;
-    padding: 0 14px;
+    height: 42px;
+    padding: 0 6px 0 14px;
     border-radius: 22px;
     background: var(--panel-hover);
     color: var(--panel-muted);
@@ -766,10 +858,65 @@
     color: var(--panel-text);
     outline: none;
   }
+  .stories-Overlap {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .story-ring {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    border: 2px solid #34c759;
+    box-sizing: border-box;
+  }
+  .story-ring.tg-story {
+    background: #111;
+    z-index: 2;
+  }
+  .story-ring.user-story {
+    background: #3390ec;
+    border-color: #3390ec;
+    margin-left: -10px;
+    z-index: 1;
+  }
+  .notif-banner {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0 10px 6px;
+    padding: 10px 14px;
+    border-radius: 14px;
+    background: var(--panel-hover);
+  }
+  .notif-banner-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--panel-text);
+  }
+  .notif-banner-sub {
+    font-size: 13px;
+    color: var(--panel-muted);
+    margin-top: 2px;
+  }
+  .notif-banner-close {
+    border: 0;
+    background: transparent;
+    color: var(--panel-muted);
+    padding: 2px;
+    cursor: pointer;
+    border-radius: 50%;
+  }
   .dialog-list {
     flex: 1;
     overflow-y: auto;
-    padding: 4px 8px 80px;
+    padding: 2px 8px 80px;
   }
   .list-status {
     text-align: center;
@@ -786,7 +933,7 @@
     align-items: center;
     gap: 12px;
     padding: 9px 10px;
-    border-radius: 12px;
+    border-radius: 16px;
     cursor: pointer;
     text-align: left;
   }
@@ -803,19 +950,36 @@
   .dialog-row.active .read-ticks,
   .dialog-row.active .muted-icon,
   .dialog-row.active .pinned-icon,
-  .dialog-row.active .verified-icon {
-    color: rgba(255, 255, 255, 0.9);
+  .dialog-row.active .verified-icon,
+  .dialog-row.active .preview-icon {
+    color: rgba(255, 255, 255, 0.92);
   }
   .read-ticks {
-    color: #4dcd5e;
+    color: #3390ec;
     display: inline-flex;
     align-items: center;
   }
-  .workspace-shell.dark .read-ticks {
-    color: #2ea6ff;
+  .archived-ring {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    padding: 2px;
+    box-sizing: border-box;
+    border: 2px solid #2ab69d;
+    display: grid;
+    place-items: center;
   }
   .archived-avatar {
-    background: #2ea6ff;
+    width: 46px !important;
+    height: 46px !important;
+    background: #3390ec;
+  }
+  .avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
   }
   .dialog-title-group {
     display: flex;
@@ -825,13 +989,14 @@
     overflow: hidden;
   }
   .verified-icon {
-    color: #2ea6ff;
+    color: #3390ec;
     display: inline-flex;
     flex-shrink: 0;
   }
   .muted-icon,
-  .pinned-icon {
-    color: var(--panel-muted);
+  .pinned-icon,
+  .preview-icon {
+    color: #9aa3ab;
     display: inline-flex;
     flex-shrink: 0;
   }
@@ -959,25 +1124,22 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    background:
-      linear-gradient(135deg, rgba(199, 220, 167, 0.45), rgba(153, 190, 142, 0.45)),
-      url('/images/chat-bg.jpg') center / cover no-repeat;
+    background: transparent;
     position: relative;
-  }
-  .workspace-shell.dark .conversation-column {
-    background:
-      linear-gradient(135deg, rgba(14, 22, 33, 0.84), rgba(20, 32, 46, 0.84)),
-      url('/images/chat-bg.jpg') center / cover no-repeat;
   }
   .chat-header {
     display: flex;
     align-items: center;
-    gap: 14px;
-    height: 60px;
-    padding: 0 18px;
+    gap: 12px;
+    width: min(calc(100% - 24px), 780px);
+    height: 54px;
+    margin: 12px auto 0;
+    padding: 0 14px 0 8px;
+    border-radius: 28px;
     background: var(--panel-bg);
-    border-bottom: 1px solid var(--panel-border);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
     flex-shrink: 0;
+    box-sizing: border-box;
   }
   .back-to-list-btn {
     display: none;
@@ -995,7 +1157,7 @@
     min-width: 0;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     border: 0;
     background: transparent;
     color: inherit;
@@ -1012,6 +1174,7 @@
     font-weight: 600;
     display: grid;
     place-items: center;
+    overflow: hidden;
   }
   .header-info {
     flex: 1;
@@ -1019,61 +1182,27 @@
   }
   .header-title {
     margin: 0;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     display: flex;
     align-items: center;
     gap: 5px;
   }
   .header-status {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--panel-muted);
   }
   .header-status.online {
     color: #3390ec;
   }
-  .header-pinned-banner {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    max-width: 280px;
-    padding: 4px 10px;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  .header-pinned-banner:hover {
-    background: var(--panel-hover);
-  }
-  .pinned-bar-accent {
-    width: 2.5px;
-    height: 30px;
-    border-radius: 2px;
-    background: #3390ec;
-    flex-shrink: 0;
-  }
-  .pinned-bar-content {
-    min-width: 0;
-  }
-  .pinned-bar-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: #3390ec;
-  }
-  .pinned-bar-text {
-    font-size: 13px;
-    color: var(--panel-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
   .header-actions {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
   }
   .header-icon-btn {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     border: 0;
     background: transparent;
@@ -1090,15 +1219,15 @@
     border: 1px solid var(--panel-border);
     background: transparent;
     color: var(--panel-text);
-    padding: 6px 12px;
-    border-radius: 10px;
-    font-size: 13px;
+    padding: 5px 10px;
+    border-radius: 14px;
+    font-size: 12px;
     cursor: pointer;
   }
   .messages-viewport {
     flex: 1;
     overflow-y: auto;
-    padding: 18px 20px;
+    padding: 12px 20px;
   }
   .messages-inner {
     width: min(100%, 720px);
@@ -1109,14 +1238,34 @@
     justify-content: flex-end;
     gap: 8px;
   }
+  .date-divider {
+    align-self: center;
+    margin: 6px 0;
+  }
+  .date-divider span {
+    display: inline-block;
+    background: rgba(74, 114, 68, 0.45);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 999px;
+  }
   .message-bubble {
     align-self: flex-start;
-    max-width: min(78%, 480px);
+    max-width: min(78%, 460px);
     background: #ffffff;
     color: #111111;
     border-radius: 16px 16px 16px 4px;
     padding: 8px 12px 6px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+  .message-bubble.has-photo {
+    padding: 0;
+  }
+  .message-bubble.has-photo .message-caption-row {
+    padding: 8px 12px 6px;
   }
   .workspace-shell.dark .message-bubble {
     background: #182533;
@@ -1131,6 +1280,17 @@
   .workspace-shell.dark .message-bubble.outgoing {
     background: #2b5278;
     color: #ffffff;
+  }
+  .message-photo-bleed {
+    width: 100%;
+    max-height: 360px;
+    overflow: hidden;
+  }
+  .message-photo-img {
+    width: 100%;
+    max-height: 360px;
+    object-fit: cover;
+    display: block;
   }
   .message-sender {
     font-size: 13px;
@@ -1178,25 +1338,29 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 4px;
+    gap: 5px;
     font-size: 11px;
-    color: #688860;
+    color: #707579;
     margin-top: 2px;
+  }
+  .message-views {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
   }
   .workspace-shell.dark .message-meta {
     color: #7ea3c8;
   }
   .composer-bar {
     position: relative;
-    width: min(100% - 28px, 720px);
-    margin: 6px auto 14px;
+    width: min(calc(100% - 24px), 780px);
+    margin: 4px auto 12px;
     display: flex;
-    align-items: flex-end;
-    gap: 10px;
+    align-items: center;
   }
   .attach-popup {
     position: absolute;
-    right: 60px;
+    left: 8px;
     bottom: calc(100% + 10px);
     width: 210px;
     background: var(--panel-bg);
@@ -1226,11 +1390,13 @@
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    min-height: 50px;
     background: var(--panel-bg);
-    border-radius: 24px 24px 6px 24px;
-    padding: 6px 12px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+    border-radius: 26px;
+    padding: 5px 6px 5px 10px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    box-sizing: border-box;
   }
   .composer-emoji-btn,
   .composer-attach-btn {
@@ -1260,12 +1426,13 @@
     line-height: 1.4;
     resize: none;
     outline: none;
-    padding: 6px 0;
+    padding: 6px 4px;
     max-height: 120px;
   }
   .composer-send-btn {
-    width: 50px;
-    height: 50px;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
     border-radius: 50%;
     border: 0;
     background: #3390ec;
@@ -1273,18 +1440,19 @@
     display: grid;
     place-items: center;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(51, 144, 236, 0.35);
   }
   .composer-send-btn:disabled {
-    opacity: 0.55;
+    opacity: 0.85;
     cursor: default;
   }
   .right-info-sidebar {
     width: 340px;
     flex: 0 0 340px;
-    height: 100%;
+    height: calc(100dvh - 24px);
+    margin: 12px 12px 12px 0;
+    border-radius: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     background: var(--panel-bg);
-    border-left: 1px solid var(--panel-border);
     display: flex;
     flex-direction: column;
     overflow-y: auto;
@@ -1477,9 +1645,13 @@
     cursor: pointer;
   }
   @media (max-width: 760px) {
+    .workspace-shell {
+      gap: 6px;
+    }
     .sidebar-column {
       flex: 1;
       width: auto;
+      margin-right: 6px;
     }
     .conversation-column {
       display: none;
@@ -1489,6 +1661,14 @@
     }
     .workspace-shell.chat-open .conversation-column {
       display: flex;
+    }
+    .chat-header {
+      width: calc(100% - 10px);
+      gap: 6px;
+      padding: 0 8px 0 6px;
+    }
+    .header-actions .header-icon-btn:not(:last-of-type) {
+      display: none;
     }
     .back-to-list-btn {
       display: inline-grid;
