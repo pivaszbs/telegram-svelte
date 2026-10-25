@@ -16,21 +16,62 @@
   let container = $state();
   let anim = null;
   let currentClip = '';
-  let lastTrackFrame = 20;
+  let currentFrame = 0;
+  let targetFrame = 0;
+  let rafId = 0;
   let hadPeeked = false;
 
   function cloneData(data) {
     return JSON.parse(JSON.stringify(data));
   }
 
-  function mountClip(name, data, loop = false, autoplay = false) {
+  function stopStepper() {
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    }
+  }
+
+  function animateToFrame(nextTarget, speed = 2.5) {
+    targetFrame = nextTarget;
+    if (!anim) return;
+    if (Math.abs(currentFrame - targetFrame) < 0.5) {
+      currentFrame = targetFrame;
+      anim.goToAndStop(currentFrame, true);
+      stopStepper();
+      return;
+    }
+    if (rafId) return;
+    const tickFrame = () => {
+      if (!anim) {
+        rafId = 0;
+        return;
+      }
+      const diff = targetFrame - currentFrame;
+      if (Math.abs(diff) <= speed) {
+        currentFrame = targetFrame;
+        anim.goToAndStop(currentFrame, true);
+        rafId = 0;
+        return;
+      }
+      currentFrame += Math.sign(diff) * speed;
+      anim.goToAndStop(Math.round(currentFrame), true);
+      rafId = requestAnimationFrame(tickFrame);
+    };
+    rafId = requestAnimationFrame(tickFrame);
+  }
+
+  function mountClip(name, data, loop = false, autoplay = false, initialFrame = 0) {
     if (!container) return null;
     if (anim && currentClip === name) return anim;
+    stopStepper();
     if (anim) {
       anim.destroy();
       anim = null;
     }
     currentClip = name;
+    currentFrame = initialFrame;
+    targetFrame = initialFrame;
     anim = lottie.loadAnimation({
       container,
       renderer: 'svg',
@@ -38,11 +79,15 @@
       autoplay,
       animationData: cloneData(data),
     });
+    if (!autoplay) {
+      anim.goToAndStop(initialFrame, true);
+    }
     return anim;
   }
 
   onMount(() => {
     return () => {
+      stopStepper();
       if (anim) {
         anim.destroy();
         anim = null;
@@ -56,34 +101,26 @@
     if (step === 'code') {
       hadPeeked = false;
       if (codeLength > 0) {
-        const ratio = Math.min(1, codeLength / Math.max(1, maxCodeLength));
-        const targetFrame = Math.round(20 + ratio * 140);
+        const span = Math.max(5, maxCodeLength || 5);
+        const ratio = Math.min(1, codeLength / span);
+        const nextFrame = Math.round(20 + ratio * 130);
         const wasTracking = currentClip === 'tracking';
-        const instance = mountClip('tracking', monkeyTracking, false, false);
-        if (instance) {
-          const fromFrame = wasTracking ? lastTrackFrame : 0;
-          if (fromFrame === targetFrame) {
-            instance.goToAndStop(targetFrame, true);
-          } else {
-            instance.playSegments([fromFrame, targetFrame], true);
-          }
-          lastTrackFrame = targetFrame;
-        }
+        mountClip('tracking', monkeyTracking, false, false, wasTracking ? currentFrame : 15);
+        animateToFrame(nextFrame, 3.5);
       } else {
-        lastTrackFrame = 20;
-        mountClip('idle', monkeyIdle, true, true);
+        mountClip('idle', monkeyIdle, true, true, 0);
       }
     } else if (step === 'password') {
       if (showPassword) {
         hadPeeked = true;
-        const instance = mountClip('peek', monkeyPeek, false, false);
-        instance?.playSegments([0, 15], true);
+        mountClip('peek', monkeyPeek, false, false, 0);
+        animateToFrame(15, 2);
       } else if (hadPeeked) {
-        const instance = mountClip('peek', monkeyPeek, false, false);
-        instance?.playSegments([15, 32], true);
+        mountClip('peek', monkeyPeek, false, false, 15);
+        animateToFrame(32, 2);
       } else {
-        const instance = mountClip('close', monkeyClose, false, false);
-        instance?.playSegments([0, 50], true);
+        mountClip('close', monkeyClose, false, false, 0);
+        animateToFrame(50, 3);
       }
     }
   });
