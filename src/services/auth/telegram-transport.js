@@ -135,7 +135,7 @@ function inferFolderIcon(title, emoticon) {
 }
 
 export async function createTransport(config) {
-  const { TelegramClient, MemoryStorage, Dialog } = await import('@mtcute/web');
+  const { TelegramClient, MemoryStorage, Dialog, Thumbnail } = await import('@mtcute/web');
   const client = new TelegramClient({
     apiId: config.apiId, apiHash: config.apiHash,
     storage: new MemoryStorage(), updates: false,
@@ -165,15 +165,26 @@ export async function createTransport(config) {
 
   function extractStrippedThumbUrl(media) {
     try {
-      const stripThumb = media?.getThumbnail?.('i');
-      if (stripThumb?.location instanceof Uint8Array) {
-        return bytesToBlobUrl(stripThumb.location);
+      const sizes = media?.raw?.sizes || media?.raw?.thumbs || [];
+      const stripped = sizes.find(s => s?._ === 'photoStrippedSize');
+      if (stripped && media?.raw) {
+        const thumb = new Thumbnail(media.raw, stripped);
+        if (thumb.location instanceof Uint8Array) {
+          return bytesToBlobUrl(thumb.location);
+        }
       }
     } catch {}
     return '';
   }
 
-  function mapMessage(msg, overrideMedia = null) {
+  function formatDateLabel(date) {
+    if (!date) return '';
+    const d = date instanceof Date ? date : new Date(date);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+  }
+
+  function mapMessage(msg, overrideMedia = null, isChannel = false) {
     const mediaType = msg?.media?.type || '';
     let media = overrideMedia;
     if (!media) {
@@ -193,6 +204,13 @@ export async function createTransport(config) {
         };
       }
     }
+    const reactions = [];
+    for (const r of msg?.raw?.reactions?.results || []) {
+      const emoticon = r?.reaction?.emoticon;
+      if (emoticon) {
+        reactions.push({ emoji: emoticon, count: Number(r.count || 1) });
+      }
+    }
     return {
       id: String(msg?.id || Date.now()),
       sender: msg?.isOutgoing ? 'You' : (msg?.sender?.displayName || ''),
@@ -200,8 +218,10 @@ export async function createTransport(config) {
         ? ''
         : (msg?.text || (mediaType && mediaType !== 'photo' ? `[${mediaType}]` : '')),
       time: formatTime(msg?.date || new Date()),
+      dateLabel: formatDateLabel(msg?.date || new Date()),
       views: msg?.views || 0,
-      out: Boolean(msg?.isOutgoing ?? true),
+      reactions,
+      out: isChannel ? false : Boolean(msg?.isOutgoing ?? true),
       read: true,
       media,
     };
@@ -560,21 +580,18 @@ export async function createTransport(config) {
       ]);
 
       api.readHistory(peer).catch(() => {});
+      const isChannel = Boolean(rawPeer?.chatType === 'channel' || current?.status?.includes('subscriber'));
       const rawReversed = [...history].reverse();
-      const messages = rawReversed.map(msg => mapMessage(msg));
+      const messages = rawReversed.map(msg => mapMessage(msg, null, isChannel));
 
-      // Upgrade photo media for messages in parallel to crisp 800x800 / 320x320 JPEGs
+      // Download full-size photo media directly via rawMsg.media (FileLocation)
       await Promise.all(
         rawReversed.map(async (rawMsg, idx) => {
           if (rawMsg?.media?.type !== 'photo') return;
           try {
-            const targetLocation =
-              rawMsg.media.getThumbnail?.('x') ||
-              rawMsg.media.getThumbnail?.('m') ||
-              rawMsg.media;
             const bytes = await Promise.race([
-              api.downloadAsBuffer(targetLocation),
-              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3500)),
+              api.downloadAsBuffer(rawMsg.media),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
             ]);
             const photoUrl = bytesToBlobUrl(bytes);
             if (photoUrl) {

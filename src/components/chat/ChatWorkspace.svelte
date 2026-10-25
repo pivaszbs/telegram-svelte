@@ -536,64 +536,73 @@
           >
             <TgIcon name="more" size={21} />
           </button>
-          <button
-            type="button"
-            class="header-signout-btn"
-            onclick={onLogout}
-            disabled={busy}
-          >
-            Sign out
-          </button>
         </div>
       </header>
 
       <div class="messages-viewport" bind:this={messagesContainerEl} aria-label="Message history">
         <div class="messages-inner">
-          <div class="date-divider"><span>October 24</span></div>
-          {#each activeMessages as msg (msg.id)}
-            <article class="message-bubble" class:outgoing={msg.out} class:has-photo={Boolean(msg.media?.photoUrl)}>
-              {#if !msg.out && activeChat.status.includes('members')}
-                <div class="message-sender">{msg.sender}</div>
-              {/if}
-              {#if msg.media?.type === 'sticker'}
-                <div class="message-sticker" style={`background: ${msg.media.bg || '#fff8e1'}`}>
-                  <span class="sticker-big">{msg.media.emoji}</span>
-                  <span class="sticker-label">{msg.media.label}</span>
-                </div>
-              {:else if msg.media?.type === 'gif'}
-                <div class="message-gif" style={`background: ${msg.media.gradient}`}>
-                  <span class="gif-big">{msg.media.emoji}</span>
-                  <span class="gif-label">{msg.media.title}</span>
-                </div>
-              {:else if msg.media?.type === 'photo'}
-                {#if msg.media.photoUrl}
-                  <div class="message-photo-bleed">
-                    <img class="message-photo-img" src={msg.media.photoUrl} alt={msg.text || msg.media.title || 'Photo'} />
-                  </div>
-                {:else}
-                  <div class="message-photo">
-                    <span class="photo-big">{msg.media.emoji || '🖼️'}</span>
-                    <span class="photo-title">{msg.media.title}</span>
-                  </div>
+          {#each activeMessages as msg, idx (msg.id)}
+            {#if idx === 0 || (msg.dateLabel || 'October 24') !== (activeMessages[idx - 1]?.dateLabel || 'October 24')}
+              <div class="date-divider"><span>{msg.dateLabel || 'October 24'}</span></div>
+            {/if}
+            <div class="message-row" class:outgoing={msg.out}>
+              <article class="message-bubble" class:outgoing={msg.out} class:has-photo={Boolean(msg.media?.photoUrl)}>
+                {#if !msg.out && activeChat.status.includes('members')}
+                  <div class="message-sender">{msg.sender}</div>
                 {/if}
-              {/if}
-              <div class="message-caption-row">
-                {#if msg.text}
-                  <div class="message-text">{msg.text}</div>
-                {/if}
-                <div class="message-meta">
-                  {#if msg.views}
-                    <span class="message-views">{msg.views} <TgIcon name="channelviews" size={14} /></span>
+                {#if msg.media?.type === 'sticker'}
+                  <div class="message-sticker" style={`background: ${msg.media.bg || '#fff8e1'}`}>
+                    <span class="sticker-big">{msg.media.emoji}</span>
+                    <span class="sticker-label">{msg.media.label}</span>
+                  </div>
+                {:else if msg.media?.type === 'gif'}
+                  <div class="message-gif" style={`background: ${msg.media.gradient}`}>
+                    <span class="gif-big">{msg.media.emoji}</span>
+                    <span class="gif-label">{msg.media.title}</span>
+                  </div>
+                {:else if msg.media?.type === 'photo'}
+                  {#if msg.media.photoUrl}
+                    <div class="message-photo-bleed">
+                      <img class="message-photo-img" src={msg.media.photoUrl} alt={msg.text || msg.media.title || 'Photo'} />
+                    </div>
+                  {:else}
+                    <div class="message-photo">
+                      <span class="photo-big">{msg.media.emoji || '🖼️'}</span>
+                      <span class="photo-title">{msg.media.title}</span>
+                    </div>
                   {/if}
-                  <span class="message-time">{msg.time}</span>
-                  {#if msg.out}
-                    <span class="message-check" aria-label="Read">
-                      <TgIcon name="checks" size={16} />
+                {/if}
+                <div class="message-caption-row">
+                  {#if msg.text}
+                    <div class="message-text">{msg.text}</div>
+                  {/if}
+                  <div class="message-meta">
+                    {#if msg.views}
+                      <span class="message-views">{msg.views} <TgIcon name="channelviews_filled" size={14} /></span>
+                    {/if}
+                    <span class="message-time">{msg.time}</span>
+                    {#if msg.out}
+                      <span class="message-check" aria-label="Read">
+                        <TgIcon name="checks" size={16} />
+                      </span>
+                    {/if}
+                  </div>
+                </div>
+              </article>
+
+              {#if msg.reactions?.length || (!msg.out && activeChat.status?.includes('subscriber'))}
+                <div class="message-side-widgets" aria-hidden="true">
+                  {#each msg.reactions || [] as react}
+                    <span class="reaction-pill">{react.emoji}{react.count > 1 ? ` ${react.count}` : ''}</span>
+                  {/each}
+                  {#if activeChat.status?.includes('subscriber')}
+                    <span class="share-circle-btn">
+                      <TgIcon name="forward_filled" size={16} />
                     </span>
                   {/if}
                 </div>
-              </div>
-            </article>
+              {/if}
+            </div>
           {/each}
         </div>
       </div>
@@ -677,11 +686,17 @@
             bind:this={messageInputEl}
             rows="1"
             aria-label="Message"
-            placeholder="Message"
+            placeholder={activeChat.status?.includes('subscriber') ? 'Broadcast' : 'Message'}
             value={currentDraft}
             oninput={e => setCurrentDraft(e.currentTarget.value)}
             onkeydown={handleKeydown}
           ></textarea>
+
+          {#if activeChat.status?.includes('subscriber')}
+            <span class="composer-bot-badge" aria-hidden="true">
+              <TgIcon name="bot_filled" size={15} />
+            </span>
+          {/if}
 
           <button
             type="button"
@@ -696,20 +711,20 @@
           >
             <TgIcon name="smile" size={24} />
           </button>
-
-          <button
-            type="submit"
-            class="composer-send-btn"
-            aria-label="Send message"
-            disabled={!currentDraft.trim() || sending}
-          >
-            {#if currentDraft.trim()}
-              <TgIcon name="send2" size={20} />
-            {:else}
-              <TgIcon name="microphone_filled" size={20} />
-            {/if}
-          </button>
         </div>
+
+        <button
+          type="submit"
+          class="composer-send-btn"
+          aria-label="Send message"
+          disabled={!currentDraft.trim() || sending}
+        >
+          {#if currentDraft.trim()}
+            <TgIcon name="send2" size={22} />
+          {:else}
+            <TgIcon name="microphone_filled" size={22} />
+          {/if}
+        </button>
       </form>
     {:else}
       <div class="empty-conversation-card">
@@ -1198,9 +1213,9 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    width: min(calc(100% - 24px), 780px);
+    width: calc(100% - 14px);
     height: 54px;
-    margin: 12px auto 0;
+    margin: 12px 12px 0 2px;
     padding: 0 14px 0 8px;
     border-radius: 28px;
     background: var(--panel-bg);
@@ -1294,12 +1309,12 @@
   .messages-viewport {
     flex: 1;
     overflow-y: auto;
-    padding: 12px 20px;
+    padding: 12px 14px 12px 2px;
   }
   .messages-inner {
-    width: min(100%, 720px);
+    width: 100%;
     min-height: 100%;
-    margin: 0 auto;
+    margin: 0;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
@@ -1318,6 +1333,15 @@
     padding: 4px 12px;
     border-radius: 999px;
   }
+  .message-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    max-width: 100%;
+  }
+  .message-row.outgoing {
+    justify-content: flex-end;
+  }
   .message-bubble {
     align-self: flex-start;
     max-width: min(78%, 460px);
@@ -1329,10 +1353,15 @@
     overflow: hidden;
   }
   .message-bubble.has-photo {
-    padding: 0;
+    padding: 3px;
+    max-width: 420px;
   }
   .message-bubble.has-photo .message-caption-row {
-    padding: 8px 12px 6px;
+    padding: 6px 9px 4px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
   }
   .workspace-shell.dark .message-bubble {
     background: #182533;
@@ -1350,14 +1379,41 @@
   }
   .message-photo-bleed {
     width: 100%;
-    max-height: 360px;
+    border-radius: 13px 13px 4px 4px;
     overflow: hidden;
   }
   .message-photo-img {
     width: 100%;
-    max-height: 360px;
+    max-width: 414px;
+    max-height: 520px;
+    height: auto;
     object-fit: cover;
     display: block;
+  }
+  .message-side-widgets {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-bottom: 2px;
+  }
+  .reaction-pill {
+    background: #ffffff;
+    border-radius: 999px;
+    padding: 4px 8px;
+    font-size: 14px;
+    line-height: 1;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    display: inline-flex;
+    align-items: center;
+  }
+  .share-circle-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(74, 114, 68, 0.42);
+    color: #ffffff;
+    display: grid;
+    place-items: center;
   }
   .message-sender {
     font-size: 13px;
@@ -1420,10 +1476,11 @@
   }
   .composer-bar {
     position: relative;
-    width: min(calc(100% - 24px), 780px);
-    margin: 4px auto 12px;
+    width: calc(100% - 14px);
+    margin: 4px 12px 12px 2px;
     display: flex;
     align-items: center;
+    gap: 8px;
   }
   .attach-popup {
     position: absolute;
@@ -1496,14 +1553,25 @@
     padding: 6px 4px;
     max-height: 120px;
   }
+  .composer-bot-badge {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #4dcd5e;
+    color: #11161d;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
   .composer-send-btn {
-    width: 38px;
-    height: 38px;
-    flex: 0 0 38px;
+    width: 50px;
+    height: 50px;
+    flex: 0 0 50px;
     border-radius: 50%;
     border: 0;
     background: #3390ec;
     color: #fff;
+    box-shadow: 0 2px 10px rgba(51, 144, 236, 0.3);
     display: grid;
     place-items: center;
     cursor: pointer;
