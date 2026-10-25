@@ -394,6 +394,9 @@ export async function handleFakeTelegramRpc(action, payload = {}, instanceId = '
       state.signedIn = false;
       return { ok: true };
     }
+    case 'getCachedBootstrap': {
+      return null;
+    }
     case 'getBootstrap': {
       return {
         user: state.user,

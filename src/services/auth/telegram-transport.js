@@ -1,4 +1,12 @@
 // This is the only module that knows the MTProto library. Loaded on first use.
+import {
+  bytesToCachedBlobUrl,
+  getCachedBlobUrl,
+  putCachedBlob,
+  getCachedState,
+  putCachedState,
+  clearWebkCache,
+} from './webk-cache.mjs';
 
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #f06292, #c2185b)',
@@ -247,7 +255,7 @@ export async function createTransport(config) {
     let initialAvatarUrl = '';
     if (!isSelf && !isTelegram && peer?.photo) {
       try {
-        initialAvatarUrl = bytesToBlobUrl(peer.photo.thumb);
+        initialAvatarUrl = bytesToCachedBlobUrl(`avatar-thumb:${id}`, peer.photo.thumb);
       } catch {}
     }
 
@@ -350,8 +358,72 @@ export async function createTransport(config) {
     getMe: async () => user(await api.getMe()),
     importSession: async value => { await client.prepare(); try { await client.importSession(value); } catch { throw Object.assign(new Error('INVALID_SESSION'), { text: 'INVALID_SESSION' }); } },
     exportSession: () => client.exportSession(),
-    logOut: () => api.logOut(),
+    logOut: async () => {
+      await clearWebkCache();
+      return api.logOut();
+    },
     close: () => client.destroy(),
+
+    getCachedBootstrap: async () => {
+      const snap = await getCachedState('bootstrap');
+      if (!snap || !Array.isArray(snap.chats) || !snap.chats.length) return null;
+      const histories = (await getCachedState('histories')) || {};
+
+      const hydratedChats = await Promise.all(
+        snap.chats.map(async c => {
+          const hiUrl = await getCachedBlobUrl(`avatar-hi:${c.id}`);
+          const thumbUrl = hiUrl || (await getCachedBlobUrl(`avatar-thumb:${c.id}`)) || c.avatar?.photoUrl || '';
+          const next = {
+            ...c,
+            avatar: {
+              ...c.avatar,
+              photoUrl: thumbUrl,
+              hiRes: Boolean(hiUrl),
+            },
+          };
+          chatMap.set(c.id, next);
+          return next;
+        })
+      );
+
+      let hydratedMe = snap.meProfile ? { ...snap.meProfile } : null;
+      if (hydratedMe) {
+        const meAvatar = await getCachedBlobUrl('me:avatar');
+        if (meAvatar) hydratedMe.photoUrl = meAvatar;
+        if (hydratedMe.personalChannel?.id) {
+          const chAvatar = await getCachedBlobUrl(`avatar-hi:${hydratedMe.personalChannel.id}`);
+          if (chAvatar) {
+            hydratedMe.personalChannel = { ...hydratedMe.personalChannel, photoUrl: chAvatar };
+          }
+        }
+      }
+
+      const hydratedMessages = {};
+      for (const [chatId, list] of Object.entries(histories)) {
+        if (!Array.isArray(list)) continue;
+        hydratedMessages[chatId] = await Promise.all(
+          list.map(async m => {
+            if (m?.media?.type === 'photo') {
+              const pUrl = await getCachedBlobUrl(`msg-photo:${chatId}:${m.id}`);
+              if (pUrl) {
+                return { ...m, media: { ...m.media, photoUrl: pUrl } };
+              }
+            }
+            return m;
+          })
+        );
+      }
+
+      return {
+        folders: snap.folders || [],
+        chats: hydratedChats,
+        archivedSummary: snap.archivedSummary || null,
+        meProfile: hydratedMe,
+        messages: hydratedMessages,
+        stickerPacks: snap.stickerPacks || stickerPacks,
+        gifs: snap.gifs || DEFAULT_GIFS,
+      };
+    },
 
     getBootstrap: async () => {
       const rawDialogs = [];
@@ -360,16 +432,29 @@ export async function createTransport(config) {
       }
       const chats = rawDialogs.map(mapDialog);
 
-      // Upgrade profile photos for the top 12 dialogs to crisp 160x160 JPEGs via downloadAsBuffer(peer.photo.small)
+      // First restore any already-cached hi-res avatars from IndexedDB for all 80 dialogs (0 network requests)
+      await Promise.all(
+        chats.map(async c => {
+          if (!c.avatar?.hasPhoto || c.saved || c.isTelegram) return;
+          const cachedUrl = await getCachedBlobUrl(`avatar-hi:${c.id}`);
+          if (cachedUrl) {
+            c.avatar.photoUrl = cachedUrl;
+            c.avatar.hiRes = true;
+            chatMap.set(c.id, c);
+          }
+        })
+      );
+
+      // Upgrade profile photos for the top 12 dialogs that are not yet cached in IndexedDB
       await Promise.all(
         rawDialogs.slice(0, 12).map(async (d, idx) => {
-          if (!d.peer?.photo?.small || chats[idx]?.saved || chats[idx]?.isTelegram) return;
+          if (!d.peer?.photo?.small || chats[idx]?.saved || chats[idx]?.isTelegram || chats[idx]?.avatar?.hiRes) return;
           try {
             const bytes = await Promise.race([
               api.downloadAsBuffer(d.peer.photo.small),
               new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500)),
             ]);
-            const photoUrl = bytesToBlobUrl(bytes);
+            const photoUrl = await putCachedBlob(`avatar-hi:${chats[idx].id}`, bytes);
             if (photoUrl) {
               chats[idx].avatar.photoUrl = photoUrl;
               chats[idx].avatar.hiRes = true;
@@ -466,15 +551,15 @@ export async function createTransport(config) {
       let meProfile = null;
       try {
         const fullMe = await api.getFullUser('self');
-        let mePhotoUrl = '';
-        if (fullMe?.photo) {
-          mePhotoUrl = bytesToBlobUrl(fullMe.photo.thumb);
+        let mePhotoUrl = await getCachedBlobUrl('me:avatar');
+        if (!mePhotoUrl && fullMe?.photo) {
+          mePhotoUrl = bytesToCachedBlobUrl('me:avatar-thumb', fullMe.photo.thumb);
           try {
             const bytes = await Promise.race([
               api.downloadAsBuffer(fullMe.photo.big || fullMe.photo.small),
               new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500)),
             ]);
-            const hiUrl = bytesToBlobUrl(bytes);
+            const hiUrl = await putCachedBlob('me:avatar', bytes);
             if (hiUrl) mePhotoUrl = hiUrl;
           } catch {}
         }
@@ -507,15 +592,15 @@ export async function createTransport(config) {
           const ch = fullMe.personalChannel;
           const chId = String(ch.id);
           const existingChat = chatMap.get(chId);
-          let chPhotoUrl = existingChat?.avatar?.photoUrl || '';
+          let chPhotoUrl = existingChat?.avatar?.photoUrl || (await getCachedBlobUrl(`avatar-hi:${chId}`));
           if (!chPhotoUrl && ch.photo) {
-            chPhotoUrl = bytesToBlobUrl(ch.photo.thumb);
+            chPhotoUrl = bytesToCachedBlobUrl(`avatar-thumb:${chId}`, ch.photo.thumb);
             try {
               const chBytes = await Promise.race([
                 api.downloadAsBuffer(ch.photo.small),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000)),
               ]);
-              const hiChUrl = bytesToBlobUrl(chBytes);
+              const hiChUrl = await putCachedBlob(`avatar-hi:${chId}`, chBytes);
               if (hiChUrl) chPhotoUrl = hiChUrl;
             } catch {}
           }
@@ -544,15 +629,26 @@ export async function createTransport(config) {
       } catch {}
 
       cachedFolders = folders;
-      return {
+      const histories = (await getCachedState('histories')) || {};
+      const payload = {
         folders,
         chats,
         archivedSummary,
         meProfile,
-        messages: {},
+        messages: histories,
         stickerPacks,
         gifs: DEFAULT_GIFS,
       };
+      await putCachedState('bootstrap', {
+        folders,
+        chats,
+        archivedSummary,
+        meProfile,
+        stickerPacks,
+        gifs: DEFAULT_GIFS,
+        updatedAt: Date.now(),
+      });
+      return payload;
     },
 
     openChat: async ({ chatId }) => {
@@ -564,17 +660,24 @@ export async function createTransport(config) {
       const [history] = await Promise.all([
         api.getHistory(peer, { limit: 40 }),
         (async () => {
-          if (current && !current.avatar?.hiRes && rawPeer?.photo?.small && !current.saved && !current.isTelegram) {
-            try {
-              const bytes = await Promise.race([
-                api.downloadAsBuffer(rawPeer.photo.small),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000)),
-              ]);
-              const photoUrl = bytesToBlobUrl(bytes);
-              if (photoUrl) {
-                current.avatar = { ...current.avatar, photoUrl, hiRes: true };
-              }
-            } catch {}
+          if (current && !current.avatar?.hiRes && !current.saved && !current.isTelegram) {
+            const cachedUrl = await getCachedBlobUrl(`avatar-hi:${id}`);
+            if (cachedUrl) {
+              current.avatar = { ...current.avatar, photoUrl: cachedUrl, hiRes: true };
+              return;
+            }
+            if (rawPeer?.photo?.small) {
+              try {
+                const bytes = await Promise.race([
+                  api.downloadAsBuffer(rawPeer.photo.small),
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000)),
+                ]);
+                const photoUrl = await putCachedBlob(`avatar-hi:${id}`, bytes);
+                if (photoUrl) {
+                  current.avatar = { ...current.avatar, photoUrl, hiRes: true };
+                }
+              } catch {}
+            }
           }
         })(),
       ]);
@@ -584,16 +687,25 @@ export async function createTransport(config) {
       const rawReversed = [...history].reverse();
       const messages = rawReversed.map(msg => mapMessage(msg, null, isChannel));
 
-      // Download full-size photo media directly via rawMsg.media (FileLocation)
+      // Check IndexedDB cache first for message photos; only download uncached photos
       await Promise.all(
         rawReversed.map(async (rawMsg, idx) => {
           if (rawMsg?.media?.type !== 'photo') return;
+          const photoKey = `msg-photo:${id}:${rawMsg.id}`;
+          const cachedPhoto = await getCachedBlobUrl(photoKey);
+          if (cachedPhoto) {
+            messages[idx].media = {
+              ...messages[idx].media,
+              photoUrl: cachedPhoto,
+            };
+            return;
+          }
           try {
             const bytes = await Promise.race([
               api.downloadAsBuffer(rawMsg.media),
               new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
             ]);
-            const photoUrl = bytesToBlobUrl(bytes);
+            const photoUrl = await putCachedBlob(photoKey, bytes);
             if (photoUrl) {
               messages[idx].media = {
                 ...messages[idx].media,
@@ -606,6 +718,11 @@ export async function createTransport(config) {
 
       const updatedChat = current ? { ...current, unreadCount: 0, read: true } : { id, title: 'Chat', unreadCount: 0 };
       chatMap.set(id, updatedChat);
+
+      const histories = (await getCachedState('histories')) || {};
+      histories[id] = messages;
+      await putCachedState('histories', histories);
+
       return {
         chat: updatedChat,
         messages,
@@ -616,18 +733,27 @@ export async function createTransport(config) {
       const id = String(chatId);
       const rawPeer = rawPeerMap.get(id);
       const current = chatMap.get(id);
-      if (!rawPeer?.photo?.small || !current || current.saved || current.isTelegram) {
+      if (!current || current.saved || current.isTelegram) {
         return { photoUrl: current?.avatar?.photoUrl || '' };
       }
       if (current.avatar?.hiRes && current.avatar?.photoUrl) {
         return { photoUrl: current.avatar.photoUrl };
+      }
+      const cachedUrl = await getCachedBlobUrl(`avatar-hi:${id}`);
+      if (cachedUrl) {
+        current.avatar = { ...current.avatar, photoUrl: cachedUrl, hiRes: true };
+        chatMap.set(id, current);
+        return { photoUrl: cachedUrl };
+      }
+      if (!rawPeer?.photo?.small) {
+        return { photoUrl: current?.avatar?.photoUrl || '' };
       }
       try {
         const bytes = await Promise.race([
           api.downloadAsBuffer(rawPeer.photo.small),
           new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000)),
         ]);
-        const photoUrl = bytesToBlobUrl(bytes);
+        const photoUrl = await putCachedBlob(`avatar-hi:${id}`, bytes);
         if (photoUrl) {
           current.avatar = { ...current.avatar, photoUrl, hiRes: true };
           chatMap.set(id, current);

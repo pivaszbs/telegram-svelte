@@ -74,17 +74,33 @@
     loading = true;
     error = '';
     try {
+      try {
+        const cached = await callBackend('getCachedBootstrap');
+        if (cached && Array.isArray(cached.chats) && cached.chats.length > 0) {
+          folders = cached.folders || [];
+          chats = cached.chats || [];
+          archivedSummary = cached.archivedSummary || null;
+          meProfile = cached.meProfile || null;
+          messagesByChat = cached.messages || {};
+          stickerPacks = cached.stickerPacks || [];
+          gifs = cached.gifs || [];
+          loading = false;
+        }
+      } catch {}
+
       const data = await callBackend('getBootstrap');
       folders = data.folders || [];
       chats = data.chats || [];
       archivedSummary = data.archivedSummary || null;
       meProfile = data.meProfile || null;
-      messagesByChat = data.messages || {};
+      messagesByChat = { ...messagesByChat, ...(data.messages || {}) };
       stickerPacks = data.stickerPacks || [];
       gifs = data.gifs || [];
       hydrateAvatars();
     } catch {
-      error = 'Could not load conversations from the server.';
+      if (!chats.length) {
+        error = 'Could not load conversations from the server.';
+      }
     } finally {
       loading = false;
     }
