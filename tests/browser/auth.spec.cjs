@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
 test.afterEach(() => expect(runtimeErrors).toEqual([]));
 const phone = '+447700900123';
 async function sendCode(page) {
-  await page.getByLabel('Phone number', { exact: true }).fill(phone);
+  await page.getByLabel('Your phone number', { exact: true }).fill(phone);
   await page.getByRole('button', { name: 'Send login code' }).click();
   await expect(page.getByRole('heading', { name: 'Check your Telegram' })).toBeVisible();
 }
@@ -83,7 +83,7 @@ test('phone login is usable on a narrow screen', async ({ page }, info) => {
   await page.screenshot({ path: info.outputPath('mobile-code.png'), fullPage: true, animations: 'disabled' });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole('button', { name: 'Use another phone number' }).click();
-  await expect(page.getByLabel('Phone number', { exact: true })).toHaveValue(phone);
+  await expect(page.getByLabel('Your phone number', { exact: true })).toHaveValue(phone);
 });
 test('real browser transport initializes WebCrypto and WASM without Telegram requests', async ({ page }) => {
   const sockets = [];

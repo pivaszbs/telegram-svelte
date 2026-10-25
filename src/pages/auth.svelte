@@ -1,22 +1,22 @@
 <script>
   import { onMount, tick } from 'svelte';
   import { auth, initializeAuth, isPreview } from '../services/auth';
-  import logo from 'images/logo.png';
+  import logo from 'images/telegram-logo.svg';
+  import CountryPicker from '../components/auth/CountryPicker.svelte';
   import countries from '../stores/countries.json';
   import { renderQr } from '../services/auth/qr-code.mjs';
   let theme = $state('dark');
   let selectedCountry = $state('');
-  const countryNames = new Intl.DisplayNames(['en'], { type: 'region' });
   const preferred = ['GB', 'US', 'RU', 'NO', 'AU', 'FI'];
-  const countryPrefixes = [...countries].sort((a, b) => b.code.length - a.code.length || Number(preferred.includes(b.alpha)) - Number(preferred.includes(a.alpha)));
+  const countryPrefixes = countries.filter(item => /^[1-9]\d*$/.test(item.code)).sort((a, b) => b.code.length - a.code.length || Number(preferred.includes(b.alpha)) - Number(preferred.includes(a.alpha)));
   let country = $derived.by(() => {
     const digits = phone.replace(/\D/g, '');
+    if (!digits) return '';
     const match = countryPrefixes.find(item => digits.startsWith(item.code));
     const selected = countries.find(item => item.alpha === selectedCountry);
     return selected && digits.startsWith(selected.code) && selected.code.length === match?.code.length ? selected.alpha : match?.alpha || '';
   });
-  function selectCountry(event) {
-    const selected = countries.find(item => item.alpha === event.currentTarget.value);
+  function selectCountry(selected) {
     if (selected) { selectedCountry = selected.alpha; phone = `+${selected.code} `; tick().then(() => focusTarget?.focus()); }
   }
   function toggleTheme() {
@@ -125,8 +125,8 @@
           <input id="api-hash" type="password" bind:value={apiHash} required autocomplete="off" spellcheck="false" disabled={$auth.busy} />
         {:else if $auth.step === 'phone'}
           <p class="muted">Please confirm your country code and enter your phone number.</p>
-          <div class="country-field"><label for="auth-country">Country</label><select id="auth-country" value={country} onchange={selectCountry} disabled={$auth.busy}><option value="" disabled>Select your country</option>{#each countries as item}<option value={item.alpha}>{String.fromCodePoint(...[...item.alpha].map(char => 127397 + char.charCodeAt(0)))} {countryNames.of(item.alpha) || item.name}</option>{/each}</select><span aria-hidden="true">⌄</span></div>
-          <div class="phone-field"><label for="auth-phone">Phone number</label>
+          <CountryPicker value={country} disabled={$auth.busy} onselect={selectCountry} />
+          <div class="phone-field"><label for="auth-phone">Your phone number</label>
           <input bind:this={focusTarget} id="auth-phone" type="tel" bind:value={phone} placeholder="+" autocomplete="tel" required disabled={$auth.busy} /></div>
         {:else if $auth.step === 'code'}
           <p class="muted">{delivery[$auth.delivery]}</p>
@@ -139,7 +139,7 @@
           <label for="auth-password">Password</label>
           <div class="password-row"><input bind:this={focusTarget} id="auth-password" type={showPassword ? 'text' : 'password'} bind:value={password} autocomplete="current-password" required disabled={$auth.busy} /><button class="show" type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} onclick={() => showPassword = !showPassword}>{showPassword ? 'Hide' : 'Show'}</button></div>
         {/if}
-        {#if ['setup', 'phone'].includes($auth.step)}<label class="remember"><input type="checkbox" bind:checked={remember} disabled={$auth.busy} /> Keep me signed in on this device</label>{/if}
+        {#if ['setup', 'phone'].includes($auth.step)}<label class="remember"><input type="checkbox" bind:checked={remember} disabled={$auth.busy} /> Keep me signed in</label>{/if}
         {#if $auth.step !== 'phone' || phone.replace(/\D/g, '').length >= 7}<button class="primary" type="submit" disabled={$auth.busy || rateLimited}>{$auth.busy ? 'Connecting…' : $auth.step === 'setup' ? 'Continue' : $auth.step === 'phone' ? 'Send login code' : 'Sign in'}</button>{/if}
       </form>
       {#if $auth.step === 'phone'}<button class="link" disabled={$auth.busy} onclick={() => auth.useQr(remember)}>Log in by QR code</button>{/if}
@@ -179,24 +179,30 @@
   a { color: var(--accent); }
   form { margin-top: 12px; }
   label:not(.remember) { display: block; text-align: left; color: var(--muted); font-size: 13px; margin: 18px 0 7px; }
-  input:not([type='checkbox']), select { width: 100%; height: 54px; box-sizing: border-box; border: 1px solid var(--border); padding: 14px 16px; border-radius: 12px; font: inherit; font-size: 16px; background: var(--bg); color: var(--text); transition: border-color .15s; }
+  input:not([type='checkbox']) { width: 100%; height: 54px; box-sizing: border-box; border: 1px solid var(--border); padding: 14px 16px; border-radius: 12px; font: inherit; font-size: 16px; background: var(--bg); color: var(--text); transition: border-color .15s; user-select: text; caret-color: var(--accent); }
   input:not([type='checkbox']):focus { border: 2px solid var(--accent); padding: 13px 15px; outline: none; }
-  input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-  .country-field, .phone-field { position: relative; margin-top: 24px; }
-  .country-field { margin-top: 48px; }
-  .country-field label, .phone-field label { position: absolute; z-index: 1; top: -9px; left: 16px; background: var(--bg); padding: 0 5px; margin: 0; font-weight: 400; }
+  input:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .phone-field { position: relative; margin-top: 18px; }
+  .phone-field label { position: absolute; z-index: 1; top: -9px; left: 16px; background: var(--bg); padding: 0 5px; margin: 0; font-weight: 400; }
   .phone-field:focus-within label { color: var(--accent); }
-  select { appearance: none; cursor: pointer; padding-right: 40px; }
-  .country-field > span { pointer-events: none; position: absolute; right: 16px; top: 12px; font-size: 24px; color: var(--muted); }
   .remember { display: flex; gap: 24px; align-items: center; text-align: left; font-size: 16px; color: var(--text); margin: 18px 0 0; padding: 14px 18px; border-radius: 12px; line-height: 22px; cursor: pointer; }
   .remember:hover { background: var(--hover); }
-  input[type='checkbox'] { width: 20px; height: 20px; accent-color: var(--accent); flex-shrink: 0; cursor: pointer; }
+  input[type='checkbox'] { appearance: none; position: relative; width: 20px; height: 20px; border: 2px solid var(--muted); border-radius: 3px; background: transparent; flex-shrink: 0; cursor: pointer; }
+  input[type='checkbox']:checked { border-color: var(--accent); background: var(--accent); }
+  input[type='checkbox']:checked::after { content: ''; position: absolute; left: 4px; top: 0; width: 6px; height: 11px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); }
   button { cursor: pointer; font: inherit; border: 0; }
   button:disabled { opacity: .5; cursor: default; }
   .primary { width: 100%; min-height: 54px; background: var(--accent); color: white; border-radius: 12px; padding: 16px; font-size: 14px; font-weight: 500; text-transform: uppercase; margin-top: 24px; }
   .primary:hover:not(:disabled) { filter: brightness(1.08); }
   .link { display: block; width: 100%; min-height: 48px; border-radius: 10px; background: transparent; color: var(--accent); font-size: 14px; padding: 12px 8px; margin: 12px auto 0; }
-  .phone-card form + .link { text-transform: uppercase; margin-top: 40px; }
+  .phone-card h1 { font-size: 32px; font-weight: 400; line-height: 40px; margin-bottom: 8px; }
+  .phone-card form { margin-top: 0; }
+  .phone-card .muted { margin-bottom: 0; }
+  .phone-card .phone-field input { height: 48px; border-radius: 16px; padding: 12px 18px; }
+  .phone-card .phone-field input:focus { padding: 11px 17px; }
+  .phone-card .phone-field label { font-size: 12px; line-height: 16px; top: -8px; }
+  .phone-card .remember { gap: 26px; margin-top: 18px; min-height: 48px; padding: 12px 18px; }
+  .phone-card form + .link { text-transform: uppercase; font-size: 16px; margin-top: 40px; }
   .phone-number { font-size: 20px; color: var(--text); font-weight: 500; margin: 12px 0 32px; }
   .error { margin-top: 20px; padding: 12px; border: 1px solid var(--error); border-radius: 12px; color: var(--error); font-size: 14px; line-height: 1.5; }
   .notice { margin: 16px 0; padding: 12px; border-radius: 12px; background: var(--hover); font-size: 14px; line-height: 1.5; color: var(--muted); }
@@ -213,6 +219,11 @@
   .theme-toggle { position: fixed; z-index: 3; right: 16px; top: 12px; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; color: var(--muted); background: transparent; }
   .theme-toggle svg { width: 24px; height: 24px; }
   @media (max-width: 480px) { .auth-shell { padding-top: 72px; } .auth-logo { width: 120px; height: 120px; margin-bottom: 28px; } .qr-steps { margin-bottom: 32px; } }
+  @media (max-height: 700px) {
+    .auth-shell:has(.phone-card) { padding-top: 48px; padding-bottom: 16px; }
+    .phone-card .auth-logo { width: 88px; height: 88px; margin-bottom: 20px; }
+    .phone-card form + .link { margin-top: 24px; }
+  }
   @media (max-width: 350px) { .qr-card h1 { font-size: 18px; white-space: normal; } .qr-steps li { font-size: 15px; } }
   @media (prefers-reduced-motion: reduce) { .auth-shell :global(*) { transition: none; } }
 </style>
