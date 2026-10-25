@@ -48,5 +48,11 @@ export async function createTransport() {
     exportSession: () => callFakeTelegram('exportSession'),
     logOut: () => callFakeTelegram('logOut'),
     close: async () => {},
+    getBootstrap: () => callFakeTelegram('getBootstrap'),
+    openChat: payload => callFakeTelegram('openChat', payload),
+    sendMessage: payload => callFakeTelegram('sendMessage', payload),
+    saveFolder: payload => callFakeTelegram('saveFolder', payload),
+    createInviteLink: payload => callFakeTelegram('createInviteLink', payload),
+    toggleStickerPack: payload => callFakeTelegram('toggleStickerPack', payload),
   };
 }

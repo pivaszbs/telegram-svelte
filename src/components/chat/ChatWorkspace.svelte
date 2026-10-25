@@ -12,7 +12,11 @@
     theme = 'light',
     onToggleTheme = () => {},
     onLogout = () => {},
+    onCallChat = null,
   } = $props();
+
+  const callBackend = (action, payload = {}) =>
+    onCallChat ? onCallChat(action, payload) : callFakeTelegram(action, payload);
 
   let loading = $state(true);
   let error = $state('');
@@ -37,7 +41,7 @@
     loading = true;
     error = '';
     try {
-      const data = await callFakeTelegram('getBootstrap');
+      const data = await callBackend('getBootstrap');
       folders = data.folders || [];
       chats = data.chats || [];
       messagesByChat = data.messages || {};
@@ -89,7 +93,7 @@
     activeChatId = chatId;
     mediaPanelOpen = false;
     try {
-      const data = await callFakeTelegram('openChat', { chatId });
+      const data = await callBackend('openChat', { chatId });
       chats = chats.map(item => (item.id === chatId ? data.chat : item));
       messagesByChat = { ...messagesByChat, [chatId]: data.messages };
       await tick();
@@ -108,7 +112,7 @@
     const chatId = activeChatId;
     sending = true;
     try {
-      const data = await callFakeTelegram('sendMessage', { chatId, text });
+      const data = await callBackend('sendMessage', { chatId, text });
       drafts = { ...drafts, [chatId]: '' };
       mediaPanelOpen = false;
       chats = chats.map(item => (item.id === chatId ? data.chat : item));
@@ -131,7 +135,7 @@
     const chatId = activeChatId;
     sending = true;
     try {
-      const data = await callFakeTelegram('sendMessage', {
+      const data = await callBackend('sendMessage', {
         chatId,
         text: media.type === 'sticker' ? `${media.emoji} ${media.label}` : media.title,
         media,
@@ -172,19 +176,19 @@
   }
 
   async function saveFolder(updated) {
-    const data = await callFakeTelegram('saveFolder', { folder: updated });
+    const data = await callBackend('saveFolder', { folder: updated });
     folders = data.folders;
     editingFolderId = '';
   }
 
   async function createInviteLink(folderId) {
-    const data = await callFakeTelegram('createInviteLink', { folderId });
+    const data = await callBackend('createInviteLink', { folderId });
     folders = folders.map(item => (item.id === folderId ? data.folder : item));
     return data.link;
   }
 
   async function toggleStickerPack(packId) {
-    const data = await callFakeTelegram('toggleStickerPack', { packId });
+    const data = await callBackend('toggleStickerPack', { packId });
     stickerPacks = data.stickerPacks;
   }
 </script>

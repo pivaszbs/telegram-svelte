@@ -85,6 +85,7 @@
     {theme}
     onToggleTheme={toggleTheme}
     onLogout={() => auth.logout()}
+    onCallChat={(action, payload) => auth.callChat(action, payload)}
   />
 {:else}
 <main class="auth-shell" class:light={theme === 'light'}>
