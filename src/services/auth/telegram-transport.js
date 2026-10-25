@@ -147,9 +147,31 @@ export async function createTransport(config) {
   const sent = value => value.phoneCodeHash ? { type: value.type, phoneCodeHash: value.phoneCodeHash, nextType: value.nextType, timeout: value.timeout, length: value.length } : { user: user(value) };
 
   const peerMap = new Map();
+  const rawPeerMap = new Map();
   const chatMap = new Map();
   let cachedFolders = [];
   let stickerPacks = JSON.parse(JSON.stringify(DEFAULT_STICKER_PACKS));
+
+  function bytesToBlobUrl(bytes, mime = 'image/jpeg') {
+    if (!bytes || !(bytes instanceof Uint8Array) || bytes.length === 0 || typeof URL === 'undefined') {
+      return '';
+    }
+    try {
+      return URL.createObjectURL(new Blob([bytes], { type: mime }));
+    } catch {
+      return '';
+    }
+  }
+
+  function extractStrippedThumbUrl(media) {
+    try {
+      const stripThumb = media?.getThumbnail?.('i');
+      if (stripThumb?.location instanceof Uint8Array) {
+        return bytesToBlobUrl(stripThumb.location);
+      }
+    } catch {}
+    return '';
+  }
 
   function mapMessage(msg, overrideMedia = null) {
     const mediaType = msg?.media?.type || '';
@@ -167,6 +189,7 @@ export async function createTransport(config) {
           type: 'photo',
           emoji: '🖼️',
           title: msg?.text || 'Photo',
+          photoUrl: extractStrippedThumbUrl(msg?.media),
         };
       }
     }
@@ -188,6 +211,7 @@ export async function createTransport(config) {
     const peer = dialog.peer;
     const id = String(peer.id);
     peerMap.set(id, peer.inputPeer || peer.id);
+    rawPeerMap.set(id, peer);
 
     const isSelf = peer.type === 'user' && Boolean(peer.isSelf);
     const isBot = peer.type === 'user' && Boolean(peer.isBot);
@@ -199,6 +223,13 @@ export async function createTransport(config) {
     const avatarBg = isSelf || isTelegram
       ? '#3390ec'
       : AVATAR_GRADIENTS[colorIndex];
+
+    let initialAvatarUrl = '';
+    if (!isSelf && !isTelegram && peer?.photo) {
+      try {
+        initialAvatarUrl = bytesToBlobUrl(peer.photo.thumb);
+      } catch {}
+    }
 
     let online = false;
     let status = '';
@@ -232,10 +263,13 @@ export async function createTransport(config) {
           ? last.sender.displayName.split(' ')[0]
           : '');
     const mediaType = last?.media?.type || '';
+    const thumbUrl = (mediaType === 'photo' || mediaType === 'video')
+      ? extractStrippedThumbUrl(last?.media)
+      : '';
     const mediaPreview = mediaType === 'photo'
-      ? { type: 'photo', gradient: 'linear-gradient(135deg, #90caf9, #f48fb1)' }
+      ? { type: 'photo', gradient: 'linear-gradient(135deg, #90caf9, #f48fb1)', thumbUrl }
       : mediaType === 'video'
-        ? { type: 'video', gradient: 'linear-gradient(135deg, #ce93d8, #80deea)' }
+        ? { type: 'video', gradient: 'linear-gradient(135deg, #ce93d8, #80deea)', thumbUrl }
         : null;
 
     let previewText = last?.text || '';
@@ -276,7 +310,9 @@ export async function createTransport(config) {
         bg: avatarBg,
         initials: getInitials(title),
         badge: isBot ? 'bot' : null,
-        photoUrl: '',
+        photoUrl: initialAvatarUrl,
+        hasPhoto: Boolean(peer?.photo?.small && !isSelf && !isTelegram),
+        hiRes: false,
       },
     };
     chatMap.set(id, mapped);
@@ -304,18 +340,19 @@ export async function createTransport(config) {
       }
       const chats = rawDialogs.map(mapDialog);
 
-      // Download profile photos for the top 15 dialogs that have photos (with a fast timeout)
+      // Upgrade profile photos for the top 12 dialogs to crisp 160x160 JPEGs via downloadAsBuffer(peer.photo.small)
       await Promise.all(
-        rawDialogs.slice(0, 15).map(async (d, idx) => {
-          if (!d.peer?.photo || chats[idx]?.saved || chats[idx]?.isTelegram) return;
+        rawDialogs.slice(0, 12).map(async (d, idx) => {
+          if (!d.peer?.photo?.small || chats[idx]?.saved || chats[idx]?.isTelegram) return;
           try {
             const bytes = await Promise.race([
-              api.downloadPeerPhoto(d.peer.inputPeer || d.peer.id),
-              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1500)),
+              api.downloadAsBuffer(d.peer.photo.small),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500)),
             ]);
-            if (bytes && bytes.length > 0 && typeof URL !== 'undefined') {
-              const photoUrl = URL.createObjectURL(new Blob([bytes], { type: 'image/jpeg' }));
+            const photoUrl = bytesToBlobUrl(bytes);
+            if (photoUrl) {
               chats[idx].avatar.photoUrl = photoUrl;
+              chats[idx].avatar.hiRes = true;
               chatMap.set(chats[idx].id, chats[idx]);
             }
           } catch {}
@@ -420,22 +457,46 @@ export async function createTransport(config) {
     openChat: async ({ chatId }) => {
       const id = String(chatId);
       const peer = peerMap.get(id) ?? Number(id);
-      const history = await api.getHistory(peer, { limit: 40 });
+      const rawPeer = rawPeerMap.get(id);
+      const current = chatMap.get(id);
+
+      const [history] = await Promise.all([
+        api.getHistory(peer, { limit: 40 }),
+        (async () => {
+          if (current && !current.avatar?.hiRes && rawPeer?.photo?.small && !current.saved && !current.isTelegram) {
+            try {
+              const bytes = await Promise.race([
+                api.downloadAsBuffer(rawPeer.photo.small),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000)),
+              ]);
+              const photoUrl = bytesToBlobUrl(bytes);
+              if (photoUrl) {
+                current.avatar = { ...current.avatar, photoUrl, hiRes: true };
+              }
+            } catch {}
+          }
+        })(),
+      ]);
+
       api.readHistory(peer).catch(() => {});
       const rawReversed = [...history].reverse();
       const messages = rawReversed.map(msg => mapMessage(msg));
 
-      // Download photo media for messages in parallel
+      // Upgrade photo media for messages in parallel to crisp 800x800 / 320x320 JPEGs
       await Promise.all(
         rawReversed.map(async (rawMsg, idx) => {
           if (rawMsg?.media?.type !== 'photo') return;
           try {
+            const targetLocation =
+              rawMsg.media.getThumbnail?.('x') ||
+              rawMsg.media.getThumbnail?.('m') ||
+              rawMsg.media;
             const bytes = await Promise.race([
-              api.downloadAsBuffer(rawMsg.media),
-              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500)),
+              api.downloadAsBuffer(targetLocation),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3500)),
             ]);
-            if (bytes && bytes.length > 0 && typeof URL !== 'undefined') {
-              const photoUrl = URL.createObjectURL(new Blob([bytes], { type: 'image/jpeg' }));
+            const photoUrl = bytesToBlobUrl(bytes);
+            if (photoUrl) {
               messages[idx].media = {
                 ...messages[idx].media,
                 photoUrl,
@@ -445,13 +506,37 @@ export async function createTransport(config) {
         })
       );
 
-      const current = chatMap.get(id);
       const updatedChat = current ? { ...current, unreadCount: 0, read: true } : { id, title: 'Chat', unreadCount: 0 };
       chatMap.set(id, updatedChat);
       return {
         chat: updatedChat,
         messages,
       };
+    },
+
+    downloadAvatar: async ({ chatId }) => {
+      const id = String(chatId);
+      const rawPeer = rawPeerMap.get(id);
+      const current = chatMap.get(id);
+      if (!rawPeer?.photo?.small || !current || current.saved || current.isTelegram) {
+        return { photoUrl: current?.avatar?.photoUrl || '' };
+      }
+      if (current.avatar?.hiRes && current.avatar?.photoUrl) {
+        return { photoUrl: current.avatar.photoUrl };
+      }
+      try {
+        const bytes = await Promise.race([
+          api.downloadAsBuffer(rawPeer.photo.small),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4000)),
+        ]);
+        const photoUrl = bytesToBlobUrl(bytes);
+        if (photoUrl) {
+          current.avatar = { ...current.avatar, photoUrl, hiRes: true };
+          chatMap.set(id, current);
+          return { photoUrl };
+        }
+      } catch {}
+      return { photoUrl: current?.avatar?.photoUrl || '' };
     },
 
     sendMessage: async ({ chatId, text, media }) => {

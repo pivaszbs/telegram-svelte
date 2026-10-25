@@ -45,6 +45,28 @@
   let messageInputEl = $state();
   let messagesContainerEl = $state();
 
+  async function hydrateAvatars() {
+    const pending = chats.filter(c => c.avatar?.hasPhoto && !c.avatar?.hiRes);
+    const batchSize = 4;
+    for (let i = 0; i < pending.length; i += batchSize) {
+      const batch = pending.slice(i, i + batchSize);
+      await Promise.all(
+        batch.map(async item => {
+          try {
+            const res = await callBackend('downloadAvatar', { chatId: item.id });
+            if (res?.photoUrl) {
+              chats = chats.map(c =>
+                c.id === item.id
+                  ? { ...c, avatar: { ...c.avatar, photoUrl: res.photoUrl, hiRes: true } }
+                  : c
+              );
+            }
+          } catch {}
+        })
+      );
+    }
+  }
+
   async function bootstrap() {
     loading = true;
     error = '';
@@ -56,6 +78,7 @@
       messagesByChat = data.messages || {};
       stickerPacks = data.stickerPacks || [];
       gifs = data.gifs || [];
+      hydrateAvatars();
     } catch {
       error = 'Could not load conversations from the server.';
     } finally {
@@ -369,7 +392,11 @@
                       <strong class="sender-prefix">{chat.fromName}:</strong>
                     {/if}
                     {#if chat.mediaPreview}
-                      <span class="media-thumb" style={`background: ${chat.mediaPreview.gradient}`}></span>
+                      {#if chat.mediaPreview.thumbUrl}
+                        <img class="media-thumb" src={chat.mediaPreview.thumbUrl} alt="" />
+                      {:else}
+                        <span class="media-thumb" style={`background: ${chat.mediaPreview.gradient}`}></span>
+                      {/if}
                     {/if}
                     <span class="preview-text">{chat.text}</span>
                   </span>
