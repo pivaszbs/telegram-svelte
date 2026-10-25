@@ -1,4 +1,6 @@
 <script>
+  import TgIcon from '../icons/TgIcon.svelte';
+
   let {
     folder,
     chats = [],
@@ -106,15 +108,11 @@
 <section class="folder-editor" aria-label="Edit Folder">
   <header class="editor-header">
     <button type="button" class="icon-btn" aria-label="Close folder editor" onclick={onClose}>
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M18 6 6 18M6 6l12 12" />
-      </svg>
+      <TgIcon name="close" size={22} />
     </button>
     <h2>Edit Folder</h2>
     <button type="button" class="icon-btn save-btn" aria-label="Save folder" onclick={handleSave}>
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2">
-        <path d="M20 6 9 17l-5-5" />
-      </svg>
+      <TgIcon name="check" size={22} />
     </button>
   </header>
 
@@ -153,17 +151,29 @@
       >
         {#if customEmoji && icon === 'custom'}
           <span class="trigger-emoji">{customEmoji}</span>
+        {:else if icon === 'chats'}
+          <TgIcon name="round_chats_filled" size={24} />
+        {:else if icon === 'chat'}
+          <TgIcon name="message" size={24} />
+        {:else if icon === 'user'}
+          <TgIcon name="user" size={24} />
+        {:else if icon === 'group'}
+          <TgIcon name="group" size={24} />
+        {:else if icon === 'star'}
+          <TgIcon name="favourites" size={24} />
+        {:else if icon === 'channel'}
+          <TgIcon name="channel" size={24} />
+        {:else if icon === 'bot'}
+          <TgIcon name="bots" size={24} />
         {:else}
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-            <path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2Z" />
-          </svg>
+          <TgIcon name="folder" size={24} />
         {/if}
       </button>
 
       {#if iconPickerOpen}
         <div class="folder-emoji-popover" role="dialog" aria-label="Folder icon and emoji picker">
           <div class="pack-strip">
-            <span class="strip-icon active">☺</span>
+            <span class="strip-icon active"><TgIcon name="smile" size={20} /></span>
             {#each packStrip as packEmoji}
               <button
                 type="button"
@@ -176,10 +186,7 @@
           </div>
 
           <div class="emoji-search-row">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="7" />
-              <path d="m20 20-3.5-3.5" />
-            </svg>
+            <TgIcon name="search" size={18} />
             <input
               type="search"
               aria-label="Search Emoji"
@@ -198,21 +205,21 @@
                 onclick={() => { icon = std.id; iconPickerOpen = false; }}
               >
                 {#if std.id === 'chats'}
-                  <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 3C6.5 3 2 6.58 2 11c0 2.13 1.05 4.07 2.75 5.5L4 21l4.75-2.25c1.03.32 2.12.5 3.25.5 5.5 0 10-3.58 10-8.25S17.5 3 12 3Z"/></svg>
+                  <TgIcon name="round_chats_filled" size={22} />
                 {:else if std.id === 'chat'}
-                  <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Z"/></svg>
+                  <TgIcon name="message" size={22} />
                 {:else if std.id === 'user'}
-                  <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2.25c-3.34 0-10 1.68-10 5v1.75h20v-1.75c0-3.32-6.66-5-10-5Z"/></svg>
+                  <TgIcon name="user" size={22} />
                 {:else if std.id === 'group'}
-                  <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3Zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3Zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5Z"/></svg>
+                  <TgIcon name="group" size={22} />
                 {:else if std.id === 'star'}
-                  <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="m12 17.27 6.18 3.73-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                  <TgIcon name="favourites" size={22} />
                 {:else if std.id === 'channel'}
-                  <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M18 4 8 8H4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h1l2 5h2.5l-1.8-5H8l10 4V4Z"/></svg>
+                  <TgIcon name="channel" size={22} />
                 {:else if std.id === 'bot'}
-                  <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2a2 2 0 0 1 2 2v1h3a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h3V4a2 2 0 0 1 2-2Z"/></svg>
+                  <TgIcon name="bots" size={22} />
                 {:else}
-                  <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2Z"/></svg>
+                  <TgIcon name="folder" size={22} />
                 {/if}
               </button>
             {/each}
@@ -242,7 +249,7 @@
     <div class="folder-section">
       <h3>Included Chats</h3>
       <button type="button" class="action-row" onclick={() => (showAddIncluded = !showAddIncluded)}>
-        <span class="plus-icon">+</span>
+        <span class="plus-icon"><TgIcon name="add" size={20} /></span>
         <span>Add Chats</span>
       </button>
       {#if showAddIncluded}
@@ -267,7 +274,7 @@
     <div class="folder-section">
       <h3>Excluded Chats</h3>
       <button type="button" class="action-row" onclick={() => (showAddExcluded = !showAddExcluded)}>
-        <span class="plus-icon">+</span>
+        <span class="plus-icon"><TgIcon name="add" size={20} /></span>
         <span>Exclude Chats</span>
       </button>
       {#if showAddExcluded}
@@ -296,7 +303,7 @@
           if (link) inviteLinks = [...inviteLinks, link];
         }}
       >
-        <span class="plus-icon">+</span>
+        <span class="plus-icon"><TgIcon name="add" size={20} /></span>
         <span>Create an Invite Link</span>
       </button>
       {#each inviteLinks as link (link)}

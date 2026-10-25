@@ -1,4 +1,6 @@
 <script>
+  import TgIcon from '../icons/TgIcon.svelte';
+
   let {
     stickerPacks = [],
     gifs = [],
@@ -80,12 +82,12 @@
   ];
 
   const quickReactions = [
-    { id: 'heart', label: 'Heart filter', icon: '♡', emojis: ['❤️', '😍', '🥰', '😘', '💕', '💖', '💗', '💓'] },
-    { id: 'up', label: 'Thumbs up filter', icon: '👍', emojis: ['👍', '🙌', '👏', '🤝', '💪', '🔥', '✨', '💯'] },
-    { id: 'down', label: 'Thumbs down filter', icon: '👎', emojis: ['👎', '😒', '🙄', '😐', '😑', '🤦', '🤷', '😬'] },
-    { id: 'party', label: 'Party filter', icon: '🎉', emojis: partyEmojis },
-    { id: 'happy', label: 'Happy filter', icon: '😀', emojis: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂'] },
-    { id: 'sad', label: 'Sad filter', icon: '😢', emojis: ['😢', '😭', '🥺', '😞', '😔', '😟', '💔', '🥲'] },
+    { id: 'heart', label: 'Heart filter', tgIcon: 'favourites', emojis: ['❤️', '😍', '🥰', '😘', '💕', '💖', '💗', '💓'] },
+    { id: 'up', label: 'Thumbs up filter', tgIcon: 'like', emojis: ['👍', '🙌', '👏', '🤝', '💪', '🔥', '✨', '💯'] },
+    { id: 'down', label: 'Thumbs down filter', tgIcon: 'dislike', emojis: ['👎', '😒', '🙄', '😐', '😑', '🤦', '🤷', '😬'] },
+    { id: 'party', label: 'Party filter', tgIcon: 'party', emojis: partyEmojis },
+    { id: 'happy', label: 'Happy filter', tgIcon: 'emoji_happy', emojis: ['😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂'] },
+    { id: 'sad', label: 'Sad filter', tgIcon: 'emoji_sad', emojis: ['😢', '😭', '🥺', '😞', '😔', '😟', '💔', '🥲'] },
   ];
 
   let filteredStandardEmojis = $derived.by(() => {
@@ -117,19 +119,18 @@
   {#if activeTab === 'emoji'}
     <div class="top-strip">
       <button type="button" class="strip-clock" aria-label="Recent emojis" onclick={() => { standardExpanded = false; reactionFilter = ''; }}>
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="9" />
-          <path d="M12 7v5l3 2" />
-        </svg>
+        <TgIcon name="recent" size={20} />
       </button>
 
       {#if standardExpanded}
         <div class="standard-cat-pill" role="group" aria-label="Standard emoji categories">
-          <button type="button" class="cat-btn active" onclick={() => (standardExpanded = false)}>😊</button>
-          <button type="button" class="cat-btn">🐻</button>
-          <button type="button" class="cat-btn">🍎</button>
-          <button type="button" class="cat-btn">⚽</button>
-          <button type="button" class="cat-btn">🚗</button>
+          <button type="button" class="cat-btn active" aria-label="Smileys & People" onclick={() => (standardExpanded = false)}><TgIcon name="smile" size={18} /></button>
+          <button type="button" class="cat-btn" aria-label="Animals & Nature"><TgIcon name="animals" size={18} /></button>
+          <button type="button" class="cat-btn" aria-label="Food & Drink"><TgIcon name="eats" size={18} /></button>
+          <button type="button" class="cat-btn" aria-label="Activity"><TgIcon name="sport" size={18} /></button>
+          <button type="button" class="cat-btn" aria-label="Travel & Places"><TgIcon name="car" size={18} /></button>
+          <button type="button" class="cat-btn" aria-label="Objects"><TgIcon name="lamp" size={18} /></button>
+          <button type="button" class="cat-btn" aria-label="Flags"><TgIcon name="flag" size={18} /></button>
         </div>
       {:else}
         <button
@@ -138,7 +139,7 @@
           aria-label="Expand standard emoji categories"
           onclick={() => { standardExpanded = true; reactionFilter = ''; }}
         >
-          ☺
+          <TgIcon name="smile" size={20} />
         </button>
       {/if}
 
@@ -162,13 +163,10 @@
             aria-label="Clear reaction filter"
             onclick={() => (reactionFilter = '')}
           >
-            ←
+            <TgIcon name="back" size={18} />
           </button>
         {:else}
-          <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.5-3.5" />
-          </svg>
+          <TgIcon class="search-icon" name="search" size={18} />
           <input
             type="search"
             aria-label="Search Emoji"
@@ -186,7 +184,7 @@
               aria-label={react.label}
               onclick={() => (reactionFilter = reactionFilter === react.id ? '' : react.id)}
             >
-              {react.icon}
+              <TgIcon name={react.tgIcon} size={18} />
             </button>
           {/each}
         </div>
@@ -234,10 +232,7 @@
     {#if !stickerCatalogMode}
       <div class="top-strip">
         <button type="button" class="strip-clock active" aria-label="Recent stickers">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 7v5l3 2" />
-          </svg>
+          <TgIcon name="recent" size={20} />
         </button>
         {#each ['😂', '🐸', '🦄', '🐕', '🐹', '🐱', '🦉', '🥶'] as icon}
           <button type="button" class="strip-pack-btn">{icon}</button>
@@ -246,10 +241,7 @@
     {/if}
 
     <div class="search-filter-bar">
-      <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="7" />
-        <path d="m20 20-3.5-3.5" />
-      </svg>
+      <TgIcon class="search-icon" name="search" size={18} />
       <input
         type="search"
         aria-label="Search Stickers"
@@ -264,7 +256,7 @@
           aria-label="Close sticker catalog"
           onclick={() => { stickerCatalogMode = false; stickerQuery = ''; }}
         >
-          ✕
+          <TgIcon name="close" size={18} />
         </button>
       {:else}
         <div class="reaction-strip">
@@ -274,7 +266,7 @@
               class="reaction-chip"
               onclick={() => (stickerCatalogMode = true)}
             >
-              {react.icon}
+              <TgIcon name={react.tgIcon} size={18} />
             </button>
           {/each}
         </div>
@@ -356,10 +348,7 @@
   {:else if activeTab === 'gifs'}
     <div class="top-strip">
       <button type="button" class="strip-clock active" aria-label="Trending GIFs" onclick={() => (gifQuery = '')}>
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="9" />
-          <path d="M12 7v5l3 2" />
-        </svg>
+        <TgIcon name="recent" size={20} />
       </button>
       {#each ['👍', '😍', '😘', '😡', '🥳', '😂', '😮', '🙄', '😎'] as trendEmoji}
         <button type="button" class="strip-pack-btn" onclick={() => (gifQuery = trendEmoji)}>
@@ -369,10 +358,7 @@
     </div>
 
     <div class="search-filter-bar gif-search-bar">
-      <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="7" />
-        <path d="m20 20-3.5-3.5" />
-      </svg>
+      <TgIcon class="search-icon" name="search" size={18} />
       <input
         type="search"
         aria-label="Search GIFs"
@@ -409,10 +395,7 @@
           if (activeTab === 'stickers') stickerCatalogMode = !stickerCatalogMode;
         }}
       >
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="7" />
-          <path d="m20 20-3.5-3.5" />
-        </svg>
+        <TgIcon name="search" size={20} />
       </button>
 
       <div class="bottom-tabs" role="tablist" aria-label="Media type">
@@ -425,10 +408,7 @@
           aria-label="Emoji tab"
           onclick={() => (activeTab = 'emoji')}
         >
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="9" />
-            <path d="M8.5 14.5s1.5 2 3.5 2 3.5-2 3.5-2M9 9.5h.01M15 9.5h.01" />
-          </svg>
+          <TgIcon name="smile" size={22} />
         </button>
         <button
           type="button"
@@ -439,10 +419,7 @@
           aria-label="Stickers tab"
           onclick={() => { activeTab = 'stickers'; stickerCatalogMode = false; }}
         >
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M5 4h14a2 2 0 0 1 2 2v9l-6 6H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
-            <path d="M15 21v-5a1 1 0 0 1 1-1h5" />
-          </svg>
+          <TgIcon name="stickers_face" size={22} />
         </button>
         <button
           type="button"
@@ -453,7 +430,7 @@
           aria-label="GIFs tab"
           onclick={() => (activeTab = 'gifs')}
         >
-          <span class="gif-badge-icon">GIF</span>
+          <TgIcon name="gifs" size={22} />
         </button>
       </div>
 
@@ -463,10 +440,7 @@
         aria-label="Backspace"
         onclick={onBackspace}
       >
-        <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 6H8l-6 6 6 6h13a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Z" />
-          <path d="m16 9-5 6M11 9l5 6" />
-        </svg>
+        <TgIcon name="deleteleft" size={22} />
       </button>
     </footer>
   {/if}
@@ -532,6 +506,9 @@
     border-radius: 50%;
     cursor: pointer;
     font-size: 16px;
+    color: #5b725e;
+    display: grid;
+    place-items: center;
   }
   .cat-btn.active {
     background: rgba(255, 255, 255, 0.7);

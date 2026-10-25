@@ -1,4 +1,6 @@
 <script>
+  import TgIcon from '../icons/TgIcon.svelte';
+
   let {
     folders = [],
     activeFolderId = 'all',
@@ -66,9 +68,7 @@
       aria-expanded={menuOpen}
       onclick={() => (menuOpen = !menuOpen)}
     >
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-        <path d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
+      <TgIcon name="menu" size={24} />
     </button>
 
     {#if menuOpen}
@@ -162,32 +162,34 @@
             {/if}
           {:else if iconStyle === 'minimal' && folder.id !== 'all'}
             {#if folder.id === 'personal'}
-              <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M10 4h4a2 2 0 0 1 2 2v2h4a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h4V6a2 2 0 0 1 2-2Zm0 4h4V6h-4v2Z"/></svg>
+              <TgIcon name="work" size={26} />
             {:else if folder.id === 'channels'}
-              <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M14.5 4a3.5 3.5 0 0 0-3.46 3h2.06a1.5 1.5 0 1 1 1.4 2h-3a3.5 3.5 0 0 0-3.5 3.5V15H6a2 2 0 1 0 0 4h11a3 3 0 0 0 3-3v-2.5A4.5 4.5 0 0 0 15.5 9h-.1A3.5 3.5 0 0 0 14.5 4Z"/></svg>
+              <TgIcon name="cloud" size={26} />
             {:else if folder.id === 'groups'}
-              <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="m20.59 13.41-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82ZM7 5a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/></svg>
+              <TgIcon name="tag_alt_filled" size={26} />
             {:else if folder.id === 'bots'}
-              <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M12 2a2 2 0 0 1 2 2v1h3a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h3V4a2 2 0 0 1 2-2Zm-3 7a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm6 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm-6 8h6v2H9v-2Z"/></svg>
+              <TgIcon name="bot_filled" size={26} />
             {:else}
-              <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9v8l3-2 3 2 3-2 3 2 3-2 3 2v-8c0-4.97-4.03-9-9-9Zm-3 8a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Zm6 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3Z"/></svg>
+              <TgIcon name="lamp" size={26} />
             {/if}
           {:else if folder.customEmoji && !['⛏️', '💎', '₿', '🤖', '👾'].includes(folder.customEmoji)}
             <span class="emoji-glyph">{folder.customEmoji}</span>
           {:else if folder.icon === 'chats'}
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M12 3C6.5 3 2 6.58 2 11c0 2.13 1.05 4.07 2.75 5.5L4 21l4.75-2.25c1.03.32 2.12.5 3.25.5 5.5 0 10-3.58 10-8.25S17.5 3 12 3Z"/></svg>
+            <TgIcon name="round_chats_filled" size={26} />
+          {:else if folder.icon === 'chat'}
+            <TgIcon name="message" size={26} />
           {:else if folder.icon === 'user'}
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2.25c-3.34 0-10 1.68-10 5v1.75h20v-1.75c0-3.32-6.66-5-10-5Z"/></svg>
+            <TgIcon name="user" size={26} />
           {:else if folder.icon === 'channel'}
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M18 4 8 8H4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h1l2 5h2.5l-1.8-5H8l10 4V4Zm2 4v8a4 4 0 0 0 0-8Z"/></svg>
+            <TgIcon name="channel" size={26} />
           {:else if folder.icon === 'group'}
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3Zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3Zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5Zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5Z"/></svg>
+            <TgIcon name="group" size={26} />
           {:else if folder.icon === 'bot'}
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M12 2a2 2 0 0 1 2 2v1h3a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h3V4a2 2 0 0 1 2-2Zm-3 7a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm6 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z"/></svg>
+            <TgIcon name="bots" size={26} />
           {:else if folder.icon === 'star'}
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="m12 17.27 6.18 3.73-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+            <TgIcon name="favourites" size={26} />
           {:else}
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2Z"/></svg>
+            <TgIcon name="folder" size={26} />
           {/if}
           {#if badge > 0}
             <span class="folder-badge">{badge}</span>
@@ -208,9 +210,7 @@
       if (target) onEditFolder(target.id);
     }}
   >
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8">
-      <path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" />
-    </svg>
+    <TgIcon name="edit" size={22} />
   </button>
 </nav>
 

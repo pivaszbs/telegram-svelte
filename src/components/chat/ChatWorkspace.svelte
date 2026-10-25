@@ -1,6 +1,7 @@
 <script>
   import { onMount, tick } from 'svelte';
   import { callFakeTelegram } from '../../services/fake-rpc.mjs';
+  import TgIcon from '../icons/TgIcon.svelte';
   import FolderRail from './FolderRail.svelte';
   import FolderEditor from './FolderEditor.svelte';
   import MediaPanel from './MediaPanel.svelte';
@@ -227,10 +228,7 @@
     {:else}
       <div class="search-header">
         <div class="search-pill">
-          <svg class="search-svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.5-3.5" />
-          </svg>
+          <TgIcon class="search-svg" name="search" size={20} />
           <input
             type="search"
             aria-label="Search conversations"
@@ -259,9 +257,7 @@
               <div class="avatar-cell">
                 <div class="chat-avatar" style={`background: ${chat.avatar?.bg || '#3390ec'}`}>
                   {#if chat.saved}
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="white">
-                      <path d="M6 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v17l-6-3.5L6 21V4Z" />
-                    </svg>
+                    <TgIcon name="savedmessages" size={28} />
                   {:else if chat.avatar?.badge === 'gamepad'}
                     <span class="avatar-emoji">🎮</span>
                   {:else if chat.avatar?.badge === 'doge'}
@@ -282,9 +278,9 @@
                   <span class="dialog-title">{chat.title}</span>
                   <span class="dialog-meta">
                     {#if chat.out}
-                      <svg class="read-ticks" viewBox="0 0 20 14" width="17" height="12" fill="none" stroke="#4dcd5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-label="Read">
-                        <path d="M1.5 7.5 5 11 12.5 3M7.5 7.5 11 11 18.5 3" />
-                      </svg>
+                      <span class="read-ticks" aria-label="Read">
+                        <TgIcon name="checks" size={18} />
+                      </span>
                     {/if}
                     <span class="dialog-time">{chat.time}</span>
                   </span>
@@ -321,9 +317,7 @@
           if (visibleChats[0]) openChat(visibleChats[0].id);
         }}
       >
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25ZM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z" />
-        </svg>
+        <TgIcon name="newchat_filled" size={24} />
       </button>
     {/if}
   </aside>
@@ -337,7 +331,7 @@
           aria-label="Back to conversations"
           onclick={() => (activeChatId = '')}
         >
-          ←
+          <TgIcon name="back" size={22} />
         </button>
         <div class="header-avatar" style={`background: ${activeChat.avatar?.bg || '#3390ec'}`}>
           {activeChat.avatar?.initials || activeChat.title[0]}
@@ -387,7 +381,9 @@
               <div class="message-meta">
                 <span class="message-time">{msg.time}</span>
                 {#if msg.out}
-                  <span class="message-check" aria-label="Read">✓✓</span>
+                  <span class="message-check" aria-label="Read">
+                    <TgIcon name="checks" size={16} />
+                  </span>
                 {/if}
               </div>
             </article>
@@ -423,10 +419,7 @@
             aria-expanded={mediaPanelOpen}
             onclick={() => (mediaPanelOpen = !mediaPanelOpen)}
           >
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M8.5 14.5s1.5 2 3.5 2 3.5-2 3.5-2M9 9.5h.01M15 9.5h.01" />
-            </svg>
+            <TgIcon name="smile" size={24} />
           </button>
 
           <textarea
@@ -446,9 +439,7 @@
           aria-label="Send message"
           disabled={!currentDraft.trim() || sending}
         >
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-            <path d="m3.4 20.4 17.45-7.48a1 1 0 0 0 0-1.84L3.4 3.6a.993.993 0 0 0-1.39.91L2 9.12c0 .5.37.93.87.99L17 12 2.87 13.88c-.5.07-.87.5-.87 1l.01 4.61c0 .71.73 1.2 1.39.91Z" />
-          </svg>
+          <TgIcon name="send2" size={22} />
         </button>
       </form>
     {:else}
@@ -570,8 +561,14 @@
   }
   .dialog-row.active .dialog-time,
   .dialog-row.active .dialog-preview,
-  .dialog-row.active .sender-prefix {
+  .dialog-row.active .sender-prefix,
+  .dialog-row.active .read-ticks {
     color: rgba(255, 255, 255, 0.9);
+  }
+  .read-ticks {
+    color: #4dcd5e;
+    display: inline-flex;
+    align-items: center;
   }
   .avatar-cell {
     position: relative;
