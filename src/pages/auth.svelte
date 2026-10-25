@@ -3,6 +3,7 @@
   import { auth, initializeAuth, isPreview } from '../services/auth';
   import logo from 'images/telegram-logo.svg';
   import CountryPicker from '../components/auth/CountryPicker.svelte';
+  import AuthMonkey from '../components/auth/AuthMonkey.svelte';
   import ChatWorkspace from '../components/chat/ChatWorkspace.svelte';
   import countries from '../stores/countries.json';
   import { renderQr } from '../services/auth/qr-code.mjs';
@@ -101,6 +102,8 @@
           <div class="qr-placeholder" role="status">{qrImageError ? 'Could not display the QR code. Try phone login.' : $auth.qrStatus === 'scanned' ? 'Confirming your login…' : $auth.qrStatus === 'error' ? 'Unable to load a QR code' : 'Loading a fresh QR code…'}</div>
         {/if}
       </div>
+    {:else if $auth.step === 'code' || $auth.step === 'password'}
+      <AuthMonkey step={$auth.step} codeLength={code.length} maxCodeLength={$auth.codeLength || 5} {showPassword} />
     {:else}<img class="auth-logo" src={logo} alt="" width="88" height="88" />{/if}
     <h1 id="auth-title">{titles[$auth.step]}</h1>
     {#if $auth.notice}<p class="notice" role="status">{$auth.notice}</p>{/if}
