@@ -402,6 +402,7 @@ export async function handleFakeTelegramRpc(action, payload = {}, instanceId = '
         user: state.user,
         folders: chatState.folders,
         chats: chatState.chats,
+        hasMoreDialogs: !chatState.dialogsPageLoaded,
         archivedSummary: { count: 120, preview: 'Digital Trends, Design Systems, Tech News' },
         meProfile: {
           id: state.user.id,
@@ -428,6 +429,65 @@ export async function handleFakeTelegramRpc(action, payload = {}, instanceId = '
         gifs: chatState.gifs,
       };
     }
+    case 'loadMoreDialogs': {
+      if (chatState.dialogsPageLoaded) {
+        return { chats: [], folders: chatState.folders, hasMoreDialogs: false };
+      }
+      chatState.dialogsPageLoaded = true;
+      const extraChats = [
+        {
+          id: '10',
+          title: 'Svelte Core Team',
+          online: false,
+          saved: false,
+          pinned: false,
+          verified: true,
+          time: 'Yesterday',
+          unreadCount: 0,
+          muted: false,
+          out: false,
+          read: true,
+          fromName: 'Rich',
+          text: 'Runes make scroll pagination super clean.',
+          mediaPreview: null,
+          status: '1,240 members',
+          hiddenInAll: false,
+          avatar: { bg: 'linear-gradient(135deg, #ff7043, #d84315)', initials: 'SC', badge: null },
+        },
+        {
+          id: '11',
+          title: 'Telegram Web K Updates',
+          online: false,
+          saved: false,
+          pinned: false,
+          verified: true,
+          time: 'Oct 21',
+          unreadCount: 0,
+          muted: true,
+          out: false,
+          read: true,
+          fromName: '',
+          text: 'IndexedDB media caching & infinite scroll released.',
+          mediaPreview: null,
+          status: '94,100 subscribers',
+          hiddenInAll: false,
+          avatar: { bg: 'linear-gradient(135deg, #42a5f5, #1565c0)', initials: 'WK', badge: null },
+        },
+      ];
+      for (const c of extraChats) {
+        if (!chatState.chats.some(existing => existing.id === c.id)) {
+          chatState.chats.push(c);
+          chatState.messages[c.id] = [
+            { id: Number(c.id) * 100 + 1, sender: c.title, text: c.text, time: c.time, dateLabel: 'October 21', out: false, read: true },
+          ];
+        }
+      }
+      return {
+        chats: extraChats,
+        folders: chatState.folders,
+        hasMoreDialogs: false,
+      };
+    }
     case 'downloadAvatar': {
       return { photoUrl: '' };
     }
@@ -438,9 +498,48 @@ export async function handleFakeTelegramRpc(action, payload = {}, instanceId = '
       chat.unreadCount = 0;
       const list = chatState.messages[chatId] || [];
       list.forEach(msg => { msg.read = true; });
+      if (!chatState.historyPageLoaded) chatState.historyPageLoaded = {};
       return {
         chat: { ...chat },
         messages: list.map(item => ({ ...item })),
+        hasMoreMessages: !chatState.historyPageLoaded[chatId],
+      };
+    }
+    case 'loadMoreHistory': {
+      const chatId = String(payload.chatId);
+      const chat = chatState.chats.find(item => item.id === chatId);
+      if (!chat) throw rpcError('CHAT_NOT_FOUND');
+      if (!chatState.historyPageLoaded) chatState.historyPageLoaded = {};
+      if (chatState.historyPageLoaded[chatId]) {
+        return { messages: [], hasMoreMessages: false };
+      }
+      chatState.historyPageLoaded[chatId] = true;
+      const currentList = chatState.messages[chatId] || [];
+      const minId = Number(payload.offsetId || currentList[0]?.id || 100);
+      const older = [
+        {
+          id: Math.max(1, minId - 2),
+          sender: chat.title,
+          text: `Earlier history in ${chat.title} (loaded on scroll)`,
+          time: '11:15',
+          dateLabel: 'October 23',
+          out: false,
+          read: true,
+        },
+        {
+          id: Math.max(2, minId - 1),
+          sender: state.user.displayName,
+          text: 'Checking previous messages from earlier this week.',
+          time: '11:18',
+          dateLabel: 'October 23',
+          out: true,
+          read: true,
+        },
+      ];
+      chatState.messages[chatId] = [...older, ...currentList];
+      return {
+        messages: older,
+        hasMoreMessages: false,
       };
     }
     case 'sendMessage': {

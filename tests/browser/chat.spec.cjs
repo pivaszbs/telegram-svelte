@@ -148,3 +148,26 @@ test('mobile chat navigation opens and returns to the list without horizontal ov
   await page.getByRole('button', { name: 'Back to conversations' }).click();
   await expect(page.getByRole('searchbox', { name: 'Search conversations' })).toBeVisible();
 });
+
+test('infinite scroll loads additional dialogs on sidebar scroll and older messages on history scroll', async ({ page }) => {
+  await signInToWorkspace(page);
+  await expect(page.getByRole('button', { name: /Jessica Flowers/ })).toBeVisible();
+
+  const dialogList = page.getByRole('list', { name: 'Chat list' });
+  await dialogList.evaluate(el => {
+    el.scrollTop = el.scrollHeight;
+    el.dispatchEvent(new Event('scroll'));
+  });
+  await expect(page.getByRole('button', { name: /Svelte Core Team/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Telegram Web K Updates/ })).toBeVisible();
+
+  await page.getByRole('button', { name: /Jessica Flowers/ }).click();
+  await expect(page.getByRole('heading', { name: 'Jessica Flowers' })).toBeVisible();
+
+  const historyViewport = page.getByLabel('Message history');
+  await historyViewport.evaluate(el => {
+    el.scrollTop = 0;
+    el.dispatchEvent(new Event('scroll'));
+  });
+  await expect(page.getByText('Earlier history in Jessica Flowers (loaded on scroll)')).toBeVisible();
+});

@@ -158,7 +158,89 @@ export async function createTransport(config) {
   const rawPeerMap = new Map();
   const chatMap = new Map();
   let cachedFolders = [];
+  let savedRawFilters = [];
+  let dialogCursor = null;
+  let hasMoreDialogs = true;
   let stickerPacks = JSON.parse(JSON.stringify(DEFAULT_STICKER_PACKS));
+
+  function extractDialogCursor(lastDialog) {
+    if (!lastDialog) return null;
+    return {
+      offsetPeer: lastDialog.peer?.inputPeer || lastDialog.peer?.id,
+      offsetId: lastDialog.raw?.topMessage || lastDialog.lastMessage?.id || 0,
+      offsetDate: lastDialog.lastMessage?.raw?.date || 0,
+    };
+  }
+
+  function appendDialogsToFolders(rawBatch, folders) {
+    if (!rawBatch.length) return folders;
+    return folders.map(folder => {
+      if (folder.id === 'all') return folder;
+      let addIds = [];
+      let addBadge = 0;
+      const rawFilter = savedRawFilters.find(f => `tg-folder-${f.id}` === folder.id);
+      if (rawFilter) {
+        let predicate = () => false;
+        try {
+          predicate = Dialog.filterFolder(rawFilter, false);
+        } catch {}
+        const matching = rawBatch.filter(d => {
+          try {
+            return predicate(d);
+          } catch {
+            return false;
+          }
+        });
+        addIds = matching.map(d => String(d.peer.id));
+        addBadge = matching.filter(d => Number(d.unreadCount || 0) > 0).length;
+      } else if (folder.id === 'personal') {
+        addIds = rawBatch.filter(d => d.peer.type === 'user' && !d.peer.isBot).map(d => String(d.peer.id));
+      } else if (folder.id === 'channels') {
+        addIds = rawBatch.filter(d => d.peer.type === 'chat' && d.peer.chatType === 'channel').map(d => String(d.peer.id));
+      } else if (folder.id === 'groups') {
+        addIds = rawBatch.filter(d => d.peer.type === 'chat' && d.peer.isGroup).map(d => String(d.peer.id));
+      } else if (folder.id === 'bots') {
+        addIds = rawBatch.filter(d => d.peer.type === 'user' && d.peer.isBot).map(d => String(d.peer.id));
+      }
+      if (!addIds.length && !addBadge) return folder;
+      const mergedIds = Array.from(new Set([...(folder.includedIds || []), ...addIds]));
+      return {
+        ...folder,
+        includedIds: mergedIds,
+        badgeCount: Number(folder.badgeCount || 0) + addBadge,
+      };
+    });
+  }
+
+  async function hydrateMessagePhotos(chatId, rawList, mappedMessages) {
+    await Promise.all(
+      rawList.map(async (rawMsg, idx) => {
+        if (rawMsg?.media?.type !== 'photo') return;
+        const photoKey = `msg-photo:${chatId}:${rawMsg.id}`;
+        const cachedPhoto = await getCachedBlobUrl(photoKey);
+        if (cachedPhoto) {
+          mappedMessages[idx].media = {
+            ...mappedMessages[idx].media,
+            photoUrl: cachedPhoto,
+          };
+          return;
+        }
+        try {
+          const bytes = await Promise.race([
+            api.downloadAsBuffer(rawMsg.media),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
+          ]);
+          const photoUrl = await putCachedBlob(photoKey, bytes);
+          if (photoUrl) {
+            mappedMessages[idx].media = {
+              ...mappedMessages[idx].media,
+              photoUrl,
+            };
+          }
+        } catch {}
+      })
+    );
+  }
 
   function bytesToBlobUrl(bytes, mime = 'image/jpeg') {
     if (!bytes || !(bytes instanceof Uint8Array) || bytes.length === 0 || typeof URL === 'undefined') {
@@ -426,13 +508,20 @@ export async function createTransport(config) {
     },
 
     getBootstrap: async () => {
+      const DIALOG_INITIAL_LIMIT = 40;
       const rawDialogs = [];
-      for await (const d of api.iterDialogs({ limit: 80, archived: 'exclude' })) {
+      for await (const d of api.iterDialogs({
+        limit: DIALOG_INITIAL_LIMIT,
+        chunkSize: DIALOG_INITIAL_LIMIT,
+        archived: 'exclude',
+      })) {
         rawDialogs.push(d);
       }
+      dialogCursor = extractDialogCursor(rawDialogs.at(-1));
+      hasMoreDialogs = rawDialogs.length >= 25 && Boolean(dialogCursor);
       const chats = rawDialogs.map(mapDialog);
 
-      // First restore any already-cached hi-res avatars from IndexedDB for all 80 dialogs (0 network requests)
+      // First restore any already-cached hi-res avatars from IndexedDB (0 network requests)
       await Promise.all(
         chats.map(async c => {
           if (!c.avatar?.hasPhoto || c.saved || c.isTelegram) return;
@@ -498,10 +587,12 @@ export async function createTransport(config) {
         },
       ];
 
+      savedRawFilters = [];
       try {
         const rawFolders = await api.getFolders();
         for (const filter of rawFolders?.filters || []) {
           if (!filter || filter._ === 'dialogFilterDefault') continue;
+          savedRawFilters.push(filter);
           const fTitle = typeof filter.title === 'string'
             ? filter.title
             : (filter.title?.text || 'Folder');
@@ -633,6 +724,7 @@ export async function createTransport(config) {
       const payload = {
         folders,
         chats,
+        hasMoreDialogs,
         archivedSummary,
         meProfile,
         messages: histories,
@@ -651,6 +743,67 @@ export async function createTransport(config) {
       return payload;
     },
 
+    loadMoreDialogs: async () => {
+      if (!hasMoreDialogs || !dialogCursor) {
+        return { chats: [], folders: cachedFolders, hasMoreDialogs: false };
+      }
+      const PAGE_SIZE = 30;
+      const rawBatch = [];
+      for await (const d of api.iterDialogs({
+        limit: PAGE_SIZE,
+        chunkSize: PAGE_SIZE,
+        pinned: 'exclude',
+        archived: 'exclude',
+        offsetPeer: dialogCursor.offsetPeer,
+        offsetId: dialogCursor.offsetId,
+        offsetDate: dialogCursor.offsetDate,
+      })) {
+        rawBatch.push(d);
+      }
+
+      if (rawBatch.length > 0) {
+        dialogCursor = extractDialogCursor(rawBatch.at(-1));
+        hasMoreDialogs = rawBatch.length >= 15 && Boolean(dialogCursor);
+      } else {
+        hasMoreDialogs = false;
+      }
+
+      const freshRaw = rawBatch.filter(d => !chatMap.has(String(d.peer.id)));
+      const newChats = freshRaw.map(mapDialog);
+
+      await Promise.all(
+        newChats.map(async c => {
+          if (!c.avatar?.hasPhoto || c.saved || c.isTelegram) return;
+          const cachedUrl = await getCachedBlobUrl(`avatar-hi:${c.id}`);
+          if (cachedUrl) {
+            c.avatar.photoUrl = cachedUrl;
+            c.avatar.hiRes = true;
+            chatMap.set(c.id, c);
+          }
+        })
+      );
+
+      cachedFolders = appendDialogsToFolders(freshRaw, cachedFolders);
+
+      try {
+        const snap = await getCachedState('bootstrap');
+        if (snap && Array.isArray(snap.chats)) {
+          await putCachedState('bootstrap', {
+            ...snap,
+            folders: cachedFolders,
+            chats: Array.from(chatMap.values()),
+            updatedAt: Date.now(),
+          });
+        }
+      } catch {}
+
+      return {
+        chats: newChats,
+        folders: cachedFolders,
+        hasMoreDialogs,
+      };
+    },
+
     openChat: async ({ chatId }) => {
       const id = String(chatId);
       const peer = peerMap.get(id) ?? Number(id);
@@ -658,7 +811,7 @@ export async function createTransport(config) {
       const current = chatMap.get(id);
 
       const [history] = await Promise.all([
-        api.getHistory(peer, { limit: 40 }),
+        api.getHistory(peer, { limit: 25 }),
         (async () => {
           if (current && !current.avatar?.hiRes && !current.saved && !current.isTelegram) {
             const cachedUrl = await getCachedBlobUrl(`avatar-hi:${id}`);
@@ -687,34 +840,7 @@ export async function createTransport(config) {
       const rawReversed = [...history].reverse();
       const messages = rawReversed.map(msg => mapMessage(msg, null, isChannel));
 
-      // Check IndexedDB cache first for message photos; only download uncached photos
-      await Promise.all(
-        rawReversed.map(async (rawMsg, idx) => {
-          if (rawMsg?.media?.type !== 'photo') return;
-          const photoKey = `msg-photo:${id}:${rawMsg.id}`;
-          const cachedPhoto = await getCachedBlobUrl(photoKey);
-          if (cachedPhoto) {
-            messages[idx].media = {
-              ...messages[idx].media,
-              photoUrl: cachedPhoto,
-            };
-            return;
-          }
-          try {
-            const bytes = await Promise.race([
-              api.downloadAsBuffer(rawMsg.media),
-              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000)),
-            ]);
-            const photoUrl = await putCachedBlob(photoKey, bytes);
-            if (photoUrl) {
-              messages[idx].media = {
-                ...messages[idx].media,
-                photoUrl,
-              };
-            }
-          } catch {}
-        })
-      );
+      await hydrateMessagePhotos(id, rawReversed, messages);
 
       const updatedChat = current ? { ...current, unreadCount: 0, read: true } : { id, title: 'Chat', unreadCount: 0 };
       chatMap.set(id, updatedChat);
@@ -726,6 +852,45 @@ export async function createTransport(config) {
       return {
         chat: updatedChat,
         messages,
+        hasMoreMessages: history.length >= 20,
+      };
+    },
+
+    loadMoreHistory: async ({ chatId, offsetId }) => {
+      const id = String(chatId);
+      const peer = peerMap.get(id) ?? Number(id);
+      const rawPeer = rawPeerMap.get(id);
+      const current = chatMap.get(id);
+      const minId = Number(offsetId);
+      if (!minId || Number.isNaN(minId)) {
+        return { messages: [], hasMoreMessages: false };
+      }
+
+      const history = await api.getHistory(peer, {
+        limit: 25,
+        offset: { id: minId, date: 0 },
+      });
+
+      const isChannel = Boolean(rawPeer?.chatType === 'channel' || current?.status?.includes('subscriber'));
+      const rawReversed = [...history].reverse().filter(m => Number(m.id) < minId);
+      const olderMessages = rawReversed.map(msg => mapMessage(msg, null, isChannel));
+
+      await hydrateMessagePhotos(id, rawReversed, olderMessages);
+
+      if (olderMessages.length > 0) {
+        try {
+          const histories = (await getCachedState('histories')) || {};
+          const existing = Array.isArray(histories[id]) ? histories[id] : [];
+          const existingIds = new Set(existing.map(m => String(m.id)));
+          const uniqueOlder = olderMessages.filter(m => !existingIds.has(String(m.id)));
+          histories[id] = [...uniqueOlder, ...existing];
+          await putCachedState('histories', histories);
+        } catch {}
+      }
+
+      return {
+        messages: olderMessages,
+        hasMoreMessages: history.length >= 20 && olderMessages.length > 0,
       };
     },
 

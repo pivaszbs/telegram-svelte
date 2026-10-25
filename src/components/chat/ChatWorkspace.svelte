@@ -45,6 +45,11 @@
   let settingsOpen = $state(false);
   let chatTheme = $state('light');
   let sending = $state(false);
+  let hasMoreDialogs = $state(true);
+  let loadingMoreDialogs = $state(false);
+  let hasMoreByChat = $state({});
+  let loadingMoreMessages = $state(false);
+  let dialogListEl = $state();
   let messageInputEl = $state();
   let messagesContainerEl = $state();
 
@@ -91,6 +96,7 @@
       const data = await callBackend('getBootstrap');
       folders = data.folders || [];
       chats = data.chats || [];
+      hasMoreDialogs = data.hasMoreDialogs !== false;
       archivedSummary = data.archivedSummary || null;
       meProfile = data.meProfile || null;
       messagesByChat = { ...messagesByChat, ...(data.messages || {}) };
@@ -103,6 +109,38 @@
       }
     } finally {
       loading = false;
+    }
+  }
+
+  async function loadMoreDialogs() {
+    if (loading || loadingMoreDialogs || !hasMoreDialogs) return;
+    loadingMoreDialogs = true;
+    try {
+      const res = await callBackend('loadMoreDialogs');
+      if (Array.isArray(res?.chats) && res.chats.length > 0) {
+        const existingIds = new Set(chats.map(c => c.id));
+        const fresh = res.chats.filter(c => !existingIds.has(c.id));
+        if (fresh.length > 0) {
+          chats = [...chats, ...fresh];
+        }
+      }
+      if (Array.isArray(res?.folders) && res.folders.length > 0) {
+        folders = res.folders;
+      }
+      hasMoreDialogs = Boolean(res?.hasMoreDialogs);
+      hydrateAvatars();
+    } catch {
+      hasMoreDialogs = false;
+    } finally {
+      loadingMoreDialogs = false;
+    }
+  }
+
+  function handleDialogListScroll(event) {
+    const el = event.currentTarget;
+    if (!el || loadingMoreDialogs || !hasMoreDialogs) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 180) {
+      loadMoreDialogs();
     }
   }
 
@@ -148,12 +186,60 @@
       const data = await callBackend('openChat', { chatId });
       chats = chats.map(item => (item.id === chatId ? data.chat : item));
       messagesByChat = { ...messagesByChat, [chatId]: data.messages };
+      hasMoreByChat = { ...hasMoreByChat, [chatId]: data.hasMoreMessages !== false };
       await tick();
       if (messagesContainerEl) {
         messagesContainerEl.scrollTop = messagesContainerEl.scrollHeight;
       }
     } catch {
       // Keep local messages if the server call fails.
+    }
+  }
+
+  async function loadMoreHistory() {
+    const chatId = activeChatId;
+    if (!chatId || loadingMoreMessages || hasMoreByChat[chatId] === false) return;
+    const currentList = messagesByChat[chatId] || [];
+    if (!currentList.length) return;
+    const oldestId = currentList[0]?.id;
+    if (!oldestId) return;
+
+    loadingMoreMessages = true;
+    const prevScrollHeight = messagesContainerEl?.scrollHeight || 0;
+    const prevScrollTop = messagesContainerEl?.scrollTop || 0;
+
+    try {
+      const res = await callBackend('loadMoreHistory', { chatId, offsetId: oldestId });
+      const older = Array.isArray(res?.messages) ? res.messages : [];
+      hasMoreByChat = { ...hasMoreByChat, [chatId]: Boolean(res?.hasMoreMessages) };
+      if (older.length > 0) {
+        const current = messagesByChat[chatId] || [];
+        const existingIds = new Set(current.map(m => String(m.id)));
+        const uniqueOlder = older.filter(m => !existingIds.has(String(m.id)));
+        if (uniqueOlder.length > 0) {
+          messagesByChat = {
+            ...messagesByChat,
+            [chatId]: [...uniqueOlder, ...current],
+          };
+          await tick();
+          if (messagesContainerEl && activeChatId === chatId) {
+            const newScrollHeight = messagesContainerEl.scrollHeight;
+            messagesContainerEl.scrollTop = Math.max(0, newScrollHeight - prevScrollHeight + prevScrollTop);
+          }
+        }
+      }
+    } catch {
+      hasMoreByChat = { ...hasMoreByChat, [chatId]: false };
+    } finally {
+      loadingMoreMessages = false;
+    }
+  }
+
+  function handleMessagesScroll(event) {
+    const el = event.currentTarget;
+    if (!el || loadingMoreMessages || !activeChatId || hasMoreByChat[activeChatId] === false) return;
+    if (el.scrollTop <= 100) {
+      loadMoreHistory();
     }
   }
 
@@ -349,7 +435,18 @@
         </div>
       {/if}
 
-      <div class="dialog-list" role="list" aria-label="Chat list">
+      <div
+        class="dialog-list"
+        role="list"
+        aria-label="Chat list"
+        bind:this={dialogListEl}
+        onscroll={handleDialogListScroll}
+        onwheel={e => {
+          if (e.deltaY > 0 && dialogListEl && dialogListEl.scrollTop + dialogListEl.clientHeight >= dialogListEl.scrollHeight - 80) {
+            loadMoreDialogs();
+          }
+        }}
+      >
         {#if loading}
           <p class="list-status" role="status">Loading conversations…</p>
         {:else if error}
@@ -470,6 +567,12 @@
               </div>
             </button>
           {/each}
+          {#if loadingMoreDialogs}
+            <div class="dialog-pagination-loader" role="status">
+              <span class="pagination-spinner"></span>
+              <span>Loading older chats…</span>
+            </div>
+          {/if}
         {/if}
       </div>
 
@@ -555,8 +658,24 @@
         </div>
       </header>
 
-      <div class="messages-viewport" bind:this={messagesContainerEl} aria-label="Message history">
+      <div
+        class="messages-viewport"
+        bind:this={messagesContainerEl}
+        aria-label="Message history"
+        onscroll={handleMessagesScroll}
+        onwheel={e => {
+          if (e.deltaY < 0 && messagesContainerEl && messagesContainerEl.scrollTop <= 60) {
+            loadMoreHistory();
+          }
+        }}
+      >
         <div class="messages-inner">
+          {#if loadingMoreMessages}
+            <div class="history-pagination-loader" role="status">
+              <span class="pagination-spinner"></span>
+              <span>Loading earlier messages…</span>
+            </div>
+          {/if}
           {#each activeMessages as msg, idx (msg.id)}
             {#if idx === 0 || (msg.dateLabel || 'October 24') !== (activeMessages[idx - 1]?.dateLabel || 'October 24')}
               <div class="date-divider"><span>{msg.dateLabel || 'October 24'}</span></div>
@@ -1794,6 +1913,50 @@
     font-weight: 600;
     text-transform: uppercase;
     cursor: pointer;
+  }
+  .dialog-pagination-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #707579;
+  }
+  .workspace-shell.dark .dialog-pagination-loader {
+    color: #aaaaaa;
+  }
+  .history-pagination-loader {
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    margin: 6px 0;
+    border-radius: 999px;
+    background: rgba(74, 142, 58, 0.34);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .workspace-shell.dark .history-pagination-loader {
+    background: rgba(33, 33, 33, 0.65);
+  }
+  .pagination-spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    animation: webk-spin 0.65s linear infinite;
+  }
+  @keyframes webk-spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
   @media (max-width: 760px) {
     .workspace-shell {
